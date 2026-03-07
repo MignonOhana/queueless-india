@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Search, ChevronDown, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap } from "lucide-react";
+import { MapPin, Search, ChevronDown, ChevronLeft, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
@@ -161,13 +161,18 @@ export default function HomePage() {
       {/* SECTION 1 - LOCATION HEADER */ }
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-slate-200/50 shadow-sm">
          <div className="max-w-2xl mx-auto flex items-center justify-between">
-            <div>
-               <div className="flex items-center gap-1 text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
-                 <MapPin size={12} className="text-[#F59E0B]" /> Current Location
-               </div>
-               <div className="flex items-center gap-2">
-                 <h2 className="text-slate-900 font-extrabold text-lg flex items-center">{CURRENT_LOCATION.name}</h2>
-                 <ChevronDown size={18} className="text-[#0B6EFE]" />
+            <div className="flex items-center gap-3">
+               <Link href="/" className="w-10 h-10 shrink-0 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-[#0B6EFE] transition-colors">
+                 <ChevronLeft size={20} />
+               </Link>
+               <div>
+                  <div className="flex items-center gap-1 text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+                    <MapPin size={12} className="text-[#F59E0B]" /> Current Location
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-slate-900 font-extrabold text-lg flex items-center">{CURRENT_LOCATION.name}</h2>
+                    <ChevronDown size={18} className="text-[#0B6EFE]" />
+                  </div>
                </div>
             </div>
             {/* User Profile Hook */}
