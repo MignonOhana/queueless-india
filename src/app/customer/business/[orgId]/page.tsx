@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { joinQueue } from "@/lib/queueService";
 import { supabase } from "@/lib/supabaseClient";
+import { useRazorpay, RazorpayOrderOptions } from "react-razorpay";
 
 export default function BusinessProfile({
   params,
@@ -18,6 +19,7 @@ export default function BusinessProfile({
   const resolvedParams = use(params);
   const orgId = resolvedParams.orgId;
   const { user, loginAsCustomer } = useAuth();
+  const { error, isLoading, Razorpay } = useRazorpay();
 
   const [isJoining, setIsJoining] = useState(false);
   const [showFastPass, setShowFastPass] = useState(false);
@@ -94,7 +96,7 @@ export default function BusinessProfile({
     }
     
     if (isFastPass) {
-       // Call the mock checkout api
+       // Call the checkout api (Razorpay / Mock)
        try {
          const res = await fetch('/api/checkout', {
            method: 'POST',
@@ -107,16 +109,77 @@ export default function BusinessProfile({
            })
          });
          const data = await res.json();
-         if (data.success && data.url) {
-           router.push(data.url);
+         
+         if (data.success) {
+           if (data.isMock) {
+             // Fallback to demo mock payment success screen
+             router.push(data.url);
+           } else {
+             // Genuine Razorpay Checkout
+             setIsJoining(true); // Keep loading state true through modal
+             
+             const options: RazorpayOrderOptions = {
+               key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+               amount: data.amount,
+               currency: data.currency,
+               name: business.name,
+               description: "Fast Pass Priority Queue",
+               order_id: data.orderId,
+               handler: async function (response: any) {
+                 // Payment succeeded, finalize Queue Join
+                 const result = await joinQueue(
+                   orgId as string, 
+                   serviceId, 
+                   prefix, 
+                   user?.id || "mock-user-" + Date.now(), 
+                   "Rahul Sharma (Guest)",
+                   ""
+                 );
+                 
+                 // Dispatch SMS
+                 fetch('/api/notify', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({
+                     tokenNumber: result.tokenNumber,
+                     phoneNumber: "+919876543210", 
+                     orgName: business.name,
+                     event: 'JOINED',
+                     estimatedWaitMins: result.estimatedWaitMins
+                   })
+                 }).catch(e => console.error(e));
+                 
+                 router.push(`/customer/queue/${orgId}/${result.tokenNumber}`);
+               },
+               prefill: {
+                 name: "Rahul Sharma",
+                 email: "rahul@example.com",
+                 contact: "9876543210",
+               },
+               theme: {
+                 color: "#4F46E5",
+               },
+             };
+             
+             const paymentObject = new Razorpay(options);
+             
+             paymentObject.on("payment.failed", function(response: any) {
+               console.error(response.error.description);
+               setIsJoining(false);
+               alert("Payment failed: " + response.error.description);
+             });
+             
+             paymentObject.open();
+           }
          } else {
            setIsJoining(false);
            alert("Checkout failed. Please try again.");
          }
        } catch(e) {
+         console.error(e);
          setIsJoining(false);
        }
-       return; // Stop here, redirect handles token creation
+       return; // Stop here, Razorpay handler manages token creation
     }
 
     // Standard Free Queue Join

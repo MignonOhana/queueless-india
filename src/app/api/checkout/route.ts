@@ -1,15 +1,41 @@
 import { NextResponse } from 'next/server';
+import Razorpay from 'razorpay';
 
 export async function POST(request: Request) {
   try {
     const { orgId, serviceId, userId, amount, type } = await request.json();
 
     // ----------------------------------------------------------------------
-    // MOCK CHECKOUT ENGINE
-    // In production, this would call Stripe.checkout.sessions.create() 
-    // or Razorpay.orders.create()
+    // RAZORPAY / MOCK CHECKOUT ENGINE
     // ----------------------------------------------------------------------
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
+    if (keyId && keySecret) {
+      // Execute genuine Razorpay Sandbox/Live Order
+      const rzp = new Razorpay({
+        key_id: keyId,
+        key_secret: keySecret,
+      });
+
+      const options = {
+        amount: Math.round(amount * 100), // convert INR to paise
+        currency: "INR",
+        receipt: `rcpt_${orgId}_${Date.now().toString().substring(6)}`
+      };
+
+      const order = await rzp.orders.create(options);
+      
+      return NextResponse.json({
+        success: true,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        isMock: false
+      });
+    }
+
+    // --- FALLBACK MOCK CHECKOUT (No Keys Provided) ---
     // Simulate network delay for realistic feel
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -19,8 +45,10 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       sessionId: mockSessionId,
+      orderId: `order_mock_${Date.now()}`,
       url: `/customer/payment-success?session_id=${mockSessionId}&org=${orgId}&service=${serviceId}&type=${type}`,
-      message: "Mock checkout session created successfully."
+      message: "Mock checkout session created successfully.",
+      isMock: true
     });
 
   } catch (error) {
