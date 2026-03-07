@@ -40,7 +40,7 @@ export default function AdminNav() {
       <div className="max-w-[1400px] mx-auto px-6 w-full flex items-center justify-between h-full gap-4">
         
         {/* Left: Logo */}
-        <Link href="/" className="flex items-center gap-2 group shrink-0 hidden md:flex">
+        <Link href="/home" className="flex items-center gap-2 group shrink-0 hidden md:flex">
           <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold shadow-md transition-transform active:scale-95">
             Q
           </div>
@@ -48,7 +48,7 @@ export default function AdminNav() {
             QueueLess <span className="text-slate-400 font-medium text-sm ml-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 rounded">Admin</span>
           </span>
         </Link>
-        <Link href="/" className="md:hidden flex items-center shrink-0">
+        <Link href="/home" className="md:hidden flex items-center shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold">
             Q
           </div>

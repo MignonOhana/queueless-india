@@ -15,6 +15,7 @@ import PageTransition from "@/components/PageTransition";
 
 import { QrCode, Sparkles } from "lucide-react";
 
+import Link from "next/link";
 import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -61,13 +62,13 @@ function CustomerAppContent() {
       <header className="sticky top-0 z-40 bg-white/80 dark:bg-black/80 backdrop-blur-2xl border-b border-slate-200 dark:border-white/10 px-4 pt-6 pb-4">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-4">
-             <div className="flex items-center gap-2">
-               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold text-lg">Q</div>
+             <Link href="/home" className="flex items-center gap-2 group">
+               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold text-lg group-hover:rotate-12 transition-all duration-300">Q</div>
                <div>
-                  <h1 className="text-lg font-black text-slate-900 dark:text-white leading-none">QueueLess</h1>
+                  <h1 className="text-lg font-black text-slate-900 dark:text-white leading-none group-hover:text-indigo-600 transition-colors">QueueLess</h1>
                   <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1 mt-0.5"><MapPin size={10}/> Location active</p>
                </div>
-             </div>
+             </Link>
              <button onClick={() => setShowScanner(true)} className="p-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full hover:bg-indigo-100 transition shadow-sm">
                 <QrCode size={20} />
              </button>

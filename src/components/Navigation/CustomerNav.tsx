@@ -41,7 +41,7 @@ export default function CustomerNav() {
       >
         <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between h-full">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/home" className="flex items-center gap-2 group">
             <div className={`rounded-xl bg-gradient-to-tr from-orange-500 to-rose-500 text-white flex items-center justify-center font-bold shadow-lg shadow-orange-500/30 group-hover:rotate-12 transition-all duration-300 ${scrolled ? 'w-8 h-8 text-base shrink-0' : 'w-10 h-10 text-xl shrink-0'}`}>
               Q
             </div>
