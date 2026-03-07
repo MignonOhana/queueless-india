@@ -28,7 +28,7 @@ export default function MobileNav() {
     { name: "Home", icon: Compass, href: "/home" },
     { name: "Queue", icon: ListOrdered, href: queueUrl },
     { name: "SCAN", icon: QrCode, href: "/customer/scanner", isCenter: true },
-    { name: "Map", icon: MapIcon, href: "/map" },
+    { name: "Map", icon: MapIcon, href: "/map/heatmap" },
     { name: "Profile", icon: User, href: "/customer/profile" }, 
   ];
 
