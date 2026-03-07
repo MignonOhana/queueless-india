@@ -197,8 +197,8 @@ export default function HomePage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-10">
          
          {/* SECTION 10 - LIVE QUEUE PULSE */}
-         <section className="bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] p-5 shadow-2xl relative overflow-hidden border border-white/10">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[80px] opacity-20 pointer-events-none" />
+         <section className="bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] p-5 shadow-[0_8px_30px_rgba(30,27,75,0.2)] relative overflow-hidden border border-white/10 z-0">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[80px] opacity-20 pointer-events-none -z-10" />
             <div className="flex items-center justify-between mb-4 relative z-10">
                <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
@@ -206,7 +206,7 @@ export default function HomePage() {
                </div>
             </div>
             
-            <div className="relative z-10 h-14 overflow-hidden">
+            <div className="relative z-10 h-14 overflow-hidden mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)">
                <motion.div
                  animate={{ y: [0, -56, -112, -168, -224] }}
                  transition={{ repeat: Infinity, duration: 15, ease: "linear" }}

@@ -31,6 +31,8 @@ function CustomerAppContent() {
     const savedToken = localStorage.getItem("active_token");
     if (savedOrg && savedToken) {
       router.push(`/customer/queue/${savedOrg}/${savedToken}`);
+    } else {
+      router.push(`/home`);
     }
   }, [router]);
 
