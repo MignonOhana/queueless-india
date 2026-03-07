@@ -15,14 +15,33 @@ import {
 import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
-  const { profile, updateProfile, updateNotifications } = useProfile();
+  const { profile, updateProfile, updateNotifications, isLoading } = useProfile();
   const { language, setLanguage } = useLanguage();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: profile.name,
+    phone: profile.phone,
+    email: profile.email
+  });
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setFormData({
+      name: profile.name,
+      phone: profile.phone,
+      email: profile.email
+    });
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    await updateProfile(formData);
+    setIsEditing(false);
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -104,11 +123,22 @@ export default function ProfilePage() {
         >
           {/* Section 1: Personal Info */}
           <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-800/50 p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 hover:scale-[1.02] cursor-default lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                <User size={20} />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                  <User size={20} />
+                </div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Personal Information</h2>
               </div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Personal Information</h2>
+              {isEditing ? (
+                <button onClick={handleSaveProfile} disabled={isLoading} className="text-xs font-bold text-white bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg transition-colors shadow-sm">
+                  {isLoading ? "Saving..." : "Save"}
+                </button>
+              ) : (
+                <button onClick={() => setIsEditing(true)} className="text-xs font-bold text-blue-500 bg-blue-50 hover:bg-blue-100 dark:bg-blue-500/10 dark:hover:bg-blue-500/20 px-4 py-2 rounded-lg transition-colors">
+                  Edit
+                </button>
+              )}
             </div>
             
             <div className="space-y-4">
@@ -116,25 +146,31 @@ export default function ProfilePage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Full Name</label>
                 <input 
                   type="text" 
-                  defaultValue={profile.name} 
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                  value={isEditing ? formData.name : profile.name} 
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  disabled={!isEditing}
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="group">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Phone</label>
                   <input 
                     type="text" 
-                    defaultValue={profile.phone} 
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                    value={isEditing ? formData.phone : profile.phone} 
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    disabled={!isEditing}
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div className="group">
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">Email</label>
                   <input 
                     type="email" 
-                    defaultValue={profile.email} 
-                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all"
+                    value={isEditing ? formData.email : profile.email} 
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    disabled={!isEditing}
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, ListOrdered, QrCode, Bell, User } from "lucide-react";
+import { Compass, ListOrdered, QrCode, Bell, User, Map as MapIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -28,6 +28,7 @@ export default function MobileNav() {
     { name: "Home", icon: Compass, href: "/home" },
     { name: "Queue", icon: ListOrdered, href: queueUrl },
     { name: "SCAN", icon: QrCode, href: "/customer/scanner", isCenter: true },
+    { name: "Map", icon: MapIcon, href: "/map" },
     { name: "Profile", icon: User, href: "/customer/profile" }, 
   ];
 
@@ -35,7 +36,7 @@ export default function MobileNav() {
     <div className="md:hidden fixed bottom-0 inset-x-0 z-50 pointer-events-none pb-safe">
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-50/0 via-slate-50/80 to-slate-50 dark:from-black/0 dark:via-black/80 dark:to-black rotate-180 pointer-events-none" />
       
-      <div className="relative pointer-events-auto bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 py-2 px-4 flex justify-between items-end pb-[env(safe-area-inset-bottom)]">
+      <div className="relative pointer-events-auto bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 py-2 px-2 grid grid-cols-5 justify-items-center items-end pb-[env(safe-area-inset-bottom)]">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.name === "Queue" && pathname.includes("/customer/queue"));
           const Icon = item.icon;

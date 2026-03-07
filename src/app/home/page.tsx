@@ -265,7 +265,21 @@ export default function HomePage() {
                      <div className="p-1.5 bg-white/20 rounded-lg"><Activity size={18} /></div>
                      <span className="font-bold tracking-widest text-[10px] uppercase text-[#F59E0B]">Your Active Token</span>
                   </div>
-                  <span className="px-2 py-1 bg-white/10 rounded-md text-xs font-bold text-white">Active</span>
+                  <div className="flex items-center gap-2">
+                     <span className="px-2 py-1 bg-white/10 rounded-md text-xs font-bold text-white">Active</span>
+                     <button 
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         localStorage.removeItem("active_org");
+                         localStorage.removeItem("active_token");
+                         setActiveTokenMap(null);
+                       }}
+                       className="p-1 bg-white/10 hover:bg-white/20 rounded-md text-white/70 hover:text-white transition-colors flex items-center justify-center shrink-0"
+                       title="Dismiss Test Token"
+                     >
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                     </button>
+                  </div>
                </div>
                <div className="relative z-10">
                   <h3 className="text-xl font-bold mb-1">City Hospital</h3>

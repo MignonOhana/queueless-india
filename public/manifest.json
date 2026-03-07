@@ -2,7 +2,7 @@
   "name": "QueueLess India",
   "short_name": "QueueLess",
   "description": "Smart digital queue system for instant check-ins.",
-  "start_url": "/customer",
+  "start_url": "/home",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0F172A",
