@@ -129,6 +129,25 @@ export default function BusinessProfile({
       ""
     );
     
+    // Dispatch Twilio SMS Notification
+    try {
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tokenNumber: result.tokenNumber,
+          phoneNumber: "+919876543210", // Mock recipient for Demo purposes
+          orgName: business.name,
+          event: 'JOINED',
+          estimatedWaitMins: result.estimatedWaitMins
+        })
+      });
+    } catch (e) {
+      console.error("SMS notification dispatch failed during join:", e);
+    }
+    
     router.push(`/customer/queue/${orgId}/${result.tokenNumber}`);
   };
 

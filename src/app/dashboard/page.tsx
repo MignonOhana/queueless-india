@@ -197,7 +197,7 @@ export default function BusinessDashboard() {
                 setIsCalling(true);
                 await callNextToken(adminUsername);
                 
-                // Trigger hypothetical SMS notification to the next person
+                // Trigger SMS notification to the called person
                 if (queue.length > 0) {
                   await fetch("/api/notify", {
                     method: "POST",
@@ -205,7 +205,22 @@ export default function BusinessDashboard() {
                     body: JSON.stringify({
                       tokenNumber: queue[0].tokenNumber,
                       phoneNumber: "+919876543210", // Example Indian number
-                      orgName: "City Hospital"
+                      orgName: businessData?.name || adminUsername,
+                      event: "CALLED"
+                    })
+                  }).catch(e => console.error("Notification failed", e));
+                }
+                
+                // Trigger APPROACHING SMS to the NEXT person in line (queue index 1)
+                if (queue.length > 1) {
+                  await fetch("/api/notify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      tokenNumber: queue[1].tokenNumber,
+                      phoneNumber: "+919876543210",
+                      orgName: businessData?.name || adminUsername,
+                      event: "APPROACHING"
                     })
                   }).catch(e => console.error("Notification failed", e));
                 }

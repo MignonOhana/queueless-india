@@ -1,10 +1,18 @@
 import { NextResponse } from 'next/server';
+import twilio from 'twilio';
 
 /**
  * MOCK NOTIFICATION ENGINE API
  * Handles dispatching cross-channel operational alerts for QueueLess India.
- * In a real-world scenario, this would use Twilio / Gupshup / WhatsApp Business API.
+ * If TWILIO_ACCOUNT_SID is provided, it uses the official Twilio SDK. Otherwise, mocks.
  */
+
+// Init Twilio conditionally
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+const client = (accountSid && authToken) ? twilio(accountSid, authToken) : null;
 
 interface NotifyRequest {
   tokenNumber: string;
@@ -18,9 +26,6 @@ export async function POST(req: Request) {
   try {
     const body: NotifyRequest = await req.json();
     const { tokenNumber, phoneNumber, orgName, event, estimatedWaitMins } = body;
-
-    // Simulate Network Delay & Third-Party API connection
-    await new Promise(resolve => setTimeout(resolve, 800));
 
     let smsBody = "";
     
@@ -38,12 +43,25 @@ export async function POST(req: Request) {
         smsBody = `Queue update for token ${tokenNumber} at ${orgName}.`;
     }
 
-    // Log the simulated mock message to the server console
-    console.log('\n--- SIMULATED NOTIFICATION DISPATCH ---');
-    console.log(`Channel: SMS & WhatsApp`);
-    console.log(`To: ${phoneNumber}`);
-    console.log(`Payload: ${smsBody}`);
-    console.log('-------------------------------------\n');
+    if (client && fromNumber) {
+      // Dispatch Real SMS
+      await client.messages.create({
+        body: smsBody,
+        from: fromNumber,
+        to: phoneNumber
+      });
+      console.log(`[TWILIO] SMS Sent to ${phoneNumber}: ${smsBody}`);
+    } else {
+      // Log the simulated mock message to the server console
+      console.log('\n--- SIMULATED NOTIFICATION DISPATCH (No Twilio Keys) ---');
+      console.log(`Channel: SMS & WhatsApp`);
+      console.log(`To: ${phoneNumber}`);
+      console.log(`Payload: ${smsBody}`);
+      console.log('-------------------------------------------------------\n');
+      
+      // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
 
     return NextResponse.json({
       success: true,
