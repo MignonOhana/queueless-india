@@ -8,6 +8,7 @@ import { callNextToken, skipToken, recallToken } from "@/lib/queueService";
 import { supabase } from "@/lib/supabaseClient";
 import QRCodeModal from "@/components/QR/QRCodeModal";
 import AIPredictionCard from "@/components/Dashboard/AIPredictionCard";
+import { MOCK_BUSINESSES } from "@/lib/mockHomeData";
 import dynamic from "next/dynamic";
 
 const QueueChart = dynamic(() => import("@/components/Analytics/QueueChart"), { 
@@ -72,14 +73,22 @@ export default function BusinessDashboard() {
                 setIsLoggingIn(true);
                 try {
                   const { data, error } = await supabase.from('businesses').select('*').eq('id', adminUsername).single();
+                  
                   if (error || !data) {
-                    alert("Business ID not found!");
-                    setIsLoggingIn(false);
-                    return;
+                    // Fallback to check if it's a known Mock ID for demo purposes
+                    const mockBiz = MOCK_BUSINESSES.find(b => b.id === adminUsername);
+                    if (mockBiz) {
+                      setBusinessData({ name: mockBiz.name, id: mockBiz.id });
+                      setIsAdminLoggedIn(true);
+                      localStorage.setItem("admin_org", mockBiz.id);
+                    } else {
+                      alert("Business ID not found!");
+                    }
+                  } else {
+                    setBusinessData(data);
+                    setIsAdminLoggedIn(true);
+                    localStorage.setItem("admin_org", adminUsername);
                   }
-                  setBusinessData(data);
-                  setIsAdminLoggedIn(true);
-                  localStorage.setItem("admin_org", adminUsername);
                 } catch(err) {
                   alert("Error validating business.");
                 }
