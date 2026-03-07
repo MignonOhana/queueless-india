@@ -33,10 +33,24 @@ const generateMockTrafficData = () => {
 
 export default function QueueChart() {
   const [data, setData] = useState<any[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setData(generateMockTrafficData());
+    setIsMounted(true);
   }, []);
+
+  if (!isMounted) {
+    return (
+      <div className="w-full h-[400px] bg-slate-50 dark:bg-slate-900/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 animate-pulse flex flex-col justify-between">
+         <div className="space-y-2">
+            <div className="h-6 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+         </div>
+         <div className="h-[250px] w-full bg-slate-100 dark:bg-slate-800/50 rounded-xl mt-6"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-[400px] bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
@@ -46,7 +60,7 @@ export default function QueueChart() {
       </div>
       
       <div className="w-full h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorCustomers" x1="0" y1="0" x2="0" y2="1">

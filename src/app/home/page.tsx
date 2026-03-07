@@ -156,7 +156,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-28 font-sans selection:bg-[#0B6EFE]/30 selection:text-[#0B6EFE]">
+    <div className="min-h-screen overflow-x-hidden bg-[#F8FAFC] pb-28 font-sans selection:bg-[#0B6EFE]/30 selection:text-[#0B6EFE]">
       
       {/* SECTION 1 - LOCATION HEADER */ }
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-slate-200/50 shadow-sm">
