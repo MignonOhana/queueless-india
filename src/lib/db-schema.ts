@@ -35,6 +35,7 @@ export interface TokenItem {
   id?: string;
   orgId: string;
   counterId: string; // e.g. 'opd'
+  queue_id?: string; // Reference to queues table
   userId: string;
   customerName: string;
   customerPhone?: string;

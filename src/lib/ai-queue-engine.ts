@@ -27,15 +27,16 @@ export function predictWaitTime(input: QueuePredictionInput): number {
   // Base calculation: (total people * avg time per person) / number of active counters serving them
   const baseWaitMins = (input.peopleAhead * input.averageServiceMins) / Math.max(1, input.activeStaffCounters);
 
-  // Apply historical congestion tracking
-  let predictedWait = baseWaitMins * input.historicalPacingMultiplier;
+  // Apply historical congestion tracking (default to 1.0 if not provided)
+  let predictedWait = baseWaitMins * (input.historicalPacingMultiplier || 1.0);
 
   // Factor in live queue velocity (if staff is working faster/slower than usual right now)
   // E.g., if velocity is high (serving 5 people in 10 mins instead of 2), reduce wait.
+  // We cap velocity adjustment to prevent wild swings
   if (input.currentQueueVelocity > 0) {
-     const velocityAdjustment = 1 / Math.max(0.5, input.currentQueueVelocity);
-     // Blend the historical prediction with live velocity (70% live pacing, 30% historical)
-     predictedWait = (predictedWait * 0.3) + ((baseWaitMins * velocityAdjustment) * 0.7);
+     const velocityAdjustment = Math.min(2.0, Math.max(0.5, 1 / input.currentQueueVelocity));
+     // Blend the historical prediction with live velocity (60% live pacing, 40% historical)
+     predictedWait = (predictedWait * 0.4) + ((baseWaitMins * velocityAdjustment) * 0.6);
   }
 
   // Ensure intelligent minimum bounds (e.g., if you are next, it will take at least 2 mins)

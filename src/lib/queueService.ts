@@ -13,58 +13,35 @@ export const joinQueue = async (
   customerPhone?: string
 ) => {
   try {
-    let tokenStr = `${counterPrefix}-001`;
-
-    // Improved service time estimation formula
-    // estimated_wait = (queue_length / active_counters_assumed_1) * average_service_time 
-    const { count } = await supabase
-      .from("tokens")
-      .select("*", { count: "exact", head: true })
-      .eq("orgId", orgId)
-      .eq("counterId", counterId)
-      .eq("status", "WAITING");
-
-    const estimatedWaitMins = (count || 0) * AVG_WAIT_TIME_MINS;
-
-    // Simulate counter increment (in a real production postgres, we'd use a sequence or RPC call)
-    const { data: counterData } = await supabase
-      .from("counters")
-      .select("lastNumber")
-      .eq("id", counterId)
-      .single();
-
-    let currentNumber = (counterData?.lastNumber || 0) + 1;
-    
-    await supabase
-      .from("counters")
-      .upsert({ id: counterId, orgId, lastNumber: currentNumber });
-
-    const paddedNumber = String(currentNumber).padStart(3, '0');
-    tokenStr = `${counterPrefix}-${paddedNumber}`;
-
-    // Add to queue
-    const { data: newDoc, error } = await supabase.from("tokens").insert({
-      orgId,
-      counterId,
-      userId,
-      customerName,
-      customerPhone: customerPhone || "",
-      tokenNumber: tokenStr,
-      status: "WAITING",
-      estimatedWaitMins,
-      createdAt: new Date().toISOString()
-    }).select().single();
+    const { data, error } = await supabase.functions.invoke('generate-token', {
+      body: { 
+        orgId, 
+        counterPrefix, 
+        userId, 
+        customerName, 
+        customerPhone 
+      }
+    });
 
     if (error) throw error;
-
-    return { id: newDoc.id, tokenNumber: tokenStr, estimatedWaitMins };
+    
+    // The edge function returns the inserted token document
+    return { 
+      id: data.id, 
+      tokenNumber: data.tokenNumber, 
+      estimatedWaitMins: data.estimatedWaitMins 
+    };
 
   } catch (error) {
-    console.warn("Firestore might not be configured. Generating mock token.", error);
-    // Fallback if Firebase is not linked yet
+    console.warn("Supabase edge function failed. Generating mock token.", error);
+    // Fallback if Edge function is not deployed yet locally
     const rad = Math.floor(Math.random() * 99) + 1;
     // Mock 15 mins wait
-    return { id: `mock_${Date.now()}`, tokenNumber: `${counterPrefix}-${String(rad).padStart(3, '0')}`, estimatedWaitMins: 15 };
+    return { 
+      id: `mock_${Date.now()}`, 
+      tokenNumber: `${counterPrefix}-${String(rad).padStart(3, '0')}`, 
+      estimatedWaitMins: 15 
+    };
   }
 };
 
@@ -93,9 +70,17 @@ export const callNextToken = async (orgId: string, counterId?: string) => {
 
     // Mark new as serving
     if (waitingData && waitingData.length > 0) {
-      const nextDoc = waitingData[0];
+      const nextDoc = waitingData[0] as TokenItem;
       await supabase.from("tokens").update({ status: "SERVING" }).eq("id", nextDoc.id);
-      calledToken = nextDoc as TokenItem;
+      calledToken = nextDoc;
+
+      if (nextDoc.queue_id) {
+         // Decrement waiting count AND set active serving ID
+         await supabase.rpc('serve_next_queue_token', { 
+            p_queue_id: nextDoc.queue_id,
+            p_token_id: nextDoc.id
+         });
+      }
     }
     
     return calledToken;
@@ -107,13 +92,21 @@ export const callNextToken = async (orgId: string, counterId?: string) => {
 
 export const skipToken = async (orgId: string, tokenId: string) => {
   try {
-    const { data, error } = await supabase
+    const { data: tokenData, error: tokenErr } = await supabase
       .from("tokens")
       .update({ status: "SKIPPED", servedAt: new Date().toISOString() })
       .eq("id", tokenId)
-      .eq("orgId", orgId);
+      .eq("orgId", orgId)
+      .select("queue_id")
+      .single();
     
-    if (error) throw error;
+    if (tokenErr) throw tokenErr;
+
+    if (tokenData && tokenData.queue_id) {
+       // Decrement total_waiting since they left the queue
+       await supabase.rpc('decrement_queue_waiting', { p_queue_id: tokenData.queue_id });
+    }
+
     return true;
   } catch (e) {
     console.error("Failed to skip token:", e);
@@ -131,13 +124,24 @@ export const recallToken = async (orgId: string, tokenId: string) => {
       .eq("status", "SERVING");
 
      // Force target token to SERVING and wipe the 'servedAt' timestamp so it reappears as active
-    const { data, error } = await supabase
+    const { data: tokenData, error } = await supabase
       .from("tokens")
       .update({ status: "SERVING", servedAt: null })
       .eq("id", tokenId)
-      .eq("orgId", orgId);
+      .eq("orgId", orgId)
+      .select("queue_id")
+      .single();
       
     if (error) throw error;
+
+    if (tokenData && tokenData.queue_id) {
+       // Update queues table to point currently_serving_token_id to this recalled token
+       await supabase
+         .from("queues")
+         .update({ currently_serving_token_id: tokenId })
+         .eq("id", tokenData.queue_id);
+    }
+
     return true;
   } catch (e) {
     console.error("Failed to recall token:", e);

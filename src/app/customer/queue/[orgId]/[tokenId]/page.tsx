@@ -25,6 +25,11 @@ export default function TicketPage({
   const [showAlert, setShowAlert] = useState(false);
   const [isPriority, setIsPriority] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [isLate, setIsLate] = useState(false);
+
+  const estimatedWait = queueData.estimatedWait || 15;
+  const arrivalStart = Math.max(0, estimatedWait - 5);
+  const arrivalEnd = estimatedWait + 5;
 
   // Monitor network connectivity
   useEffect(() => {
@@ -59,7 +64,16 @@ export default function TicketPage({
     } else {
       setShowAlert(false);
     }
-  }, [queueData.peopleAhead]);
+
+    // Mark as late if they are next (0 ahead) but haven't been called/served yet
+    // In a real app, this would compare token createdAt + estimatedWait vs Date.now()
+    if (queueData.peopleAhead === 0 && queueData.status === "WAITING") {
+       setIsLate(true);
+    } else {
+       setIsLate(false);
+    }
+
+  }, [queueData.peopleAhead, queueData.status]);
 
   const handleCancelAndLeave = () => {
     localStorage.removeItem("active_org");
@@ -157,8 +171,13 @@ export default function TicketPage({
                 </span>
               )}
             </h2>
-            <div className="mt-4 flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-xs font-bold">
-              <Clock size={14} /> ETA: {isPriority ? '5' : (queueData.estimatedWait || 15)} min
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-full text-xs font-bold">
+                <Clock size={14} /> ETA: {isPriority ? '5' : estimatedWait} min
+              </div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Arrive within {arrivalStart}–{arrivalEnd} minutes
+              </p>
             </div>
           </div>
           
@@ -174,13 +193,19 @@ export default function TicketPage({
           </div>
           
           {/* Smart Arrival Window Context */}
-          <div className="w-full mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-start gap-3">
-             <div className="bg-blue-50 dark:bg-blue-500/10 text-blue-500 p-2 rounded-xl shrink-0">
+          <div className={`w-full mt-6 pt-4 border-t ${isLate ? 'border-rose-100 dark:border-rose-900/50' : 'border-slate-100 dark:border-slate-800'} flex items-start gap-3`}>
+             <div className={`${isLate ? 'bg-rose-50 text-rose-500 dark:bg-rose-500/10' : 'bg-blue-50 text-blue-500 dark:bg-blue-500/10'} p-2 rounded-xl shrink-0 transition-colors`}>
                <MapPin size={18} strokeWidth={3} />
              </div>
              <div>
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Recommended Arrival</p>
-                <p className="text-[11px] text-slate-500 leading-snug mt-0.5">Please arrive within {Math.max(0, (queueData.estimatedWait || 15) - 5)}-{Math.max(0, (queueData.estimatedWait || 15) + 5)} minutes. You will be marked late if not present.</p>
+                <p className={`text-xs font-bold ${isLate ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                  {isLate ? "⚠️ You are late" : "Recommended Arrival"}
+                </p>
+                <p className={`text-[11px] leading-snug mt-0.5 ${isLate ? 'text-rose-500 dark:text-rose-400/80' : 'text-slate-500'}`}>
+                  {isLate 
+                    ? "Your token has been marked as late. Please proceed to the counter immediately to avoid cancellation."
+                    : `Please arrive between ${arrivalStart} - ${arrivalEnd} minutes. You will be marked late if not present.`}
+                </p>
              </div>
              
              {/* Queue Confidence Meter */}

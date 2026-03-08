@@ -11,62 +11,102 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
   useEffect(() => {
     if (!orgId || !tokenNumber) return;
 
-    // Fetch initial data
-    const fetchQueue = async () => {
+    // Helper to get prefix (e.g., 'OPD' from 'OPD-011')
+    const prefix = tokenNumber.split('-')[0].toLowerCase();
+
+    const fetchQueueState = async () => {
       try {
-        const { data, error } = await supabase
+        // 1. Fetch the user's specific token for status
+        const { data: tokenData, error: tokenErr } = await supabase
           .from("tokens")
           .select("*")
           .eq("orgId", orgId)
-          .in("status", ["WAITING", "SERVING"])
-          .order("createdAt", { ascending: true });
+          .eq("tokenNumber", tokenNumber)
+          .single();
 
-        if (error) throw error;
-        processQueueData(data as TokenItem[]);
+        if (tokenErr) throw tokenErr;
+
+        if (tokenData) {
+           setTicketStatus((tokenData as TokenItem).status);
+           setEstimatedWait((tokenData as TokenItem).estimatedWaitMins || 0);
+        }
+
+        // 2. Fetch the aggregate queue row for currently serving & people ahead calculation
+        if (tokenData && tokenData.queue_id) {
+           const { data: queueData, error: qErr } = await supabase
+             .from("queues")
+             .select("last_issued_number, currently_serving_token_id, total_waiting")
+             .eq("id", tokenData.queue_id)
+             .single();
+
+           if (!qErr && queueData) {
+               // If there's an active serving token, fetch its number just for display
+               if (queueData.currently_serving_token_id) {
+                  const { data: activeToken } = await supabase
+                    .from("tokens")
+                    .select("tokenNumber")
+                    .eq("id", queueData.currently_serving_token_id)
+                    .single();
+                  
+                  if (activeToken) setCurrentlyServing(activeToken.tokenNumber);
+               } else {
+                  setCurrentlyServing("Wait...");
+               }
+
+               // Simplified 'people ahead' calculation using the active tokens ID vs this users ID
+               // In a production app, this would be computed on the server side or by difference in token numbers
+               // For this MVP, we just use the raw tokens rank since tokenNumber is sequential 'OPD-001'
+               const myNum = parseInt(tokenNumber.split('-')[1] || "0", 10);
+               let servingNum = 0;
+               if (queueData.currently_serving_token_id) {
+                    const { data: activeToken } = await supabase
+                    .from("tokens")
+                    .select("tokenNumber")
+                    .eq("id", queueData.currently_serving_token_id)
+                    .single();
+                    servingNum = parseInt(activeToken?.tokenNumber?.split('-')[1] || "0", 10);
+               }
+
+               const ahead = Math.max(0, myNum - servingNum - 1);
+               if (tokenData.status === "WAITING") {
+                   setPeopleAhead(ahead);
+               } else {
+                   setPeopleAhead(0);
+               }
+           }
+        }
       } catch (err) {
         console.warn("Supabase customer fetch failed, using mock data", err);
         applyMockData();
       }
     };
 
-    fetchQueue();
+    fetchQueueState();
 
-    // Setup Realtime Subscription
-    const channel = supabase
-      .channel(`customer-queue-${orgId}`)
+    // Setup Realtime Subscriptions
+    // 1. Subscribe to their own token for status changes (WAITING -> SERVING)
+    const tokenChannel = supabase
+      .channel(`customer-token-${tokenNumber}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tokens", filter: `orgId=eq.${orgId}` },
-        (payload) => {
-          console.log("Customer Realtime Update", payload);
-          fetchQueue(); // Refetch to recalculate position
-        }
+        { event: "UPDATE", schema: "public", table: "tokens", filter: `tokenNumber=eq.${tokenNumber}` },
+        () => fetchQueueState() 
       )
       .subscribe();
 
-    const processQueueData = (docs: TokenItem[]) => {
-        let pAhead = 0;
-        let myTicketFound = false;
-
-        docs.forEach((data, idx) => {
-          if (data.status === "SERVING") {
-            setCurrentlyServing(data.tokenNumber);
-          }
-          if (data.tokenNumber === tokenNumber) {
-            myTicketFound = true;
-            pAhead = idx; // simple estimation based on index in waiting array
-            setTicketStatus(data.status);
-            setEstimatedWait(data.estimatedWaitMins || (idx * 5));
-          }
-        });
-
-        if (myTicketFound) {
-            setPeopleAhead(pAhead);
-        }
-    };
+    // 2. Subscribe to the queues table for movement in the line
+    const queueChannel = supabase
+      .channel(`queue-aggregate-${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "queues", filter: `org_id=eq.${orgId}` },
+        () => fetchQueueState() 
+      )
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(tokenChannel);
+      supabase.removeChannel(queueChannel);
     };
 
     function applyMockData() {

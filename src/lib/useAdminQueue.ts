@@ -10,70 +10,76 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
   useEffect(() => {
     if (!orgId) return;
 
-    // Fetch initial data
-    const fetchQueue = async () => {
+    const fetchAdminData = async () => {
       try {
+        // 1. Fetch active queue stats
+        const { data: queueRow, error: qErr } = await supabase
+          .from("queues")
+          .select("*")
+          .eq("org_id", orgId)
+          .eq("session_date", new Date().toISOString().split('T')[0])
+          .single();
+
+        if (qErr && qErr.code !== 'PGRST116') throw qErr;
+
+        // 2. Fetch the active tokens list (WAITING & SERVING)
         let query = supabase
           .from("tokens")
           .select("*")
           .eq("orgId", orgId)
+          .in("status", ["WAITING", "SERVING"])
           .order("createdAt", { ascending: true });
 
         if (counterId) {
           query = query.eq("counterId", counterId);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
+        const { data: activeTokens, error: tokensErr } = await query;
+        if (tokensErr) throw tokensErr;
         
-        processQueueData(data as TokenItem[]);
+        // 3. Process the state
+        const fullQueue: TokenItem[] = (activeTokens as TokenItem[]) || [];
+        let serving: TokenItem | null = null;
+        let waitingCount = 0;
+
+        fullQueue.forEach((data) => {
+          if (data.status === "SERVING") serving = data;
+          if (data.status === "WAITING") waitingCount++;
+        });
+
+        setQueue(fullQueue);
+        setCurrentlyServing(serving);
+
+        // Derive stats directly from the queues row to save counting
+        if (queueRow) {
+           setStats({
+              totalToday: queueRow.last_issued_number || 0,
+              currentlyWaiting: waitingCount, // Or queueRow.total_waiting
+              served: (queueRow.last_issued_number || 0) - waitingCount - (serving ? 1 : 0)
+           });
+        }
+
       } catch (err) {
         console.warn("Supabase fetch failed, falling back to mock", err);
         mockData();
       }
     };
 
-    fetchQueue();
+    fetchAdminData();
 
-    // Setup Realtime Subscription
-    const channel = supabase
-      .channel(`admin-queue-${orgId}`)
+    // Setup Realtime Subscriptions
+    // Listen to changes on the tokens table (new joins, status updates)
+    const tokensChannel = supabase
+      .channel(`admin-tokens-${orgId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "tokens", filter: `orgId=eq.${orgId}` },
-        (payload) => {
-          console.log("Realtime Update", payload);
-          // In a real app, we'd merge the payload into the state.
-          // For MVP, refetch the queue to ensure order is perfect.
-          fetchQueue();
-        }
+        () => fetchAdminData()
       )
       .subscribe();
 
-    const processQueueData = (docs: TokenItem[]) => {
-        const fullQueue: TokenItem[] = [];
-        let serving: TokenItem | null = null;
-        let waitingCount = 0;
-        let servedCount = 0;
-
-        docs.forEach((data) => {
-          fullQueue.push(data);
-          if (data.status === "SERVING") serving = data;
-          if (data.status === "WAITING") waitingCount++;
-          if (data.status === "SERVED") servedCount++;
-        });
-
-        setQueue(fullQueue.filter(i => i.status === "WAITING" || i.status === "SERVING"));
-        setCurrentlyServing(serving);
-        setStats({
-          totalToday: fullQueue.length,
-          currentlyWaiting: waitingCount,
-          served: servedCount
-        });
-    };
-
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(tokensChannel);
     };
 
     function mockData() {
@@ -87,7 +93,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         ]);
         setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });
     }
-  }, [orgId]);
+  }, [orgId, counterId]);
 
   return { queue, currentlyServing, stats };
 };
