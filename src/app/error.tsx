@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { AlertTriangle, RefreshCcw, Home } from 'lucide-react';
-import Link from 'next/link';
+import { useEffect } from "react";
+import { AlertCircle, RefreshCcw, Home } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
-export default function Error({
+export default function GlobalError({
   error,
   reset,
 }: {
@@ -12,45 +13,46 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error('App Error:', error);
+    // Log the error to an error reporting service if available
+    console.error("Global Application Error:", error);
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
-      
-      <div className="glass-panel p-8 md:p-12 rounded-3xl max-w-lg w-full text-center space-y-6 relative z-10 border border-white/10 shadow-2xl backdrop-blur-xl">
-        <div className="mx-auto w-20 h-20 bg-rose-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.3)] mb-6">
-          <AlertTriangle className="w-10 h-10 text-rose-500" />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center font-sans">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-md w-full bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl border border-rose-100 dark:border-rose-900/30"
+      >
+        <div className="w-20 h-20 bg-rose-100 dark:bg-rose-500/10 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertCircle size={40} strokeWidth={2.5} />
         </div>
         
-        <h1 className="text-3xl font-black tracking-tight text-foreground">
-          Something went wrong!
+        <h1 className="text-2xl font-black text-slate-900 dark:text-white mb-2">
+          Oops! Something broke.
         </h1>
-        
-        <p className="text-muted-foreground text-lg">
-          An unexpected error has occurred. We've been notified and are looking into it.
+        <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
+          We encountered an unexpected error while trying to load this page. Don't worry, our team has been notified.
         </p>
 
-        <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => reset()}
-            className="group flex flex-1 w-full sm:w-auto items-center justify-center gap-2 px-6 py-4 bg-white/5 hover:bg-white/10 text-foreground border border-white/10 rounded-full font-bold transition-all duration-300 active:scale-[0.98]"
+            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-6 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/30"
           >
-            <RefreshCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" />
+            <RefreshCcw size={18} />
             Try Again
           </button>
           
-          <Link 
-            href="/home" 
-            className="group flex flex-1 w-full sm:w-auto items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-full font-bold transition-all duration-300 shadow-lg shadow-indigo-500/25 active:scale-[0.98]"
+          <Link
+            href="/"
+            className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 py-3.5 px-6 rounded-2xl font-bold transition-all"
           >
-            <Home className="w-5 h-5" />
+            <Home size={18} />
             Go Home
           </Link>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -25,6 +25,11 @@ const QueueChart = dynamic(() => import("@/components/Analytics/QueueChart"), {
   loading: () => <div className="w-full h-[400px] bg-slate-100 dark:bg-slate-800 rounded-[2rem] animate-pulse"></div> 
 });
 
+const DynamicBarChart = dynamic<{ data: { hour: string; customers: number }[] }>(() => import("./ChartComponents").then(mod => mod.PeakHoursChart), {
+  ssr: false,
+  loading: () => <div className="w-full h-full bg-slate-50 dark:bg-slate-800/50 rounded-xl animate-pulse flex items-center justify-center text-slate-400 font-bold text-sm">Loading Chart Data...</div>
+});
+
 export default function AnalyticsDashboard() {
   const [dateRange, setDateRange] = useState("Last 7 Days");
 
@@ -134,32 +139,7 @@ export default function AnalyticsDashboard() {
              </div>
              
              <div className="flex-1 w-full min-h-[300px]">
-               <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={MOCK_PEAK_HOURS} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.1} />
-                   <XAxis 
-                     dataKey="hour" 
-                     axisLine={false} 
-                     tickLine={false} 
-                     tick={{ fill: '#64748b', fontSize: 10 }} 
-                     dy={10} 
-                   />
-                   <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                   <Tooltip 
-                     cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }}
-                     contentStyle={{ 
-                       backgroundColor: 'rgba(15, 23, 42, 0.9)', 
-                       borderRadius: '12px', border: 'none', color: '#fff' 
-                     }} 
-                   />
-                   <Bar 
-                     dataKey="customers" 
-                     name="Avg Customers"
-                     fill="#6366f1" 
-                     radius={[4, 4, 0, 0]} 
-                   />
-                 </BarChart>
-               </ResponsiveContainer>
+                <DynamicBarChart data={MOCK_PEAK_HOURS} />
              </div>
            </div>
 
