@@ -1,20 +1,16 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "mock-api-key");
 
 export async function POST(req: Request) {
   try {
     const { message, tokenNumber, currentlyServing, peopleAhead } = await req.json();
+    const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (!apiKey) {
       // Mock mode if api key is perfectly omitted
       return NextResponse.json({ 
         response: `[Mock AI] You are token ${tokenNumber}. With ${peopleAhead} people ahead, your estimated wait time is roughly ${peopleAhead * 5} minutes.`
       });
     }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `
       You are a helpful virtual assistant for "QueueLess India".
@@ -30,8 +26,24 @@ export async function POST(req: Request) {
       User Question: "${message}"
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I am out of service right now.";
 
     return NextResponse.json({ response: responseText });
 
