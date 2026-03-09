@@ -13,12 +13,17 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
     const fetchAdminData = async () => {
       try {
         // 1. Fetch active queue stats
-        const { data: queueRow, error: qErr } = await supabase
+        let queuesQuery = supabase
           .from("queues")
           .select("*")
           .eq("org_id", orgId)
-          .eq("session_date", new Date().toISOString().split('T')[0])
-          .single();
+          .eq("session_date", new Date().toISOString().split('T')[0]);
+
+        if (counterId) {
+          queuesQuery = queuesQuery.eq("counter_id", counterId);
+        }
+
+        const { data: queueRows, error: qErr } = await queuesQuery;
 
         if (qErr && qErr.code !== 'PGRST116') throw qErr;
 
@@ -51,12 +56,17 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         setCurrentlyServing(serving);
 
         // Derive stats directly from the queues row to save counting
-        if (queueRow) {
+        if (queueRows && queueRows.length > 0) {
+           let totalIssued = 0;
+           queueRows.forEach(row => totalIssued += (row.last_issued_number || 0));
+           
            setStats({
-              totalToday: queueRow.last_issued_number || 0,
-              currentlyWaiting: waitingCount, // Or queueRow.total_waiting
-              served: (queueRow.last_issued_number || 0) - waitingCount - (serving ? 1 : 0)
+              totalToday: totalIssued,
+              currentlyWaiting: waitingCount, // Derived from active tokens
+              served: totalIssued - waitingCount - (serving ? 1 : 0)
            });
+        } else {
+           setStats({ totalToday: 0, currentlyWaiting: 0, served: 0 });
         }
 
       } catch (err) {

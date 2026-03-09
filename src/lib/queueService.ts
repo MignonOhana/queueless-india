@@ -98,9 +98,10 @@ export const skipToken = async (orgId: string, tokenId: string) => {
       .eq("id", tokenId)
       .eq("orgId", orgId)
       .select("queue_id")
-      .single();
+      .maybeSingle();
     
     if (tokenErr) throw tokenErr;
+    if (!tokenData) return false;
 
     if (tokenData && tokenData.queue_id) {
        // Decrement total_waiting since they left the queue
@@ -130,9 +131,10 @@ export const recallToken = async (orgId: string, tokenId: string) => {
       .eq("id", tokenId)
       .eq("orgId", orgId)
       .select("queue_id")
-      .single();
+      .maybeSingle();
       
     if (error) throw error;
+    if (!tokenData) return false;
 
     if (tokenData && tokenData.queue_id) {
        // Update queues table to point currently_serving_token_id to this recalled token

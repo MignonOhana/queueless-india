@@ -1,198 +1,192 @@
 "use client";
 
-import { useAdminQueue } from "@/lib/useAdminQueue";
+import { use, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import { Clock, Volume2 } from "lucide-react";
-import SceneCanvas from "@/components/Spatial/SceneCanvas";
-import dynamic from "next/dynamic";
-const HolographicToken = dynamic(() => import("@/components/Spatial/HolographicToken"), { ssr: false });
-import { use } from "react"; // For Next.js 15+ async params
+import { Activity, Clock, QrCode } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
+import { QRCodeSVG } from 'qrcode.react';
 
-export default function DisplayScreen({ params }: { params: Promise<{ orgId: string }> }) {
-  // Unwrap the promise for params
-  const { orgId } = use(params);
-  const { queue, currentlyServing } = useAdminQueue(orgId);
-  const [time, setTime] = useState("");
+// Reusable mock data if DB empty
+const MOCK_DISPLAY = {
+  name: "City Hospital",
+  serving: "H-039",
+  waiting: 8,
+  estWait: 15,
+  recent: ["H-038", "H-037", "H-036", "H-035"]
+};
 
-  // Clock for the TV display
+export default function TVDisplay({ params }: { params: Promise<{ orgId: string }> }) {
+  const resolvedParams = use(params);
+  const orgId = resolvedParams.orgId;
+  const [data, setData] = useState(MOCK_DISPLAY);
+  const [time, setTime] = useState(new Date().toLocaleTimeString());
+  const [highlight, setHighlight] = useState(false);
+
+  // Link for the QR Code to scan (Points directly to Customer join UI)
+  // For dev environment, we assume localhost:3000, in prod it will be window.location.origin
+  const qrLink = typeof window !== "undefined" 
+    ? `${window.location.origin}/customer/business/${orgId}`
+    : `https://queueless.vercel.app/customer/business/${orgId}`;
+
   useEffect(() => {
-    const updateTime = () => setTime(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+    // Clock tick
+    const timer = setInterval(() => {
+      setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    }, 60000);
 
-  // Play an automated Voice Announcement when currentlyServing changes
-  useEffect(() => {
-    if (currentlyServing?.tokenNumber && typeof window !== "undefined") {
-      try {
-        // Fallback doorbell sequence
-        const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg"); // Fallback open audio
-        audio.volume = 0.2;
-        audio.play().catch(e => console.log("Audio play blocked", e));
-        
-        // Setup Speech Synthesis
-        if ('speechSynthesis' in window) {
-           setTimeout(() => {
-             // To ensure clarity, we separate tokens like "OPD-021" into "O P D, zero two one"
-             const rawToken = currentlyServing.tokenNumber;
-             const letters = rawToken.split('-')[0].split('').join(' ');
-             const numbers = rawToken.split('-')[1]?.split('').join(' ') || '';
-             
-             const announcementText = `Token number, ${letters}, ${numbers}, please proceed to ${currentlyServing.counterId || 'the main desk'}.`;
-             
-             const utterance = new SpeechSynthesisUtterance(announcementText);
-             utterance.rate = 0.9; // Slightly slower for public address clarity
-             utterance.pitch = 1.0;
-             
-             // Attempt to find an Indian English voice for local flavor
-             const voices = window.speechSynthesis.getVoices();
-             const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.name.includes('India'));
-             if (indianVoice) utterance.voice = indianVoice;
-             
-             window.speechSynthesis.speak(utterance);
-           }, 1500); // Wait 1.5s after the doorbell chime
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
-  }, [currentlyServing?.tokenNumber, currentlyServing?.counterId]);
+    // Initial Fetch
+    const fetchRealData = async () => {
+       const { data: qData, error } = await supabase.from('queues').select('*, businesses(name)').eq('id', orgId).maybeSingle();
+       if (!error && qData) {
+          setData({
+             name: qData.businesses?.name || orgId,
+             serving: qData.current_serving_token || "000",
+             waiting: qData.total_waiting || 0,
+             estWait: 15,
+             recent: []
+          });
+       }
+    };
+    fetchRealData();
+
+    // Supabase Real-Time Subscription
+    const channel = supabase.channel(`public:queues:${orgId}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'queues', filter: `id=eq.${orgId}` }, (payload) => {
+         const newServing = payload.new.current_serving_token;
+         
+         setData(prev => {
+            if (prev.serving !== newServing) {
+              // Trigger highlight animation when new customer called
+              setHighlight(true);
+              setTimeout(() => setHighlight(false), 5000);
+              
+              const newRecent = [prev.serving, ...prev.recent].slice(0, 4);
+              return { ...prev, serving: newServing, waiting: payload.new.total_waiting, recent: newRecent };
+            }
+            return { ...prev, waiting: payload.new.total_waiting };
+         });
+      })
+      .subscribe();
+
+    return () => {
+       clearInterval(timer);
+       supabase.removeChannel(channel);
+    };
+  }, [orgId]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col font-sans overflow-hidden">
+    <div className="h-screen w-screen bg-slate-950 font-sans text-white overflow-hidden flex flex-col selection:bg-indigo-500/30">
       
-      {/* Heavy Blue Glare Background */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-600/20 blur-[150px] rounded-full point-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-orange-600/10 blur-[150px] rounded-full point-events-none" />
-
-      {/* Top Header */}
-      <header className="relative z-10 flex justify-between items-center p-8 lg:p-12 border-b border-white/5 bg-slate-950/50 backdrop-blur-xl">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center font-bold text-3xl shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-            Q
-          </div>
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight">City Hospital</h1>
-            <p className="text-blue-400 font-semibold text-xl uppercase tracking-widest mt-1">Queue Display System</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 text-3xl font-bold bg-white/5 px-8 py-4 rounded-3xl border border-white/10">
-          <Clock size={36} className="text-orange-400" />
-          {time}
-        </div>
+      {/* Top Header Bar */}
+      <header className="h-24 bg-slate-900 border-b border-white/10 px-10 flex items-center justify-between shrink-0 shadow-lg">
+         <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+               <Activity className="w-6 h-6 text-white" />
+            </div>
+            <div>
+               <h1 className="text-3xl font-black tracking-tight">{data.name}</h1>
+               <p className="text-slate-400 font-medium flex items-center gap-2">Live Queue <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.8)]" /></p>
+            </div>
+         </div>
+         <div className="text-right">
+            <div className="text-4xl font-extrabold tracking-tight font-mono">{time}</div>
+            <div className="text-slate-400 font-bold uppercase tracking-widest text-sm text-right mt-1">QueueLess India</div>
+         </div>
       </header>
 
-      {/* Main Content (Split Screen) */}
-      <div className="flex-1 flex flex-col lg:flex-row p-8 lg:p-12 gap-8 lg:gap-12 relative z-10 h-full">
-        
-        {/* Left: NOW SERVING (Massive Focus) */}
-        <div className="lg:w-7/12 flex flex-col">
-          <h2 className="text-3xl font-bold text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-4">
-            <span className="w-4 h-4 rounded-full bg-emerald-500 animate-pulse" />
-            Now Serving
-          </h2>
+      {/* Main Display Grid */}
+      <main className="flex-1 grid grid-cols-12 gap-8 p-10 bg-[radial-gradient(ellipse_at_top,#1e1b4b_0%,transparent_70%)] relative">
+         {/* Left Side: Current Serving */}
+         <div className="col-span-8 flex flex-col gap-8">
+            <motion.div 
+               animate={{ 
+                 scale: highlight ? [1, 1.05, 1] : 1,
+                 borderColor: highlight ? ['rgba(255,255,255,0.1)', 'rgba(99,102,241,0.8)', 'rgba(255,255,255,0.1)'] : 'rgba(255,255,255,0.1)',
+                 boxShadow: highlight ? ['none', '0 0 50px rgba(99,102,241,0.3)', 'none'] : 'none'
+               }}
+               transition={{ duration: 0.8 }}
+               className="flex-1 bg-slate-900/80 backdrop-blur-3xl rounded-[3rem] border border-white/10 shadow-2xl flex flex-col items-center justify-center p-12 relative overflow-hidden"
+            >
+               {highlight && (
+                 <motion.div 
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                   exit={{ opacity: 0 }}
+                   className="absolute inset-0 bg-indigo-500/10 z-0 pointer-events-none"
+                 />
+               )}
+               <p className="text-slate-400 font-bold text-3xl uppercase tracking-[0.2em] mb-4 z-10">Now Serving</p>
+               <h2 className="text-[12rem] font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-indigo-100 to-indigo-300 leading-none tracking-tighter z-10 font-mono drop-shadow-2xl">
+                 {data.serving}
+               </h2>
+               {highlight && (
+                 <p className="absolute bottom-12 font-bold text-2xl text-indigo-400 animate-pulse tracking-widest uppercase">Please approach counter 1</p>
+               )}
+            </motion.div>
 
-          <div className="flex-1 bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-[3rem] p-12 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
-            {/* Glowing inner border */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
-            
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentlyServing?.tokenNumber || 'none'}
-                initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
-                animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)" }}
-                transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                className="text-center w-full"
-              >
-                {currentlyServing ? (
-                  <>
-                    <p className="text-blue-400 font-bold tracking-[0.3em] text-2xl uppercase mb-4">{currentlyServing.counterId || 'Main Counter'}</p>
-                    
-                    {/* Massive 3D Rotating TV Display Token */}
-                    <div className="w-full h-[600px] -mt-10 overflow-visible z-20">
-                      <SceneCanvas className="absolute inset-0 z-20 mix-blend-screen scale-[1.5]">
-                         <HolographicToken 
-                           tokenNumber={currentlyServing.tokenNumber} 
-                           color="#fbbf24" // Amber glow
-                           scale={1.2}
-                           position={[0, -0.5, 0]}
-                         />
-                      </SceneCanvas>
-                    </div>
-
-                    <p className="text-4xl text-slate-300 font-semibold mt-0">Please proceed to counter</p>
-                  </>
-                ) : (
-                  <h3 className="text-[6rem] font-bold text-slate-700">Waiting...</h3>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Right: NEXT IN LINE (List) */}
-        <div className="lg:w-5/12 flex flex-col">
-          <h2 className="text-3xl font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">
-            Next In Line
-          </h2>
-
-          <div className="bg-slate-900 border border-slate-800/80 rounded-[3rem] p-8 flex-1 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-900 z-10 pointer-events-none" />
-            
-            <div className="flex flex-col gap-6">
-              <AnimatePresence>
-                {queue.slice(0, 5).map((item, idx) => (
-                  <motion.div
-                    key={item.id}
-                    layout // This makes the items smoothly float up when one is removed
-                    initial={{ opacity: 0, x: 50 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -50 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className={`flex items-center justify-between p-8 rounded-3xl border ${
-                      idx === 0 
-                      ? "bg-slate-800 border-slate-700 shadow-xl" 
-                      : "bg-slate-800/40 border-slate-800/50"
-                    }`}
-                  >
-                    <div>
-                      <h4 className={`font-black tracking-tight ${idx === 0 ? "text-6xl text-white" : "text-5xl text-slate-300"}`}>
-                        {item.tokenNumber}
-                      </h4>
-                      <p className={`font-semibold uppercase tracking-wider mt-2 ${idx === 0 ? "text-orange-400 text-xl" : "text-slate-500 text-lg"}`}>
-                        {item.counterId}
-                      </p>
-                    </div>
-                    {idx === 0 && (
-                      <div className="hidden sm:flex items-center gap-2 text-orange-400 font-bold bg-orange-500/10 px-4 py-2 rounded-xl">
-                        NEXT <ArrowRightIcon />
-                      </div>
-                    )}
-                  </motion.div>
-                ))}
-                
-                {queue.length === 0 && (
-                  <div className="text-center py-20 text-slate-600 text-2xl font-bold">
-                    No one is currently waiting.
+            {/* Bottom Row inside left: Wait stats */}
+            <div className="h-40 grid grid-cols-2 gap-8 shrink-0">
+               <div className="bg-slate-900/50 backdrop-blur-xl rounded-[2rem] border border-white/5 flex items-center justify-between px-10">
+                  <div>
+                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-1">Waiting in line</p>
+                     <p className="text-5xl font-black font-mono">{data.waiting} <span className="text-2xl text-slate-500">ppl</span></p>
                   </div>
-                )}
-              </AnimatePresence>
+                  <Activity size={48} className="text-emerald-500/20" />
+               </div>
+               <div className="bg-slate-900/50 backdrop-blur-xl rounded-[2rem] border border-white/5 flex items-center justify-between px-10">
+                  <div>
+                     <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mb-1">Est. Wait Time</p>
+                     <p className="text-5xl font-black font-mono">{data.estWait} <span className="text-2xl text-slate-500">min</span></p>
+                  </div>
+                  <Clock size={48} className="text-amber-500/20" />
+               </div>
             </div>
-          </div>
-        </div>
+         </div>
 
-      </div>
+         {/* Right Side: QR Code + Recent History */}
+         <div className="col-span-4 flex flex-col gap-8">
+            
+            {/* The QR Code Scan Target */}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[3rem] p-10 flex flex-col items-center justify-center text-center shadow-2xl shadow-indigo-500/20 border border-white/20 shrink-0 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 blur-[50px] rounded-full" />
+               <QrCode size={40} className="text-white/80 mb-6" />
+               <h3 className="text-2xl font-black mb-2 text-white drop-shadow-md">Skip the Waiting Room</h3>
+               <p className="text-indigo-100 font-medium mb-8">Scan to join queue on your phone & wait anywhere.</p>
+               
+               <div className="bg-white p-6 rounded-3xl shadow-2xl hover:scale-105 transition-transform">
+                  <QRCodeSVG value={qrLink} size={200} level="H" includeMargin={false} fgColor="#0F172A" />
+               </div>
+            </div>
+
+            {/* Recently Called List */}
+            <div className="flex-1 bg-slate-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-8 flex flex-col overflow-hidden relative">
+               <p className="text-slate-400 font-bold text-lg uppercase tracking-widest mb-6">Recently Called</p>
+               <div className="flex-1 flex flex-col gap-4">
+                  <AnimatePresence>
+                     {data.recent.map((token, i) => (
+                        <motion.div 
+                          key={token + i}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="bg-slate-800/50 border border-white/5 rounded-2xl p-6 flex justify-between items-center"
+                        >
+                           <span className="text-3xl font-bold font-mono text-slate-300">{token}</span>
+                           <span className="text-emerald-500 font-bold text-sm tracking-widest uppercase">Finished</span>
+                        </motion.div>
+                     ))}
+                  </AnimatePresence>
+                  {data.recent.length === 0 && (
+                     <div className="flex-1 flex items-center justify-center text-slate-600 font-bold tracking-widest uppercase">
+                        No recent customers
+                     </div>
+                  )}
+               </div>
+               {/* Fading bottom edge */}
+               <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none rounded-b-[3rem]" />
+            </div>
+
+         </div>
+      </main>
     </div>
-  );
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-    </svg>
   );
 }

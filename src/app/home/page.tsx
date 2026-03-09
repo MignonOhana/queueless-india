@@ -8,6 +8,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { MOCK_BUSINESSES, CURRENT_LOCATION, Business } from "@/lib/mockHomeData";
 import { supabase } from "@/lib/supabaseClient";
+import { getDistance, estimateTravelTime } from "@/lib/geolocation";
 
 // Dynamically import Leaflet map to avoid SSR errors
 const LeafletMiniMap = dynamic(() => import("@/components/Map/LeafletMiniMap"), { 
@@ -32,6 +33,7 @@ export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTokenMap, setActiveTokenMap] = useState<any>(null); // To store active queue if joined
   const [liveBusinesses, setLiveBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
+  const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
     // Check local storage for an active queue token
@@ -42,30 +44,55 @@ export default function HomePage() {
     }
     
     // Fetch live organically created businesses from Supabase MVP DB
-    const fetchLiveBusinesses = async () => {
+    const fetchLiveBusinesses = async (userLat?: number, userLng?: number) => {
       const { data, error } = await supabase.from("businesses").select("*");
       if (!error && data && data.length > 0) {
-        const mappedData: Business[] = data.map((b: any) => ({
-          id: b.id,
-          name: b.name,
-          category: b.category,
-          address: b.location,
-          distance: +(Math.random() * 5 + 0.5).toFixed(1), // Random mock distance 0.5 to 5.5
-          waitTime: b.serviceMins || 15, 
-          queueLength: Math.floor(Math.random() * 10),
-          image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop", // placeholder
-          icon: CATEGORIES.find(c => c.name === b.category)?.icon || "🏢",
-          coordinates: [28.6139 + (Math.random() - 0.5) * 0.1, 77.2090 + (Math.random() - 0.5) * 0.1], // Slight random offset from center
-          isFastest: b.fastPassEnabled,
-          isPopular: true,
-          isFavorite: false
-        }));
+        const mappedData: Business[] = data.map((b: any) => {
+          
+          let calcDist = +(Math.random() * 5 + 0.5).toFixed(1); // fallback mock
+          if (userLat && userLng && b.latitude && b.longitude) {
+             calcDist = getDistance(userLat, userLng, Number(b.latitude), Number(b.longitude));
+          }
+
+          return {
+            id: b.id,
+            name: b.name,
+            category: b.category,
+            address: b.location,
+            distance: calcDist, 
+            waitTime: b.serviceMins || 15, 
+            queueLength: Math.floor(Math.random() * 10),
+            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop", 
+            icon: CATEGORIES.find(c => c.name === b.category)?.icon || "🏢",
+            coordinates: [Number(b.latitude) || 28.6139, Number(b.longitude) || 77.2090], 
+            isFastest: b.fastPassEnabled,
+            isPopular: true,
+            isFavorite: false
+          };
+        });
+        
         // Merge latest live data to the front of the list, keeping mock data to fill out page
         setLiveBusinesses([...mappedData, ...MOCK_BUSINESSES]);
       }
     };
     
-    fetchLiveBusinesses();
+    // Attempt to get user location first to calculate exact distances
+    if (navigator.geolocation) {
+       navigator.geolocation.getCurrentPosition(
+          (pos) => {
+             setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+             fetchLiveBusinesses(pos.coords.latitude, pos.coords.longitude);
+          },
+          (err) => {
+             console.warn("Location denied, falling back to mock distances", err);
+             fetchLiveBusinesses(); // fallback
+          },
+          { enableHighAccuracy: true, timeout: 5000 }
+       );
+    } else {
+       fetchLiveBusinesses();
+    }
+    
   }, []);
 
   // Filter Data

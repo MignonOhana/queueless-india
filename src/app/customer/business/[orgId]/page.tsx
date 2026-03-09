@@ -30,7 +30,7 @@ export default function BusinessProfile({
 
   useEffect(() => {
     const fetchBiz = async () => {
-      const { data, error } = await supabase.from("businesses").select("*").eq("id", orgId).single();
+      const { data, error } = await supabase.from("businesses").select("*").eq("id", orgId).maybeSingle();
       if (!error && data) {
         setBusiness({
           id: data.id,
@@ -474,7 +474,7 @@ export default function BusinessProfile({
             </div>
          )}
 
-         {/* Book Slot Showcase Modal */}
+         {/* Advance Booking Modal */}
          {showBookingModal && (
             <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
                <motion.div 
@@ -489,26 +489,109 @@ export default function BusinessProfile({
                  animate={{ y: 0 }}
                  exit={{ y: "100%" }}
                  transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                 className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-sm relative z-10 p-6 shadow-2xl overflow-hidden text-center"
+                 className="bg-white dark:bg-slate-900 rounded-[2rem] w-full max-w-sm relative z-10 p-6 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                >
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500" />
-                  <div className="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-500 flex items-center justify-center mx-auto mb-6 shadow-inner">
-                     <CalendarClock size={32} />
+                  
+                  <div className="flex justify-between items-center mb-6">
+                     <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <CalendarClock size={24} className="text-indigo-500" />
+                        Book Slot
+                     </h3>
+                     <button onClick={() => setShowBookingModal(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                        <ChevronLeft size={16} className="rotate-180" />
+                     </button>
                   </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Advance Booking</h3>
-                  <div className="inline-block bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 font-bold text-xs uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-                     Showcase Feature
-                  </div>
-                  <p className="text-slate-500 font-medium text-sm mb-8">
-                     This feature allows customers to book specific time slots hours or days in advance instead of joining the live queue immediately. It merges into the live tracking timeline automatically upon arrival.
-                  </p>
 
-                  <button 
-                    onClick={() => setShowBookingModal(false)}
-                    className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-xl hover:opacity-90 active:scale-95 transition-all"
-                  >
-                    Close Preview
-                  </button>
+                  <div className="flex-1 overflow-y-auto hide-scrollbar space-y-6 pb-6">
+                     {/* Select Department */}
+                     <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">1. Select Service</label>
+                        <div className="grid grid-cols-2 gap-2">
+                           {business.services.map((svc: any) => (
+                             <button key={svc.id} className="p-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-left bg-slate-50 dark:bg-slate-800">
+                                {svc.name}
+                             </button>
+                           ))}
+                        </div>
+                     </div>
+
+                     {/* Select Date */}
+                     <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">2. Select Date</label>
+                        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+                           {Array.from({length: 7}).map((_, i) => {
+                             const d = new Date();
+                             d.setDate(d.getDate() + i);
+                             const isToday = i === 0;
+                             const dateStr = d.toISOString().split('T')[0];
+                             const dayName = isToday ? 'Today' : d.toLocaleDateString('en-US', { weekday: 'short' });
+                             const dayNum = d.getDate();
+                             
+                             return (
+                               <button key={i} className={`flex-shrink-0 w-16 p-2 rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all ${isToday ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400'}`}>
+                                 <span className="text-[10px] font-bold uppercase">{dayName}</span>
+                                 <span className="text-lg font-black">{dayNum}</span>
+                               </button>
+                             );
+                           })}
+                        </div>
+                     </div>
+
+                     {/* Select Time */}
+                     <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">3. Select Time</label>
+                        <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+                           {/* Mocking generated time slots based on opHours */}
+                           {['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'].map((time, i) => (
+                             <button key={i} className="py-2.5 px-1 border-2 border-slate-200 dark:border-slate-800 rounded-lg text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                               {time}
+                             </button>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
+                     <button 
+                       disabled={isJoining}
+                       onClick={async () => {
+                          setIsJoining(true);
+                          
+                          if (!user) {
+                            await loginAsCustomer();
+                          }
+                          
+                          try {
+                             // Mock Edge Function Call
+                             const res = await supabase.functions.invoke('book-slot', {
+                               body: {
+                                 orgId,
+                                 counterId: business.services[0].id, // Mocked selection
+                                 userId: user?.id || "mock-user-" + Date.now(),
+                                 customerName: "Rahul Sharma",
+                                 customerPhone: "",
+                                 bookingDate: new Date().toISOString().split('T')[0], // Mocked Selection
+                                 timeSlot: "10:30:00" // Mocked Selection
+                               }
+                             });
+                             
+                             if (res.error) throw res.error;
+                             
+                             alert("Booking Confirmed for 10:30 AM!");
+                             setShowBookingModal(false);
+                          } catch (e: any) {
+                             console.error("Booking error", e);
+                             alert(e.message || "Failed to book slot.");
+                          } finally {
+                             setIsJoining(false);
+                          }
+                       }}
+                       className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-xl hover:opacity-90 active:scale-95 transition-all flex justify-center items-center gap-2 disabled:opacity-50"
+                     >
+                       {isJoining ? <Activity size={20} className="animate-spin" /> : "Confirm Booking"}
+                     </button>
+                  </div>
                </motion.div>
             </div>
          )}

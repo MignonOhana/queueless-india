@@ -8,6 +8,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import PageTransition from "@/components/PageTransition";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { getDistance, estimateTravelTime } from "@/lib/geolocation";
 
 export default function TicketPage({
   params,
@@ -26,6 +28,8 @@ export default function TicketPage({
   const [isPriority, setIsPriority] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [isLate, setIsLate] = useState(false);
+  const [travelTimeMins, setTravelTimeMins] = useState<number | null>(null);
+  const [isTimeToLeave, setIsTimeToLeave] = useState(false);
 
   const estimatedWait = queueData.estimatedWait || 15;
   const arrivalStart = Math.max(0, estimatedWait - 5);
@@ -57,6 +61,33 @@ export default function TicketPage({
     }
   }, [orgId, myToken]);
 
+  // Track user location and calculate travel time
+  useEffect(() => {
+    let watchId: number;
+    
+    const calculateTravel = async (userLat: number, userLng: number) => {
+       const { data, error } = await supabase.from('businesses').select('latitude, longitude').eq('id', orgId).maybeSingle();
+       if (!error && data && data.latitude && data.longitude) {
+          const distanceKM = getDistance(userLat, userLng, Number(data.latitude), Number(data.longitude));
+          const tTime = estimateTravelTime(distanceKM);
+          setTravelTimeMins(tTime);
+       }
+    };
+
+    if (navigator.geolocation && orgId) {
+       // Watch position so if they start moving closer, travel time reduces
+       watchId = navigator.geolocation.watchPosition(
+          (pos) => calculateTravel(pos.coords.latitude, pos.coords.longitude),
+          (err) => console.log("Geolocation tracking denied:", err),
+          { enableHighAccuracy: true, maximumAge: 60000 } // Update every minute max
+       );
+    }
+    
+    return () => {
+       if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [orgId]);
+
   // Simulate an alert when people ahead drops to 1 or 2
   useEffect(() => {
     if (queueData.peopleAhead <= 2 && queueData.peopleAhead > 0) {
@@ -67,13 +98,25 @@ export default function TicketPage({
 
     // Mark as late if they are next (0 ahead) but haven't been called/served yet
     // In a real app, this would compare token createdAt + estimatedWait vs Date.now()
-    if (queueData.peopleAhead === 0 && queueData.status === "WAITING") {
+    if (queueData.peopleAhead === 0 && queueData.ticketStatus === "WAITING") {
        setIsLate(true);
     } else {
        setIsLate(false);
     }
 
-  }, [queueData.peopleAhead, queueData.status]);
+    // Smart Leave Calculation (Tolerance 5 mins)
+    if (travelTimeMins !== null && estimatedWait <= (travelTimeMins + 5)) {
+       // Don't flag "leave now" if wait time is huge but travel time is also huge (edge case) or they are already at location
+       if (estimatedWait > 0 && travelTimeMins > 2) {
+          setIsTimeToLeave(true);
+       } else {
+          setIsTimeToLeave(false);
+       }
+    } else {
+       setIsTimeToLeave(false);
+    }
+
+  }, [queueData.peopleAhead, queueData.ticketStatus, estimatedWait, travelTimeMins]);
 
   const handleCancelAndLeave = () => {
     localStorage.removeItem("active_org");
@@ -137,6 +180,25 @@ export default function TicketPage({
             </div>
           </motion.div>
         )}
+
+        {/* Smart Leave Alert */}
+        <AnimatePresence>
+          {isTimeToLeave && !isLate && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full bg-rose-600 rounded-2xl p-4 text-white shadow-xl shadow-rose-600/30 flex items-center justify-between border-2 border-rose-400 border-dashed"
+            >
+              <div>
+                <h4 className="font-black text-lg tracking-tight flex items-center gap-2 uppercase">
+                   <Activity className="animate-pulse" /> Leave Now
+                </h4>
+                <p className="text-sm text-rose-100 font-medium">Your travel time ({travelTimeMins}m) matches your wait time! Head to the location to avoid cancellation.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Queue Details Card with Progress Ring */}
         <div className="relative w-full bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col items-center">

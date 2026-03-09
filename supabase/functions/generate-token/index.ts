@@ -23,9 +23,10 @@ serve(async (req) => {
 
   try {
     const payload: GenerateTokenPayload = await req.json()
-    const { orgId, counterPrefix, userId, customerName, customerPhone } = payload
+    const { orgId, userId, customerName, customerPhone } = payload
+    const counterPrefix = payload.counterPrefix || 'OPD';
 
-    if (!orgId || !counterPrefix || !customerName) {
+    if (!orgId || !customerName) {
          throw new Error("Missing required payload fields");
     }
 

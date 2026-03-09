@@ -23,7 +23,12 @@ export function useAIPrediction(orgId: string, stats: { currentlyWaiting: number
       try {
         // Use a time-based key to cache predictions per hour
         const now = new Date();
-        const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_H${now.getHours()}`;
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = now.getHours();
+        
+        const dateKey = `${year}-${month}-${day}_H${hour}`;
         const predictionId = `${orgId}_${dateKey}`;
 
         // 1. Try to fetch from Supabase first
@@ -31,7 +36,7 @@ export function useAIPrediction(orgId: string, stats: { currentlyWaiting: number
           .from('predictions')
           .select('*')
           .eq('id', predictionId)
-          .single();
+          .maybeSingle();
         
         if (cachedPred && !fetchErr) {
           setPrediction(cachedPred as AIPrediction);

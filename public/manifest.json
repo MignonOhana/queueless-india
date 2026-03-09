@@ -1,12 +1,12 @@
 {
   "name": "QueueLess India",
   "short_name": "QueueLess",
-  "description": "Smart digital queue system for instant check-ins.",
+  "description": "Never wait in a physical line ever again. The ultimate smart queue system for India.",
   "start_url": "/home",
   "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
   "orientation": "portrait",
-  "background_color": "#0F172A",
-  "theme_color": "#4F46E5",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -17,6 +17,16 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "categories": ["utilities", "business", "lifestyle"],
+  "dir": "ltr",
+  "lang": "en-IN",
+  "prefer_related_applications": false
 }

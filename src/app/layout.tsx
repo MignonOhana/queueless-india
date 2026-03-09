@@ -7,6 +7,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import SmoothScroll from "@/components/SmoothScroll";
 import SceneCanvasWrapper from "@/components/Spatial/SceneCanvasWrapper";
 import MobileNav from "@/components/MobileNav";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,18 +16,26 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "QueueLess India - No Line, Just Arrive",
+  title: "QueueLess India",
   description: "Join queues digitally and arrive only when your turn is near.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "QueueLess",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
 export const viewport = {
-  themeColor: "#4F46E5",
+  themeColor: "#0ea5e9",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -48,6 +57,7 @@ export default function RootLayout({
               <LanguageProvider>
                 <AuthProvider>
                   {children}
+                  <PWAInstallPrompt />
                   <MobileNav />
                 </AuthProvider>
               </LanguageProvider>

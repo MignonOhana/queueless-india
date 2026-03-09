@@ -28,7 +28,12 @@ serve(async (req) => {
 
     // 1. Check for cached prediction
     const now = new Date()
-    const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}_H${now.getHours()}`
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = now.getHours();
+    
+    const dateKey = `${year}-${month}-${day}_H${hour}`
     const predictionId = `${orgId}_${dateKey}`
 
     const { data: cachedPred, error: fetchErr } = await supabaseClient

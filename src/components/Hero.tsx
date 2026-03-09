@@ -1,12 +1,25 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Building2, Store, MapPin, Clock } from "lucide-react";
+import { ArrowRight, Building2, Store, MapPin, Clock, Download } from "lucide-react";
 import HeroPhysics from "./HeroPhysics";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { STAGGER_CONTAINER, FADE_UP_ANIMATION_VARIANTS, HOVER_SCALE_VARIANTS } from "../lib/utils";
 
 export default function Hero() {
+  const [isStandalone, setIsStandalone] = useState(true); // Default true to avoid hydration mismatch, update in effect
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
+    setIsMobile(/iphone|ipad|ipod|android/i.test(navigator.userAgent.toLowerCase()));
+  }, []);
+
+  const triggerInstall = () => {
+    window.dispatchEvent(new Event('show-pwa-prompt'));
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col items-center pt-32 pb-20 overflow-hidden bg-[#fafafa] dark:bg-[#0a0a0a] transition-colors duration-300">
       
@@ -60,6 +73,16 @@ export default function Hero() {
             variants={FADE_UP_ANIMATION_VARIANTS}
             className="flex flex-col sm:flex-row items-center gap-4"
           >
+            {isMobile && !isStandalone ? (
+              <button 
+                onClick={triggerInstall}
+                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-lg hover:shadow-xl hover:shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Download size={20} />
+                Download App
+              </button>
+            ) : null}
+
             <Link href="/customer" className="w-full sm:w-auto px-8 py-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium text-lg hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 group">
               Discover Queues
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />

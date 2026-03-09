@@ -25,6 +25,7 @@ export default function BusinessDashboard() {
   const [activeTab, setActiveTab] = useState<"Overview" | "Analytics" | "Settings">("Overview");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [businessData, setBusinessData] = useState<any>(null);
+  const [selectedCounter, setSelectedCounter] = useState<string>("all");
 
   useEffect(() => {
     const savedOrg = localStorage.getItem("admin_org");
@@ -33,7 +34,20 @@ export default function BusinessDashboard() {
     }
   }, []);
   
-  const { queue, currentlyServing, stats } = useAdminQueue(isAdminLoggedIn ? adminUsername : "");
+  const { queue, currentlyServing, stats } = useAdminQueue(
+    isAdminLoggedIn ? adminUsername : "",
+    selectedCounter === "all" ? undefined : selectedCounter
+  );
+  
+  // Custom manual fetching state to ensure skeleton shows before real empty state
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  useEffect(() => {
+    if (isAdminLoggedIn) {
+       const timer = setTimeout(() => setInitialLoading(false), 2000);
+       return () => clearTimeout(timer);
+    }
+  }, [isAdminLoggedIn]);
 
   const statCards = [
     { label: "Total Tokens Today", value: stats.totalToday, icon: Users, color: "bg-blue-100 text-blue-600" },
@@ -72,7 +86,7 @@ export default function BusinessDashboard() {
                 e.preventDefault();
                 setIsLoggingIn(true);
                 try {
-                  const { data, error } = await supabase.from('businesses').select('*').eq('id', adminUsername).single();
+                  const { data, error } = await supabase.from('businesses').select('*').eq('id', adminUsername).maybeSingle();
                   
                   if (error || !data) {
                     // Fallback to check if it's a known Mock ID for demo purposes
@@ -163,7 +177,7 @@ export default function BusinessDashboard() {
       {/* Vercel-style Sub Navigation Tabs */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 overflow-x-auto hide-scrollbar">
         <div className="flex gap-8 max-w-7xl mx-auto h-12">
-          {["Overview", "Analytics", "Settings"].map((tab) => (
+          {["Overview", "Bookings", "Analytics", "Settings"].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -203,8 +217,10 @@ export default function BusinessDashboard() {
 
             <button 
               onClick={async () => {
+                if (selectedCounter === "all") return;
+                
                 setIsCalling(true);
-                await callNextToken(adminUsername);
+                await callNextToken(adminUsername, selectedCounter);
                 
                 // Trigger SMS notification to the called person
                 if (queue.length > 0) {
@@ -236,13 +252,20 @@ export default function BusinessDashboard() {
 
                 setIsCalling(false);
               }}
-              disabled={isCalling}
-              className="w-full bg-gradient-to-r from-orange-500 to-rose-500 text-white font-bold text-xl py-5 rounded-2xl shadow-lg shadow-orange-500/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 group disabled:opacity-50 disabled:hover:scale-100"
+              disabled={isCalling || selectedCounter === "all"}
+              className={`w-full font-bold text-xl py-5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 group ${
+                 selectedCounter === "all" 
+                   ? "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none"
+                   : "bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-orange-500/30 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+              }`}
             >
-              {isCalling ? <Loader2 size={24} className="animate-spin" /> : "Call Next Token"}
-              {!isCalling && <ArrowRight className="group-hover:translate-x-1 transition-transform" />}
+              {isCalling ? <Loader2 size={24} className="animate-spin" /> : 
+                selectedCounter === "all" ? "Select Department to Call" : "Call Next Token"}
+              {!isCalling && selectedCounter !== "all" && <ArrowRight className="group-hover:translate-x-1 transition-transform" />}
             </button>
-            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-4">This marks the current as Served and calls the next.</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium mt-4">
+               {selectedCounter === "all" ? "You must pick a specific counter/department from the dropdown to continue." : "This marks the current as Served and calls the next."}
+            </p>
             
             <div className="grid grid-cols-2 gap-4 mt-6">
               <button className="flex flex-col items-center justify-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 text-yellow-700 dark:text-yellow-500 rounded-2xl hover:bg-yellow-100 dark:hover:bg-yellow-500/20 transition-colors group">
@@ -312,10 +335,16 @@ export default function BusinessDashboard() {
             <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="font-bold text-xl text-slate-800 dark:text-slate-100">Live Waiting List</h3>
               <div className="flex gap-2">
-                <select className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 outline-none">
-                  <option>All Services</option>
-                  <option>OPD</option>
-                  <option>Billing</option>
+                <select 
+                  value={selectedCounter}
+                  onChange={(e) => setSelectedCounter(e.target.value)}
+                  className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <option value="all">All Departments</option>
+                  <option value="opd">OPD (General)</option>
+                  <option value="spl">Specialist</option>
+                  <option value="billing">Billing</option>
+                  <option value="pharmacy">Pharmacy</option>
                 </select>
               </div>
             </div>
@@ -332,12 +361,22 @@ export default function BusinessDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                  {queue.length === 0 && (
+                  {initialLoading ? (
+                     Array.from({ length: 5 }).map((_, i) => (
+                       <tr key={`skel-${i}`} className="border-b border-slate-100 dark:border-slate-800/50">
+                         <td className="p-4 pl-6"><div className="h-5 w-16 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse"></div></td>
+                         <td className="p-4"><div className="h-5 w-32 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse"></div></td>
+                         <td className="p-4"><div className="h-5 w-12 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse"></div></td>
+                         <td className="p-4"><div className="h-5 w-20 bg-slate-100 dark:bg-slate-800 rounded-md animate-pulse"></div></td>
+                         <td className="p-4 pr-6 flex justify-end"><div className="h-6 w-24 bg-slate-100 dark:bg-slate-800 rounded-full animate-pulse"></div></td>
+                       </tr>
+                     ))
+                  ) : queue.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-slate-400 font-medium">No customers currently waiting.</td>
                     </tr>
-                  )}
-                  {queue.map((item, idx) => (
+                  ) : (
+                    queue.map((item, idx) => (
                     <tr key={item.id || idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                       <td className="p-4 pl-6 text-slate-900 dark:text-slate-200 font-bold">{item.tokenNumber}</td>
                       <td className="p-4 text-slate-700 dark:text-slate-300 font-medium">{item.customerName}</td>
@@ -373,7 +412,7 @@ export default function BusinessDashboard() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )))}
                 </tbody>
               </table>
             </div>
@@ -413,6 +452,68 @@ export default function BusinessDashboard() {
             </div>
 
             <QueueChart />
+          </div>
+        )}
+
+        {/* Bookings Tab Content */}
+        {activeTab === "Bookings" as any && (
+          <div className="w-full flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex-1 flex flex-col transition-colors">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 className="font-bold text-xl text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <CalendarClock className="text-indigo-500" />
+                  Advance Bookings
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/50 text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+                      <th className="p-4 pl-6 font-medium">Date & Time</th>
+                      <th className="p-4 font-medium">Customer</th>
+                      <th className="p-4 font-medium">Service</th>
+                      <th className="p-4 font-medium">Contact</th>
+                      <th className="p-4 pr-6 font-medium text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                    {/* Mock Bookings Data for UI validation */}
+                    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                      <td className="p-4 pl-6">
+                        <p className="text-slate-900 dark:text-slate-200 font-bold">Today, 10:30 AM</p>
+                      </td>
+                      <td className="p-4 text-slate-700 dark:text-slate-300 font-medium">Rahul Sharma</td>
+                      <td className="p-4 text-slate-500 dark:text-slate-400 uppercase">OPD</td>
+                      <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">--</td>
+                      <td className="p-4 pr-6 flex items-center justify-end gap-2">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400">
+                          CONFIRMED
+                        </span>
+                        <div className="flex items-center gap-1 ml-2 opacity-0 hover:opacity-100 transition-opacity">
+                          <button className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-600 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 dark:text-emerald-400 transition-colors cursor-pointer" title="Convert to Live Token">
+                            <CheckCircle2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors opacity-60">
+                      <td className="p-4 pl-6">
+                        <p className="text-slate-900 dark:text-slate-200 font-bold">Tomorrow, 02:00 PM</p>
+                      </td>
+                      <td className="p-4 text-slate-700 dark:text-slate-300 font-medium">Priya Patel</td>
+                      <td className="p-4 text-slate-500 dark:text-slate-400 uppercase">SPL</td>
+                      <td className="p-4 text-slate-500 dark:text-slate-400 font-mono text-sm">+91 98765*****</td>
+                      <td className="p-4 pr-6 flex justify-end">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                          PENDING
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
