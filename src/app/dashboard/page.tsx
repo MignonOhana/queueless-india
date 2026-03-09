@@ -22,7 +22,6 @@ export default function BusinessDashboard() {
   const [showQR, setShowQR] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminUsername, setAdminUsername] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
   const [activeTab, setActiveTab] = useState<"Overview" | "Bookings" | "Analytics" | "Settings" | "QR Code">("Overview");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [businessData, setBusinessData] = useState<any>(null);
@@ -32,6 +31,18 @@ export default function BusinessDashboard() {
     const savedOrg = localStorage.getItem("admin_org");
     if (savedOrg) {
       setAdminUsername(savedOrg);
+      // Auto-login: verify the saved org still exists in Supabase, then sign in
+      (async () => {
+        try {
+          const { data } = await supabase.from('businesses').select('*').eq('id', savedOrg).maybeSingle();
+          if (data) {
+            setBusinessData(data);
+            setIsAdminLoggedIn(true);
+          } else {
+            localStorage.removeItem("admin_org"); // stale, clear it
+          }
+        } catch { /* silent */ }
+      })();
     }
   }, []);
   
@@ -121,17 +132,7 @@ export default function BusinessDashboard() {
                   className="w-full px-5 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-colors font-medium"
                   required
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Password</label>
-                <input 
-                  type="password" 
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-5 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-colors font-medium"
-                  required
-                />
+                <p className="text-xs text-slate-400 mt-1.5 font-medium">Enter the org ID you registered with</p>
               </div>
 
               <button 

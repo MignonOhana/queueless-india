@@ -13,7 +13,7 @@ interface FastAuthProps {
 export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) {
   const [step, setStep] = useState<"phone" | "otp" | "loading">("phone");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,7 +67,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length < 4) return;
+    if (code.length < 6) return;
     
     setIsSubmitting(true);
     setStep("loading");
@@ -204,7 +204,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
                       newOtp[index] = e.target.value.replace(/\D/g, '');
                       setOtp(newOtp);
                       // Auto-advance
-                      if (e.target.value && index < 3) {
+                      if (e.target.value && index < 5) {
                         document.getElementById(`otp-${index + 1}`)?.focus();
                       }
                     }}
@@ -224,7 +224,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
 
               <button 
                 type="submit"
-                disabled={otp.join("").length < 4 || isSubmitting}
+                disabled={otp.join("").length < 6 || isSubmitting}
                 className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-xl font-bold text-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
               >
                 {isSubmitting ? "Verifying..." : "Verify & Join Queue"}
