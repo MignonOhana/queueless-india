@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, MapPin, Clock, Users, Activity, Phone, Star, AlertCircle, ArrowRight } from "lucide-react";
+import { ChevronLeft, MapPin, Clock, Users, Activity, Star, AlertCircle, ArrowRight, LogIn } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
+import PhoneAuthModal from "@/components/auth/PhoneAuthModal";
 
 export default function QRJoinLandingPage() {
   const params = useParams();
   const router = useRouter();
   const businessId = params?.businessId as string;
-  const { user, loginAsCustomer } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -20,11 +21,21 @@ export default function QRJoinLandingPage() {
   const [isJoining, setIsJoining] = useState(false);
   const [liveWaitCount, setLiveWaitCount] = useState(0);
   const [liveServingToken, setLiveServingToken] = useState<string | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Form State
-  const [name, setName] = useState(user?.user_metadata?.full_name || "");
+  // Form State — pre-filled from user profile
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+
+  // Sync user metadata into form when user logs in
+  useEffect(() => {
+    if (user) {
+      setName(user.user_metadata?.full_name || "");
+      const rawPhone = user.phone?.replace("+91", "") || "";
+      if (rawPhone.length === 10) setPhone(rawPhone.slice(0,5) + " " + rawPhone.slice(5));
+    }
+  }, [user]);
 
   // Success State
   const [joinedToken, setJoinedToken] = useState<any>(null);
@@ -378,38 +389,24 @@ export default function QRJoinLandingPage() {
                   
                   /* JOIN FORM */
                   <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                     {!user && (
-                        <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 mb-6">
-                           <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-white">
-                              Join without signing in
-                           </h3>
-                           
-                           <form onSubmit={handleJoinQueue} className="space-y-4">
-                              <div>
-                                 <input 
-                                   type="text" 
-                                   placeholder="Full Name" 
-                                   value={name}
-                                   onChange={e => setName(e.target.value)}
-                                   className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-medium focus:outline-none focus:border-indigo-500 focus:bg-white/5 transition-all placeholder:text-slate-500"
-                                   required
-                                 />
-                              </div>
-                              <div>
-                                 <input 
-                                   type="tel" 
-                                   placeholder="Mobile Number (+91)" 
-                                   value={phone}
-                                   onChange={handlePhoneChange}
-                                   className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-medium focus:outline-none focus:border-indigo-500 focus:bg-white/5 transition-all placeholder:text-slate-500"
-                                   required
-                                 />
-                                 {phoneError && <p className="text-rose-400 text-xs font-bold mt-2 ml-1">{phoneError}</p>}
-                                 <p className="text-slate-500 text-[10px] uppercase font-bold tracking-wider mt-2 ml-1">For SMS wait-time alerts</p>
-                              </div>
-                           </form>
-                        </div>
-                     )}
+                                           {!user && (
+                         <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 mb-6">
+                            <h3 className="text-xl font-bold mb-2 text-white">Join as Guest or Login</h3>
+                            <p className="text-slate-400 text-sm mb-5">Login for faster joins and saved history.</p>
+                            <button onClick={() => setIsAuthOpen(true)}
+                              className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-500 active:scale-95 transition-all mb-4">
+                              <LogIn size={18} /> Login with Phone OTP
+                            </button>
+                            <div className="border-t border-white/10 pt-4 space-y-3">
+                              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 text-center">or continue as guest</p>
+                              <input type="text" placeholder="Your Name" value={name} onChange={e => setName(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-medium focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-500 text-sm" />
+                              <input type="tel" placeholder="Mobile Number (+91)" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g,'').slice(0,10))}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-medium focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-500 text-sm" />
+                              {phoneError && <p className="text-rose-400 text-xs font-bold">{phoneError}</p>}
+                            </div>
+                         </div>
+                      )}
 
                      <button 
                        disabled={isJoining}
