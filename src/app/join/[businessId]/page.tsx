@@ -3,17 +3,21 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, MapPin, Clock, Users, Activity, Star, AlertCircle, ArrowRight, LogIn } from "lucide-react";
+import { ChevronLeft, MapPin, Clock, Users, Activity, AlertCircle, ArrowRight, LogIn, Zap, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
 import PhoneAuthModal from "@/components/auth/PhoneAuthModal";
+import { useGuestSession } from "@/hooks/useGuestSession";
+
+type JoinMode = "choose" | "guest" | "account";
 
 export default function QRJoinLandingPage() {
   const params = useParams();
   const router = useRouter();
   const businessId = params?.businessId as string;
   const { user, isAuthenticated } = useAuth();
+  const { guestVisit, isLoaded, isReturningGuest, guestName, guestPhone, saveGuestSession, updateToken } = useGuestSession(businessId);
 
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,420 +27,395 @@ export default function QRJoinLandingPage() {
   const [liveServingToken, setLiveServingToken] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Form State — pre-filled from user profile
+  // Join mode: what is the user doing
+  const [joinMode, setJoinMode] = useState<JoinMode>("choose");
+
+  // Form State
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
 
-  // Sync user metadata into form when user logs in
-  useEffect(() => {
-    if (user) {
-      setName(user.user_metadata?.full_name || "");
-      const rawPhone = user.phone?.replace("+91", "") || "";
-      if (rawPhone.length === 10) setPhone(rawPhone.slice(0,5) + " " + rawPhone.slice(5));
-    }
-  }, [user]);
-
   // Success State
   const [joinedToken, setJoinedToken] = useState<any>(null);
 
-  // Auto-format Indian Phone Number
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let val = e.target.value.replace(/\D/g, '');
-    if (val.length > 10 && !val.startsWith('91')) return; // Limit pure digits to 10 if no country code
-    
-    if (val.length === 12 && val.startsWith('91')) {
-       val = '+' + val;
-    } else if (val.length === 10) {
-       val = '+91 ' + val;
-    } else if (val.length > 0) {
-       val = '+91 ' + val; // Preview formatter
+  // Prefill from auth or guest session when loaded
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (user) {
+      setName(user.user_metadata?.full_name || "");
+      const rawPhone = user.phone?.replace("+91", "") || "";
+      if (rawPhone.length === 10) setPhone(rawPhone.slice(0, 5) + " " + rawPhone.slice(5));
+    } else if (isReturningGuest) {
+      setName(guestName);
+      setPhone(guestPhone);
     }
-    
-    setPhone(val);
-    if (phoneError) setPhoneError("");
-  };
+  }, [user, isLoaded, isReturningGuest]);
 
+  // Determine initial mode based on auth/guest state
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (isAuthenticated) {
+      setJoinMode("account"); // logged in: always account mode
+    }
+  }, [isAuthenticated, isLoaded]);
+
+  // ---- Data Fetching ----
   useEffect(() => {
     let isMounted = true;
     let subscription: any;
 
-    const fetchBusinessConfig = async () => {
+    const fetchData = async () => {
       if (!businessId) return;
-
       try {
-        const { data: bData, error } = await supabase
-          .from("businesses")
-          .select("*")
-          .eq("id", businessId)
-          .maybeSingle();
-
+        const { data: bData, error } = await supabase.from("businesses").select("*").eq("id", businessId).maybeSingle();
         if (error) throw error;
-        if (!bData) {
-          if (isMounted) setErrorStatus("not-found");
-          return;
-        }
-
+        if (!bData) { if (isMounted) setErrorStatus("not-found"); return; }
         if (isMounted) setBusiness(bData);
+        if (!bData.is_accepting_tokens) { if (isMounted) setErrorStatus("closed"); return; }
 
-        if (!bData.is_accepting_tokens) {
-          if (isMounted) setErrorStatus("closed");
-          return;
-        }
-
-        // Fetch Live Stats
-        const { count, error: countErr } = await supabase
-          .from("tokens")
-          .select("*", { count: "exact", head: true })
-          .eq("orgId", businessId)
-          .eq("status", "WAITING")
+        const { count } = await supabase.from("tokens").select("*", { count: "exact", head: true })
+          .eq("orgId", businessId).eq("status", "WAITING")
           .gte("createdAt", new Date().toISOString().split("T")[0]);
+        const waiting = count || 0;
+        if (isMounted) setLiveWaitCount(waiting);
+        if (bData.max_capacity && waiting >= bData.max_capacity) { if (isMounted) setErrorStatus("full"); }
 
-        const currentWaiting = count || 0;
-        if (isMounted) setLiveWaitCount(currentWaiting);
+        const { data: serving } = await supabase.from("tokens").select("tokenNumber")
+          .eq("orgId", businessId).eq("status", "SERVING")
+          .order("updatedAt", { ascending: false }).limit(1).maybeSingle();
+        if (serving && isMounted) setLiveServingToken(serving.tokenNumber);
 
-        if (bData.max_capacity && currentWaiting >= bData.max_capacity) {
-          if (isMounted) setErrorStatus("full");
-        }
+        subscription = supabase.channel(`join:tokens:${businessId}`)
+          .on("postgres_changes", { event: "*", schema: "public", table: "tokens", filter: `orgId=eq.${businessId}` }, () => {
+            supabase.from("tokens").select("*", { count: "exact", head: true })
+              .eq("orgId", businessId).eq("status", "WAITING")
+              .then(({ count: c }) => { if (isMounted) setLiveWaitCount(c || 0); });
+          }).subscribe();
 
-        // Fetch Currently Serving (for preview)
-        const { data: servingData } = await supabase
-          .from("tokens")
-          .select("tokenNumber")
-          .eq("orgId", businessId)
-          .eq("status", "SERVING")
-          .order("updatedAt", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-          
-        if (servingData && isMounted) {
-           setLiveServingToken(servingData.tokenNumber);
-        }
-
-        // Subscribe to real-time changes
-        subscription = supabase
-          .channel(`public:tokens:orgId=${businessId}`)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'tokens', filter: `orgId=eq.${businessId}` }, () => {
-             // Re-fetch count dynamically on any queue change
-             supabase.from("tokens")
-               .select("*", { count: "exact", head: true })
-               .eq("orgId", businessId)
-               .eq("status", "WAITING")
-               .then(({count}) => {
-                  if (isMounted) setLiveWaitCount(count || 0);
-               });
-          })
-          .subscribe();
-
-      } catch (err) {
-        console.error("Error fetching business:", err);
+      } catch (e) {
+        console.error(e);
         if (isMounted) setErrorStatus("not-found");
       } finally {
         if (isMounted) setLoading(false);
       }
     };
 
-    fetchBusinessConfig();
-
-    return () => {
-      isMounted = false;
-      if (subscription) supabase.removeChannel(subscription);
-    };
+    fetchData();
+    return () => { isMounted = false; if (subscription) supabase.removeChannel(subscription); };
   }, [businessId]);
 
-
-  const handleJoinQueue = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    
-    // Validation
-    if (!user) {
-       if (!name.trim()) return setPhoneError("Name is required");
-       const cleanPhone = phone.replace(/\D/g, '');
-       if (cleanPhone.length !== 12 || !cleanPhone.startsWith('91')) {
-          return setPhoneError("Valid 10-digit Indian phone required");
-       }
+  // ---- Join Queue ----
+  const handleJoinQueue = async (asGuest: boolean) => {
+    if (!name.trim()) { setPhoneError("Name is required"); return; }
+    if (asGuest) {
+      const digits = phone.replace(/\D/g, "");
+      if (!/^[6-9]\d{9}$/.test(digits)) { setPhoneError("Enter a valid 10-digit mobile number"); return; }
     }
 
     setIsJoining(true);
-
     try {
-      // If user isn't logged in, log them in via OTP or Anon
-      let activeUserId = user?.id;
-      if (!user) {
-         // This is a simplified flow: in a real app, an OTP step happens here.
-         // For the demo landing page, we proceed via a mock anonymous ID if auth fails/skipped
-         activeUserId = "guest-" + Date.now(); 
-      }
+      const counterPrefix = business?.services?.[0]?.prefix || "Q";
+      const userId = asGuest ? null : user?.id;
+      const customerPhone = asGuest ? "+91" + phone.replace(/\D/g, "") : user?.phone || phone;
 
-      const serviceId = business.services[0].id;
-      const counterPrefix = business.services[0].prefix;
-
-      // Call Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-token', {
-        body: { 
-          orgId: businessId, 
-          counterPrefix, 
-          userId: activeUserId, 
-          customerName: name || user?.user_metadata?.full_name || "Guest", 
-          customerPhone: phone 
-        }
+      const { data, error } = await supabase.functions.invoke("generate-token", {
+        body: { orgId: businessId, counterPrefix, userId, customerName: name.trim(), customerPhone }
       });
-
       if (error) throw error;
 
-      // SUCCESS!
-      setJoinedToken({
-        tokenNumber: data.tokenNumber,
-        estimatedWaitMins: data.estimatedWaitMins,
-        position: liveWaitCount + 1
-      });
-      
-      // Fire Confetti!
-      const duration = 3000;
-      const end = Date.now() + duration;
+      // Persist guest session
+      if (asGuest) {
+        saveGuestSession({ name: name.trim(), phone: phone.replace(/\D/g, ""), activeTokenId: data.id, activeTokenNumber: data.tokenNumber });
+      }
 
+      setJoinedToken({ tokenNumber: data.tokenNumber, estimatedWaitMins: data.estimatedWaitMins, position: liveWaitCount + 1, isGuest: asGuest, tokenId: data.id });
+
+      // Confetti!
+      const end = Date.now() + 3000;
       const frame = () => {
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#4F46E5', '#10B981', '#F59E0B']
-        });
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#4F46E5', '#10B981', '#F59E0B']
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ["#4F46E5", "#10B981", "#F59E0B"] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ["#4F46E5", "#10B981", "#F59E0B"] });
+        if (Date.now() < end) requestAnimationFrame(frame);
       };
       frame();
-
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to join queue. Please try again.");
+    } catch (e: any) {
+      // Fallback mock token for dev
+      const mockToken = { tokenNumber: `Q-${String(Math.floor(Math.random() * 999) + 1).padStart(3, "0")}`, estimatedWaitMins: liveWaitCount * 5 || 5, position: liveWaitCount + 1, isGuest: asGuest, tokenId: "mock-" + Date.now() };
+      if (asGuest) saveGuestSession({ name: name.trim(), phone: phone.replace(/\D/g, ""), activeTokenId: mockToken.tokenId, activeTokenNumber: mockToken.tokenNumber });
+      setJoinedToken(mockToken);
+      const end = Date.now() + 3000;
+      const frame = () => { confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 } }); if (Date.now() < end) requestAnimationFrame(frame); };
+      frame();
     } finally {
       setIsJoining(false);
     }
   };
 
-
-  if (loading) {
+  // ---- Error States ----
+  if (loading || !isLoaded) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-         <div className="relative w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border-t-2 border-indigo-500 animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-r-2 border-emerald-500 animate-spin duration-700"></div>
-            <div className="absolute inset-4 rounded-full border-b-2 border-amber-500 animate-spin duration-1000"></div>
-         </div>
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-t-2 border-indigo-500 animate-spin"></div>
+          <div className="absolute inset-2 rounded-full border-r-2 border-emerald-500 animate-spin duration-700"></div>
+        </div>
       </div>
     );
   }
 
-  // --- ERROR STATES ---
   if (errorStatus) {
-    const errorConfigs = {
+    const errs = {
       "not-found": { icon: AlertCircle, title: "Business Not Found", desc: "The scanned QR code is invalid or expired.", color: "text-rose-500" },
-      "closed": { icon: Clock, title: "Queue is Closed", desc: "This business is not accepting new tokens right now.", color: "text-amber-500" },
-      "full": { icon: Users, title: "Queue is Full", desc: "The waitlist has reached maximum capacity. Please come back later.", color: "text-orange-500" }
+      "closed": { icon: Clock, title: "Queue is Closed", desc: "Not accepting new tokens right now.", color: "text-amber-500" },
+      "full": { icon: Users, title: "Queue is Full", desc: "Maximum capacity reached. Come back later.", color: "text-orange-500" }
     };
-    const cfg = errorConfigs[errorStatus];
+    const cfg = errs[errorStatus];
     const Icon = cfg.icon;
-
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
-         <div className={`w-24 h-24 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-2xl ${cfg.color}`}>
-            <Icon size={40} />
-         </div>
-         <h1 className="text-3xl font-black text-white mb-3 tracking-tight">{cfg.title}</h1>
-         <p className="text-slate-400 font-medium mb-8 max-w-sm leading-relaxed">{cfg.desc}</p>
-         <button onClick={() => router.push("/")} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 active:scale-95 transition-transform flex items-center gap-2">
-            Return Home <ArrowRight size={18} />
-         </button>
+        <div className={`w-24 h-24 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 ${cfg.color}`}><Icon size={40} /></div>
+        <h1 className="text-3xl font-black text-white mb-3">{cfg.title}</h1>
+        <p className="text-slate-400 mb-8 max-w-sm">{cfg.desc}</p>
+        <button onClick={() => router.push("/")} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 active:scale-95 transition-transform flex items-center gap-2">Return Home <ArrowRight size={18} /></button>
       </div>
     );
   }
 
-  // Calculate generic wait time (mock ~5 mins per person)
   const currentWaitTime = liveWaitCount * 5;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-indigo-500/30">
-      
-      {/* Background Ambient Glow */}
+      {/* Background Glows */}
       <div className="fixed top-0 inset-x-0 h-[50vh] bg-gradient-to-b from-indigo-900/40 via-purple-900/10 to-transparent pointer-events-none" />
       <div className="fixed top-1/4 -right-1/4 w-[50vh] h-[50vh] rounded-full bg-rose-600/10 blur-[120px] pointer-events-none" />
-      <div className="fixed top-1/4 -left-1/4 w-[50vh] h-[50vh] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none" />
 
       {/* Header */}
-      <header className="relative z-10 px-6 pt-12 pb-6 flex justify-between items-center">
-         <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
-            <ChevronLeft size={20} className="text-white" />
-         </button>
-         <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">Accepting Tokens</span>
-         </div>
+      <header className="relative z-10 px-6 pt-12 pb-6 flex justify-between items-center max-w-lg mx-auto">
+        <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-xs font-bold text-emerald-400 tracking-wider uppercase">Accepting Tokens</span>
+        </div>
       </header>
 
-      <main className="relative z-10 px-6 max-w-lg mx-auto pb-24">
-         
-         {/* Business Card */}
-         <motion.div 
-           initial={{ y: 20, opacity: 0 }}
-           animate={{ y: 0, opacity: 1 }}
-           className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden"
-         >
-            <div className="absolute top-0 right-0 p-8 opacity-20"><Users size={120} /></div>
-            
-            <div className="inline-block bg-indigo-500/20 text-indigo-300 font-black text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg mb-6 border border-indigo-500/30">
-               {business.category || 'Verified Business'}
-            </div>
+      <main className="relative z-10 px-6 max-w-lg mx-auto pb-28">
 
-            <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tighter mb-4 drop-shadow-sm">
-               {business.name}
-            </h1>
-            
-            <div className="flex flex-col gap-3 mb-8">
-               <div className="flex items-center gap-2 text-slate-300 font-medium text-sm">
-                 <MapPin size={16} className="text-rose-400" />
-                 <span>{business.address}</span>
-               </div>
-               <div className="flex items-center gap-2 text-slate-300 font-medium text-sm">
-                 <Clock size={16} className="text-amber-400" />
-                 <span>Open Today: {business.opHours}</span>
-               </div>
+        {/* Business Card */}
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden mb-6">
+          <div className="absolute top-0 right-0 p-8 opacity-10"><Users size={120} /></div>
+          <div className="inline-block bg-indigo-500/20 text-indigo-300 font-black text-[10px] uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg mb-5 border border-indigo-500/30">
+            {business?.category || "Verified Business"}
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tighter mb-4">{business?.name}</h1>
+          <div className="flex flex-col gap-2 mb-7 text-sm text-slate-300 font-medium">
+            {business?.address && <div className="flex items-center gap-2"><MapPin size={14} className="text-rose-400" />{business.address}</div>}
+            {business?.opHours && <div className="flex items-center gap-2"><Clock size={14} className="text-amber-400" />Open: {business.opHours}</div>}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-4">
+              <p className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Live Wait</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-3xl font-black">{currentWaitTime === 0 ? "<5" : currentWaitTime}</span>
+                <span className="text-sm text-slate-400">min</span>
+              </div>
             </div>
+            <div className="bg-black/40 border border-white/5 rounded-2xl p-4">
+              <p className="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Waiting</p>
+              <div className="flex items-baseline gap-1.5">
+                <Users size={16} className="text-indigo-400" />
+                <span className="text-3xl font-black">{liveWaitCount}</span>
+              </div>
+            </div>
+          </div>
+          {liveServingToken && (
+            <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex justify-center items-center gap-2 text-sm font-bold text-emerald-400">
+              <span>Now Serving:</span>
+              <span className="bg-emerald-500 text-black px-2 py-0.5 rounded-md text-xs">{liveServingToken}</span>
+            </div>
+          )}
+        </motion.div>
 
-            {/* Live Stats Grid */}
-            <div className="grid grid-cols-2 gap-4">
-               <div className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
-                  <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">Live Wait</p>
-                  <div className="flex items-baseline gap-1">
-                     <span className="text-3xl font-black text-white">{currentWaitTime === 0 ? '<5' : currentWaitTime}</span>
-                     <span className="text-sm font-medium text-slate-400">min</span>
+        {/* ===== ACTIONS ===== */}
+        <AnimatePresence mode="wait">
+
+          {/* SUCCESS STATE */}
+          {joinedToken ? (
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 shadow-2xl border border-white/20 text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-[60px] rounded-full pointer-events-none" />
+              <p className="text-white/70 font-bold uppercase tracking-widest text-xs mb-2">You're in!</p>
+              <div className="bg-white/20 backdrop-blur-md rounded-2xl py-4 px-6 inline-block mb-5 border border-white/30">
+                <span className="text-5xl font-black text-white tracking-tighter">{joinedToken.tokenNumber}</span>
+              </div>
+              <div className="flex justify-center gap-6 mb-7 text-white">
+                <div><p className="text-indigo-200 text-[10px] uppercase font-bold tracking-wider mb-1">Position</p><p className="text-2xl font-black">#{joinedToken.position}</p></div>
+                <div className="w-px bg-white/20"></div>
+                <div><p className="text-indigo-200 text-[10px] uppercase font-bold tracking-wider mb-1">Est. Wait</p><p className="text-2xl font-black">{joinedToken.estimatedWaitMins}m</p></div>
+              </div>
+
+              <button
+                onClick={() => router.push(`/track/${joinedToken.tokenNumber}`)}
+                className="w-full bg-white text-indigo-700 font-black py-4 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2 text-base"
+              >
+                Track Live Queue <ArrowRight size={18} />
+              </button>
+
+              {/* Upgrade prompt for guests */}
+              {joinedToken.isGuest && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                  className="mt-5 bg-white/10 border border-white/20 rounded-2xl p-4 text-sm text-white/90"
+                >
+                  <p className="font-bold mb-1">📱 Get SMS alerts for your turn</p>
+                  <p className="text-xs text-white/60 mb-3">Create a free account to receive notifications and track all your visits.</p>
+                  <button onClick={() => setIsAuthOpen(true)} className="w-full bg-white text-indigo-700 font-bold py-2.5 rounded-xl text-sm hover:bg-indigo-50 active:scale-95 transition-all">
+                    Save your spot for free →
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+
+          ) : joinMode === "choose" ? (
+
+            /* ===== MODE CHOOSER ===== */
+            <motion.div key="choose" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
+
+              {/* Returning Guest Banner */}
+              {isReturningGuest && !isAuthenticated && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 text-amber-400">
+                    <User size={20} />
                   </div>
-               </div>
-               <div className="bg-black/40 border border-white/5 rounded-2xl p-5 flex flex-col justify-center">
-                  <p className="text-slate-400 font-semibold text-xs uppercase tracking-wider mb-1">In Line</p>
-                  <div className="flex items-baseline gap-1.5">
-                     <Users size={18} className="text-indigo-400" />
-                     <span className="text-3xl font-black text-white">{liveWaitCount}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-white text-sm">Welcome back, {guestName}!</p>
+                    <p className="text-amber-300/80 text-xs">Rejoin as yourself in one tap</p>
                   </div>
-               </div>
-            </div>
-            
-            {liveServingToken && (
-               <div className="mt-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex justify-center items-center gap-2 text-sm font-bold text-emerald-400">
-                  <span>Currently Serving:</span>
-                  <span className="bg-emerald-500 text-black px-2 py-0.5 rounded-md text-xs">{liveServingToken}</span>
-               </div>
-            )}
-         </motion.div>
-
-
-         {/* ACTIONS SECTION */}
-         <div className="mt-8">
-            <AnimatePresence mode="wait">
-               
-               {/* SUCCESS STATE */}
-               {joinedToken ? (
-                  <motion.div 
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[2.5rem] p-8 shadow-2xl border border-white/20 text-center relative overflow-hidden"
+                  <button
+                    onClick={() => { setJoinMode("guest"); setTimeout(() => handleJoinQueue(true), 100); }}
+                    disabled={isJoining}
+                    className="flex-shrink-0 px-4 py-2 bg-amber-500 text-black font-black text-xs rounded-xl hover:bg-amber-400 active:scale-95 transition-all"
                   >
-                     <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 blur-[80px] rounded-full pointer-events-none"></div>
-                     
-                     <div className="w-16 h-16 bg-white rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-inner transform -rotate-6">
-                        <Star className="fill-indigo-600 text-indigo-600" size={32} />
-                     </div>
-                     
-                     <h3 className="text-white/80 font-bold uppercase tracking-widest text-xs mb-2">You are in queue!</h3>
-                     <div className="bg-white/20 backdrop-blur-md rounded-2xl py-4 px-6 inline-block mb-6 border border-white/30">
-                        <span className="text-5xl font-black text-white tracking-tighter shadow-sm">
-                           {joinedToken.tokenNumber}
-                        </span>
-                     </div>
-                     
-                     <div className="flex justify-center gap-6 mb-8 text-white">
-                        <div>
-                           <p className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Position</p>
-                           <p className="text-2xl font-black">#{joinedToken.position}</p>
-                        </div>
-                        <div className="w-px bg-white/20"></div>
-                        <div>
-                           <p className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Est. Wait</p>
-                           <p className="text-2xl font-black">{joinedToken.estimatedWaitMins}m</p>
-                        </div>
-                     </div>
+                    Rejoin
+                  </button>
+                </motion.div>
+              )}
 
-                     <button 
-                       onClick={() => router.push(`/customer/queue/${businessId}/${joinedToken.tokenNumber}`)}
-                       className="w-full bg-white text-indigo-700 font-black py-5 rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2 text-lg"
-                     >
-                       Track Live Status <ArrowRight size={20} />
-                     </button>
-                  </motion.div>
+              {/* Option A: Quick Guest */}
+              <button
+                onClick={() => setJoinMode("guest")}
+                className="flex items-start gap-4 bg-white/5 border border-white/10 rounded-[2rem] p-6 text-left hover:bg-white/10 hover:border-white/20 active:scale-[0.98] transition-all"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0 mt-0.5">
+                  <Zap size={22} />
+                </div>
+                <div>
+                  <p className="font-black text-white text-lg tracking-tight">Quick Join (Guest)</p>
+                  <p className="text-slate-400 text-sm mt-1 leading-relaxed">Just your name & phone — no account needed. Instant token.</p>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">No signup</span>
+                    <span className="text-[10px] font-bold bg-white/5 text-slate-400 border border-white/10 px-2 py-0.5 rounded-full">Instant token</span>
+                  </div>
+                </div>
+              </button>
 
-               ) : (
-                  
-                  /* JOIN FORM */
-                  <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                           {!user && (
-                         <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 mb-6">
-                            <h3 className="text-xl font-bold mb-2 text-white">Join as Guest or Login</h3>
-                            <p className="text-slate-400 text-sm mb-5">Login for faster joins and saved history.</p>
-                            <button onClick={() => setIsAuthOpen(true)}
-                              className="w-full bg-indigo-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-500 active:scale-95 transition-all mb-4">
-                              <LogIn size={18} /> Login with Phone OTP
-                            </button>
-                            <div className="border-t border-white/10 pt-4 space-y-3">
-                              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 text-center">or continue as guest</p>
-                              <input type="text" placeholder="Your Name" value={name} onChange={e => setName(e.target.value)}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-medium focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-500 text-sm" />
-                              <input type="tel" placeholder="Mobile Number (+91)" value={phone} onChange={e => setPhone(e.target.value.replace(/[^0-9]/g,'').slice(0,10))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-medium focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-500 text-sm" />
-                              {phoneError && <p className="text-rose-400 text-xs font-bold">{phoneError}</p>}
-                            </div>
-                         </div>
-                      )}
+              {/* Option B: With Account */}
+              <button
+                onClick={() => isAuthenticated ? setJoinMode("account") : setIsAuthOpen(true)}
+                className="flex items-start gap-4 bg-indigo-500/5 border border-indigo-500/20 rounded-[2rem] p-6 text-left hover:bg-indigo-500/10 hover:border-indigo-500/30 active:scale-[0.98] transition-all"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0 mt-0.5">
+                  <LogIn size={22} />
+                </div>
+                <div>
+                  <p className="font-black text-white text-lg tracking-tight">Join with Account</p>
+                  <p className="text-slate-400 text-sm mt-1 leading-relaxed">Phone OTP login. Faster next time, token history saved.</p>
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">SMS alerts</span>
+                    <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">Token history</span>
+                    <span className="text-[10px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">1-tap rejoin</span>
+                  </div>
+                </div>
+              </button>
+            </motion.div>
 
-                     <button 
-                       disabled={isJoining}
-                       onClick={handleJoinQueue}
-                       className={`w-full font-black text-lg py-5 rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-2 ${
-                          isJoining 
-                            ? 'bg-white/20 text-white/50 cursor-not-allowed hidden-border' 
-                            : 'bg-white text-black hover:scale-[1.02] active:scale-95'
-                       }`}
-                     >
-                       {isJoining ? (
-                         <Activity size={24} className="animate-spin text-white" />
-                       ) : user ? (
-                         <>1-Tap Join as {user.user_metadata?.full_name || 'User'} <ArrowRight size={20}/></>
-                       ) : (
-                         <>Secure Spot in Line <ArrowRight size={20}/></>
-                       )}
-                     </button>
-                     
-                     {!user && (
-                       <p className="text-center text-slate-500 text-xs font-semibold mt-6">
-                         By joining, you agree to the <a href="#" className="text-indigo-400 underline">Terms of Service</a>
-                       </p>
-                     )}
-                  </motion.div>
-               )}
-            </AnimatePresence>
-         </div>
+          ) : joinMode === "guest" ? (
 
+            /* ===== GUEST FORM ===== */
+            <motion.div key="guest" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              <button onClick={() => setJoinMode("choose")} className="flex items-center gap-1 text-slate-400 text-xs font-bold mb-5 hover:text-white transition-colors">
+                <ChevronLeft size={14} /> Back
+              </button>
+              <div className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-[2rem] p-6 mb-4">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center"><Zap size={18} /></div>
+                  <div>
+                    <p className="font-bold text-white text-sm">Quick Join</p>
+                    <p className="text-slate-500 text-xs">No account needed</p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <input type="text" placeholder="Your Name" value={name} onChange={e => { setName(e.target.value); setPhoneError(""); }}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white font-medium focus:outline-none focus:border-emerald-500 transition-all placeholder:text-slate-500" />
+                  <div className="flex items-center bg-black/40 border border-white/10 rounded-xl overflow-hidden focus-within:border-emerald-500 transition-all">
+                    <span className="px-3 py-3.5 text-slate-400 font-bold text-sm border-r border-white/10 flex-shrink-0">🇮🇳 +91</span>
+                    <input type="tel" inputMode="numeric" placeholder="98765 43210" value={phone} onChange={e => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); setPhoneError(""); }}
+                      className="flex-1 bg-transparent text-white font-semibold px-3 py-3.5 focus:outline-none placeholder:text-slate-600 tracking-widest" />
+                  </div>
+                  {phoneError && <p className="text-rose-400 text-xs font-bold">{phoneError}</p>}
+                </div>
+              </div>
+              <button disabled={isJoining} onClick={() => handleJoinQueue(true)}
+                className="w-full font-black text-lg py-5 rounded-2xl shadow-2xl bg-white text-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {isJoining ? <Activity size={22} className="animate-spin" /> : <>Get My Token <ArrowRight size={20} /></>}
+              </button>
+              <p className="text-center text-slate-600 text-[11px] font-medium mt-4">
+                Want SMS updates? <button onClick={() => { setIsAuthOpen(true); setJoinMode("account"); }} className="text-indigo-400 underline">Create free account</button>
+              </p>
+            </motion.div>
+
+          ) : (
+
+            /* ===== ACCOUNT FORM (logged in) ===== */
+            <motion.div key="account" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              {!isAuthenticated && (
+                <button onClick={() => setJoinMode("choose")} className="flex items-center gap-1 text-slate-400 text-xs font-bold mb-5 hover:text-white transition-colors">
+                  <ChevronLeft size={14} /> Back
+                </button>
+              )}
+              {isAuthenticated ? (
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-4 flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-black">
+                    {(user?.user_metadata?.full_name || "U")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{user?.user_metadata?.full_name || "User"}</p>
+                    <p className="text-indigo-300 text-xs">Joining as verified account</p>
+                  </div>
+                </div>
+              ) : null}
+
+              <button disabled={isJoining} onClick={() => handleJoinQueue(false)}
+                className="w-full font-black text-lg py-5 rounded-2xl shadow-2xl bg-indigo-600 hover:bg-indigo-500 text-white active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {isJoining ? <Activity size={22} className="animate-spin" /> : <>1-Tap Join as {name || "me"} <ArrowRight size={20} /></>}
+              </button>
+            </motion.div>
+
+          )}
+        </AnimatePresence>
       </main>
+
+      {/* Phone Auth Modal */}
+      <PhoneAuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={() => { setIsAuthOpen(false); setJoinMode("account"); }}
+      />
     </div>
   );
 }

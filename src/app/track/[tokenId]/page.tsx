@@ -7,6 +7,8 @@ import { ChevronLeft, Maximize2, Minimize2, Bell, BellOff, MapPin, Clock, Phone,
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
+import PhoneAuthModal from "@/components/auth/PhoneAuthModal";
+import { useGuestSession } from "@/hooks/useGuestSession";
 
 export default function TokenTrackingPage() {
   const params = useParams();
@@ -41,6 +43,12 @@ export default function TokenTrackingPage() {
 
   // Confetti trigger tracking
   const hasFiredConfetti = useRef(false);
+
+  // Guest mode state
+  const [isGuestUpgradeOpen, setIsGuestUpgradeOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+  // Determine if user is a guest by checking if token has no userId
+  const isGuestMode = !isAuthenticated && !!token && !token.userId;
 
   // --- Clock Tick for ETA updates ---
   useEffect(() => {
@@ -445,6 +453,23 @@ export default function TokenTrackingPage() {
                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                  className="mt-6 flex flex-col gap-4"
                >
+                  {/* Guest Upgrade Banner */}
+                  {isGuestMode && (
+                     <motion.button
+                       onClick={() => setIsGuestUpgradeOpen(true)}
+                       initial={{ opacity: 0, y: 8 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="w-full p-4 rounded-[1.5rem] border border-amber-500/30 bg-amber-500/10 flex items-center gap-3 text-left hover:bg-amber-500/15 active:scale-[0.98] transition-all"
+                     >
+                        <span className="text-xl flex-shrink-0">📱</span>
+                        <div className="flex-1">
+                           <p className="text-amber-200 font-bold text-sm">Create a free account</p>
+                           <p className="text-amber-400/70 text-xs">Get SMS alerts when it is your turn</p>
+                        </div>
+                        <span className="text-amber-400 text-xs font-black flex-shrink-0">Free →</span>
+                     </motion.button>
+                  )}
+
                   {/* Smart Notifications Toggle */}
                   <button 
                     onClick={toggleNotifications}
