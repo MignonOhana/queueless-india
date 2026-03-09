@@ -29,7 +29,7 @@ function PaymentSuccessContent() {
          // Simulate verification of webhook/session
          await new Promise((resolve) => setTimeout(resolve, 2000));
          
-         const userId = user?.uid || "mock-user-" + Date.now();
+         const userId = user?.id || "mock-user-" + Date.now();
          
          // In production, the backend webhook handles this.
          // For MVP frontend mockup, we manually mint the token here.
@@ -38,7 +38,7 @@ function PaymentSuccessContent() {
             serviceId,
             prefix,
             userId,
-            user?.displayName || "Rahul Sharma (Priority)",
+            user?.user_metadata?.full_name || "Priority User",
             ""
          );
          

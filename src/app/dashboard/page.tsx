@@ -8,6 +8,7 @@ import { callNextToken, skipToken, recallToken } from "@/lib/queueService";
 import { supabase } from "@/lib/supabaseClient";
 import QRCodeModal from "@/components/QR/QRCodeModal";
 import AIPredictionCard from "@/components/Dashboard/AIPredictionCard";
+import QRCodeGenerator from "@/components/QRCodeGenerator";
 import { MOCK_BUSINESSES } from "@/lib/mockHomeData";
 import dynamic from "next/dynamic";
 
@@ -22,7 +23,7 @@ export default function BusinessDashboard() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminUsername, setAdminUsername] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
-  const [activeTab, setActiveTab] = useState<"Overview" | "Analytics" | "Settings">("Overview");
+  const [activeTab, setActiveTab] = useState<"Overview" | "Bookings" | "Analytics" | "Settings" | "QR Code">("Overview");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [businessData, setBusinessData] = useState<any>(null);
   const [selectedCounter, setSelectedCounter] = useState<string>("all");
@@ -177,7 +178,7 @@ export default function BusinessDashboard() {
       {/* Vercel-style Sub Navigation Tabs */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 overflow-x-auto hide-scrollbar">
         <div className="flex gap-8 max-w-7xl mx-auto h-12">
-          {["Overview", "Bookings", "Analytics", "Settings"].map((tab) => (
+          {["Overview", "Bookings", "Analytics", "QR Code", "Settings"].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab as any)}
@@ -593,6 +594,13 @@ export default function BusinessDashboard() {
                </div>
             </div>
             
+          </div>
+        )}
+
+        {/* QR Code Tab Content */}
+        {activeTab === "QR Code" as any && (
+          <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <QRCodeGenerator business={{ id: adminUsername, name: businessData?.name || adminUsername || "City Hospital" }} />
           </div>
         )}
 
