@@ -36,8 +36,8 @@ function CustomerAppContent() {
   }, [router]);
 
   const handleAuthSuccess = (userId: string) => {
-     // After fast auth, they have no active queue, route to discovery
-     router.push(`/home`);
+     // After fast auth, route to their personalized dashboard
+     router.push(`/customer/dashboard`);
   };
 
   if (isChecking) {

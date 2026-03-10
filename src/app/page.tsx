@@ -55,6 +55,12 @@ export default function LandingPage() {
             >
               Find a Queue
             </Link>
+            <Link
+              href="/customer/dashboard"
+              className="text-sm font-bold text-[#00F5A0] hover:brightness-110 transition-colors hidden sm:block"
+            >
+              My Tokens
+            </Link>
             {isMobile && !isStandalone && (
               <button
                 onClick={triggerInstall}
@@ -63,6 +69,12 @@ export default function LandingPage() {
                 <Download size={14} /> Install App
               </button>
             )}
+            <Link
+              href="/login"
+              className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block"
+            >
+              Login
+            </Link>
             <Link
               href="/register"
               className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm hover:bg-slate-100 transition-all shadow-md active:scale-95"

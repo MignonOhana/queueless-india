@@ -11,9 +11,6 @@ interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   signOut: () => Promise<void>;
-  // Legacy compat methods
-  loginAsCustomer: () => Promise<void>;
-  loginAsAdmin: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,8 +19,6 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAuthenticated: false,
   signOut: async () => {},
-  loginAsCustomer: async () => {},
-  loginAsAdmin: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -63,32 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserRole(null);
   };
 
-  // Legacy login methods kept for backward compatibility
-  const loginAsCustomer = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      console.warn("Falling back to mock customer login:", error.message);
-      setUser({ id: "mock-customer-123", email: "guest@queueless.in", app_metadata: {}, user_metadata: { role: "CUSTOMER" }, aud: "authenticated", created_at: new Date().toISOString() } as User);
-    } else {
-      setUser(data.user);
-    }
-    setUserRole("CUSTOMER");
-    setLoading(false);
-  };
-
-  const loginAsAdmin = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      setUser({ id: "mock-admin-456", email: "admin@queueless.in", app_metadata: {}, user_metadata: { role: "ADMIN" }, aud: "authenticated", created_at: new Date().toISOString() } as User);
-    } else {
-      await supabase.auth.updateUser({ data: { role: "ADMIN" } });
-    }
-    setUserRole("ADMIN");
-    setLoading(false);
-  };
-
   return (
     <AuthContext.Provider value={{
       user,
@@ -96,8 +65,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       loading,
       isAuthenticated: !!user,
       signOut,
-      loginAsCustomer,
-      loginAsAdmin,
     }}>
       {children}
     </AuthContext.Provider>

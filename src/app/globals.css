@@ -1,131 +1,103 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
+@import "../styles/tokens.css";
 
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-saffron-50: #fff6eb;
-  --color-saffron-100: #ffebd6;
-  --color-saffron-200: #ffd6ad;
-  --color-saffron-300: #ffb87a;
-  --color-saffron-400: #ff9d4d;
-  --color-saffron-500: #ff851b;
-  --color-saffron-600: #e66a00;
-  --color-saffron-700: #b35200;
-  --color-saffron-800: #803b00;
-  --color-saffron-900: #4d2300;
-  
-  --color-deepblue-50: #f0f4f8;
-  --color-deepblue-100: #dce5ef;
-  --color-deepblue-200: #bbcdde;
-  --color-deepblue-300: #93b0cb;
-  --color-deepblue-400: #6a90b5;
-  --color-deepblue-500: #4a749d;
-  --color-deepblue-600: #365b80;
-  --color-deepblue-700: #2b4967;
-  --color-deepblue-800: #233e56;
-  --color-deepblue-900: #1a2a3e;
-
-  --font-sans: var(--font-inter);
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-white);
+  --font-sans: var(--font-inter), sans-serif;
+  --font-display: var(--font-outfit), sans-serif;
 }
 
 :root {
-  --background: #F8FAFC; /* Soft White */
-  --foreground: #020617; /* Slate 950 */
-}
-
-.dark {
-  --background: #0B3C5D; /* Deep Blue base */
-  --foreground: #F8FAFC;
+  --background: #0A0A0F;
+  --foreground: #F1F5F9;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), sans-serif;
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-white);
+  font-family: var(--font-body);
   overflow-x: hidden;
 }
 
-.glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.05);
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.02em;
 }
 
-.dark .glass {
-  background: rgba(11, 60, 93, 0.4); /* Deep blue translucent */
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.3);
-}
-
+/* Reusable Glass Cards */
 .glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.4));
-  backdrop-filter: blur(32px) saturate(200%);
-  -webkit-backdrop-filter: blur(32px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 12px 48px -12px rgba(11, 60, 93, 0.1); /* Deep blue tinted shadow */
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--card-radius);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
-.dark .glass-card {
-  background: linear-gradient(135deg, rgba(16, 85, 131, 0.6), rgba(11, 60, 93, 0.8));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 12px 48px -12px rgba(0, 0, 0, 0.5);
+.glass-card-hover {
+  transition: all 0.3s ease;
+}
+
+.glass-card-hover:hover {
+  border-color: var(--color-accent-green);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -12px rgba(0, 245, 160, 0.15);
+}
+
+/* Primary Glowing Button */
+.btn-primary {
+  background: var(--color-accent-green);
+  color: var(--color-bg-primary);
+  font-weight: 700;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px -4px rgba(0, 245, 160, 0.4);
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 24px -4px rgba(0, 245, 160, 0.6);
+}
+
+/* Specialized Inputs */
+.input-dark {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s;
+}
+
+.input-dark:focus {
+  border-color: var(--color-accent-green);
+  outline: none;
+}
+
+/* Status Badges */
+.badge-waiting { background: var(--status-waiting); color: white; }
+.badge-serving { background: var(--status-serving); color: white; }
+.badge-served { background: var(--status-served); color: #0A0A0F; }
+.badge-noshow { background: var(--status-no-show); color: white; }
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .text-gradient {
-  background: linear-gradient(to right, #FF7A00, #FACC15); /* Saffron to Gold */
+  background: linear-gradient(to right, var(--color-accent-green), #00D4FF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-/* ========================================================================= */
-/* PHASE 7: CINEMATIC UI & MOTION OVERHAUL UTILITIES                        */
-/* ========================================================================= */
-
-/* Ultra-deep frosted glass for hero sections and modals */
-.glass-ultra {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(48px) saturate(200%);
-  -webkit-backdrop-filter: blur(48px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 1);
-}
-
-.dark .glass-ultra {
-  background: rgba(11, 60, 93, 0.45);
-  backdrop-filter: blur(64px) saturate(250%);
-  -webkit-backdrop-filter: blur(64px) saturate(250%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-/* Floating Ambient Radial Lights (Parallax backgrounds) */
-.ambient-light-orange {
-  position: absolute;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(255, 133, 27, 0.15) 0%, rgba(255, 133, 27, 0) 70%);
-  filter: blur(60px);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.ambient-light-blue {
-  position: absolute;
-  width: 800px;
-  height: 800px;
-  background: radial-gradient(circle, rgba(54, 91, 128, 0.2) 0%, rgba(54, 91, 128, 0) 70%);
-  filter: blur(80px);
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
 }
 
 @keyframes float-slow {
@@ -135,4 +107,15 @@ body {
 
 .animate-float-slow {
   animation: float-slow 12s ease-in-out infinite;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  display: flex;
+  width: fit-content;
+  animation: ticker 40s linear infinite;
 }

@@ -1,0 +1,33 @@
+:root {
+  /* Core Colors */
+  --color-bg-primary: #0A0A0F;
+  --color-bg-secondary: #0F0F16;
+  --color-accent-green: #00F5A0;
+  --color-text-white: #F1F5F9;
+  --color-text-muted: #8888A8;
+
+  /* Cards */
+  --card-bg: #111118;
+  --card-border: #1E1E2E;
+  --card-radius: 12px;
+
+  /* Inputs */
+  --input-bg: #16161F;
+  --input-border: #1E1E2E;
+  --input-text: #F1F5F9;
+
+  /* Status Badges */
+  --status-waiting: #F59E0B;
+  --status-serving: #3B82F6;
+  --status-served: #00F5A0;
+  --status-no-show: #EF4444;
+
+  /* Fonts */
+  --font-heading: 'Outfit', var(--font-outfit), sans-serif;
+  --font-body: 'Inter', var(--font-inter), sans-serif;
+
+  /* Glassmorphism Defaults */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(12px);
+}

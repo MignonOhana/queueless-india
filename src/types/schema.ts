@@ -19,11 +19,16 @@ export interface Business {
   orgId: string;
   name: string;
   category: 'hospitals' | 'banks' | 'salons' | 'government' | 'events';
+  description?: string;
   location: {
     address: string;
     city: string;
-    coordinates: [number, number]; // [lat, lng] for Supabase PostGIS or simple float columns
+    coordinates?: [number, number];
   };
+  phone?: string;
+  coverImageUrl?: string;
+  isVerified: boolean;
+  plan: 'free' | 'growth' | 'enterprise';
   metrics: {
     rating: number;
     totalReviews: number;
@@ -33,6 +38,7 @@ export interface Business {
     fastPassEnabled: boolean;
     fastPassPrice: number; // in INR
     advanceBookingEnabled: boolean;
+    whatsappEnabled: boolean;
   };
   services: {
     id: string; // e.g. 'opd'
@@ -40,6 +46,50 @@ export interface Business {
     name: string;
     averageServiceTimeMins: number; // used by AI predictor
   }[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Review {
+  id: string;
+  tokenId: string;
+  businessId: string;
+  userId?: string;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+}
+
+export interface Subscription {
+  id: string;
+  businessId: string;
+  plan: string;
+  razorpaySubscriptionId?: string;
+  status: string;
+  currentPeriodEnd: Date;
+  createdAt: Date;
+}
+
+export interface StaffMember {
+  id: string;
+  businessId: string;
+  userId: string;
+  role: 'owner' | 'operator' | 'viewer';
+  name?: string;
+  phone?: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface FastPassTransaction {
+  id: string;
+  tokenId: string;
+  businessId: string;
+  amount: number;
+  platformFee: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  status: string;
   createdAt: Date;
 }
 

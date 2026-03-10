@@ -1,23 +1,34 @@
 import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { TokenItem } from "./db-schema";
 
 export const useAdminQueue = (orgId: string, counterId?: string) => {
+  const supabase = createClient();
   const [queue, setQueue] = useState<TokenItem[]>([]);
-  const [currentlyServing, setCurrentlyServing] = useState<TokenItem | null>(null);
-  const [stats, setStats] = useState({ totalToday: 0, currentlyWaiting: 0, served: 0 });
+  const [currentlyServing, setCurrentlyServing] = useState<TokenItem | null>(
+    null,
+  );
+  const [stats, setStats] = useState({
+    totalToday: 0,
+    currentlyWaiting: 0,
+    served: 0,
+  });
 
   useEffect(() => {
     if (!orgId) return;
 
     const fetchAdminData = async () => {
+      if (orgId.startsWith("demo-")) {
+        mockData();
+        return;
+      }
       try {
         // 1. Fetch active queue stats
         let queuesQuery = supabase
           .from("queues")
           .select("*")
           .eq("org_id", orgId)
-          .eq("session_date", new Date().toISOString().split('T')[0]);
+          .eq("session_date", new Date().toISOString().split("T")[0]);
 
         if (counterId) {
           queuesQuery = queuesQuery.eq("counter_id", counterId);
@@ -25,7 +36,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
 
         const { data: queueRows, error: qErr } = await queuesQuery;
 
-        if (qErr && qErr.code !== 'PGRST116') throw qErr;
+        if (qErr && qErr.code !== "PGRST116") throw qErr;
 
         // 2. Fetch the active tokens list (WAITING & SERVING)
         let query = supabase
@@ -41,7 +52,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
 
         const { data: activeTokens, error: tokensErr } = await query;
         if (tokensErr) throw tokensErr;
-        
+
         // 3. Process the state
         const fullQueue: TokenItem[] = (activeTokens as TokenItem[]) || [];
         let serving: TokenItem | null = null;
@@ -57,18 +68,19 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
 
         // Derive stats directly from the queues row to save counting
         if (queueRows && queueRows.length > 0) {
-           let totalIssued = 0;
-           queueRows.forEach(row => totalIssued += (row.last_issued_number || 0));
-           
-           setStats({
-              totalToday: totalIssued,
-              currentlyWaiting: waitingCount, // Derived from active tokens
-              served: totalIssued - waitingCount - (serving ? 1 : 0)
-           });
-        } else {
-           setStats({ totalToday: 0, currentlyWaiting: 0, served: 0 });
-        }
+          let totalIssued = 0;
+          queueRows.forEach((row) =>
+            totalIssued += row.last_issued_number || 0
+          );
 
+          setStats({
+            totalToday: totalIssued,
+            currentlyWaiting: waitingCount, // Derived from active tokens
+            served: totalIssued - waitingCount - (serving ? 1 : 0),
+          });
+        } else {
+          setStats({ totalToday: 0, currentlyWaiting: 0, served: 0 });
+        }
       } catch (err) {
         console.warn("Supabase fetch failed, falling back to mock", err);
         mockData();
@@ -83,8 +95,13 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
       .channel(`admin-tokens-${orgId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tokens", filter: `orgId=eq.${orgId}` },
-        () => fetchAdminData()
+        {
+          event: "*",
+          schema: "public",
+          table: "tokens",
+          filter: `orgId=eq.${orgId}`,
+        },
+        () => fetchAdminData(),
       )
       .subscribe();
 
@@ -93,15 +110,42 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
     };
 
     function mockData() {
-        setCurrentlyServing({ 
-          id: "1", orgId, counterId: counterId || "opd", userId: "", customerName: "Rahul S.", 
-          tokenNumber: "OPD-011", status: "SERVING", createdAt: null, estimatedWaitMins: 0 
-        });
-        setQueue([
-            { id: "2", orgId, counterId: "opd", userId: "", customerName: "Anjali M.", tokenNumber: "OPD-012", status: "WAITING", createdAt: null, estimatedWaitMins: 5 },
-            { id: "3", orgId, counterId: "opd", userId: "", customerName: "Vikram K.", tokenNumber: "OPD-013", status: "WAITING", createdAt: null, estimatedWaitMins: 10 }
-        ]);
-        setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });
+      setCurrentlyServing({
+        id: "1",
+        orgId,
+        counterId: counterId || "opd",
+        userId: "",
+        customerName: "Rahul S.",
+        tokenNumber: "OPD-011",
+        status: "SERVING",
+        createdAt: null,
+        estimatedWaitMins: 0,
+      });
+      setQueue([
+        {
+          id: "2",
+          orgId,
+          counterId: "opd",
+          userId: "",
+          customerName: "Anjali M.",
+          tokenNumber: "OPD-012",
+          status: "WAITING",
+          createdAt: null,
+          estimatedWaitMins: 5,
+        },
+        {
+          id: "3",
+          orgId,
+          counterId: "opd",
+          userId: "",
+          customerName: "Vikram K.",
+          tokenNumber: "OPD-013",
+          status: "WAITING",
+          createdAt: null,
+          estimatedWaitMins: 10,
+        },
+      ]);
+      setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });
     }
   }, [orgId, counterId]);
 

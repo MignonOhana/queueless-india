@@ -161,6 +161,7 @@ export default function CTASection() {
                   { label: "Home", href: "/" },
                   { label: "Find a Queue", href: "/home" },
                   { label: "Contact", href: "/contact" },
+                  { label: "Business Login", href: "/login" },
                   { label: "Privacy Policy", href: "/policies" },
                   { label: "Terms of Service", href: "/policies" },
                 ].map(({ label, href }) => (

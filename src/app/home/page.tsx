@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Search, ChevronDown, ChevronLeft, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap } from "lucide-react";
+import { MapPin, Search, ChevronDown, ChevronLeft, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap, Ticket, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { MOCK_BUSINESSES, CURRENT_LOCATION, Business } from "@/lib/mockHomeData";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
 import { getDistance, estimateTravelTime } from "@/lib/geolocation";
 
 // Dynamically import Leaflet map to avoid SSR errors
@@ -29,6 +30,7 @@ const CATEGORIES = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTokenMap, setActiveTokenMap] = useState<any>(null); // To store active queue if joined
@@ -113,7 +115,7 @@ export default function HomePage() {
     if (layout === "horizontal") {
       return (
         <div 
-          onClick={() => router.push(`/customer/business/${biz.id}`)}
+          onClick={() => router.push(`/b/${biz.id}`)}
           className="bg-white rounded-2xl p-4 min-w-[260px] max-w-[260px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex gap-4 active:scale-95 transition-transform cursor-pointer hover:shadow-lg"
         >
           <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 relative">
@@ -134,7 +136,7 @@ export default function HomePage() {
 
     return (
       <div 
-        onClick={() => router.push(`/customer/business/${biz.id}`)}
+        onClick={() => router.push(`/b/${biz.id}`)}
         className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 active:scale-95 transition-transform cursor-pointer hover:shadow-xl group"
       >
         <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4 bg-slate-100">
@@ -203,25 +205,60 @@ export default function HomePage() {
                </div>
             </div>
             {/* User Profile Hook */}
-            <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shadow-inner">
+            <Link 
+               href={user ? "/customer/dashboard" : "/customer"}
+               className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shadow-inner hover:ring-2 hover:ring-[#0B6EFE] transition-all"
+            >
                {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src="https://ui-avatars.com/api/?name=User&background=0B6EFE&color=fff" alt="User" />
-            </div>
+               <img src={`https://ui-avatars.com/api/?name=${user?.id || 'User'}&background=0B6EFE&color=fff`} alt="User" />
+            </Link>
          </div>
 
+         {user && (
+            <motion.div 
+               initial={{ opacity: 0, y: -10 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="max-w-2xl mx-auto mt-4"
+            >
+               <Link 
+                  href="/customer/dashboard"
+                  className="w-full flex items-center justify-between p-3 bg-[#0B6EFE]/10 border border-[#0B6EFE]/20 rounded-xl group hover:bg-[#0B6EFE]/20 transition-all"
+               >
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-lg bg-[#0B6EFE] flex items-center justify-center text-white">
+                        <Ticket size={16} />
+                     </div>
+                     <span className="text-xs font-black text-[#0B6EFE] uppercase tracking-widest">Active Tokens Found</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#0B6EFE] font-black text-[10px] uppercase">
+                     Dashboard <ChevronRight size={14} />
+                  </div>
+               </Link>
+            </motion.div>
+         )}
+
          {/* SECTION 2 - GLOBAL SEARCH BAR */}
-         <div className="max-w-2xl mx-auto mt-4">
-            <div className="relative group">
-               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#0B6EFE] transition-colors" />
+         <div className="max-w-2xl mx-auto mt-4 px-1">
+            <div className="flex gap-3">
+               <div className="relative group flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#0B6EFE] transition-colors" />
+                  </div>
+                  <input 
+                     type="text" 
+                     placeholder="Search hospitals, banks, salons, events..." 
+                     value={searchQuery}
+                     onChange={(e) => setSearchQuery(e.target.value)}
+                     className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.2rem] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B6EFE]/50 focus:border-[#0B6EFE] transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.03)]"
+                  />
                </div>
-               <input 
-                  type="text" 
-                  placeholder="Search hospitals, banks, salons, events..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.2rem] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B6EFE]/50 focus:border-[#0B6EFE] transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.03)]"
-               />
+               <button 
+                  onClick={() => router.push('/customer/scanner')}
+                  className="w-14 h-14 bg-white border border-slate-200 rounded-[1.2rem] flex items-center justify-center text-slate-900 hover:text-[#0B6EFE] hover:border-[#0B6EFE] transition-all shadow-sm shrink-0"
+                  title="Scan Store QR"
+               >
+                  <QrCode size={24} />
+               </button>
             </div>
          </div>
       </header>

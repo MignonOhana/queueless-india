@@ -2,15 +2,18 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { ChevronLeft, Maximize2, Minimize2, Bell, BellOff, MapPin, Clock, Phone, X, Star, Share2, AlertCircle } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { ChevronLeft, Maximize2, Minimize2, Bell, BellOff, MapPin, Clock, Phone, X, Star, Share2, AlertCircle, Navigation, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
-import PhoneAuthModal from "@/components/auth/PhoneAuthModal";
+import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 import { useGuestSession } from "@/hooks/useGuestSession";
+import { requestNotificationPermission, sendTokenAlert } from "@/lib/notifications";
+import QRCode from 'react-qr-code';
 
 export default function TokenTrackingPage() {
+  const supabase = createClient();
   const params = useParams();
   const router = useRouter();
   const tokenId = params?.tokenId as string;
@@ -20,6 +23,8 @@ export default function TokenTrackingPage() {
   const [business, setBusiness] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState<"not-found" | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   
   // Realtime States
   const [peopleAhead, setPeopleAhead] = useState<number>(0);
@@ -49,6 +54,33 @@ export default function TokenTrackingPage() {
   const { isAuthenticated } = useAuth();
   // Determine if user is a guest by checking if token has no userId
   const isGuestMode = !isAuthenticated && !!token && !token.userId;
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setIsOffline(!navigator.onLine);
+    
+    // Load from cache if offline
+    if (!navigator.onLine) {
+      const cached = localStorage.getItem(`token_cache_${tokenId}`);
+      if (cached) {
+        const { token: ct, business: cb, timestamp } = JSON.parse(cached);
+        setToken(ct);
+        setBusiness(cb);
+        setStatus(ct.status);
+        setPeopleAhead(ct.position || 0);
+        setLastUpdated(timestamp);
+        setLoading(false);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [tokenId]);
 
   // --- Clock Tick for ETA updates ---
   useEffect(() => {
@@ -80,12 +112,6 @@ export default function TokenTrackingPage() {
           return;
         }
 
-        if (isMounted) {
-           setToken(tData);
-           setStatus(tData.status);
-           setEtaMins(tData.estimatedWaitMins || 0);
-        }
-
         // 2. Fetch Business
         const { data: bData, error: bErr } = await supabase
           .from("businesses")
@@ -94,6 +120,21 @@ export default function TokenTrackingPage() {
           .maybeSingle();
 
         if (bData && isMounted) setBusiness(bData);
+
+        if (isMounted) {
+           setToken(tData);
+           setStatus(tData.status);
+           setEtaMins(tData.estimatedWaitMins || 0);
+           
+           // Persist for offline
+           localStorage.setItem(`token_cache_${tokenId}`, JSON.stringify({
+             token: tData,
+             business: bData,
+             timestamp: Date.now()
+           }));
+           setLastUpdated(Date.now());
+           localStorage.setItem('queueless_joined_once', 'true');
+        }
 
         // 3. Calculate initial position (people ahead)
         if (tData.status === "WAITING") {
@@ -119,10 +160,21 @@ export default function TokenTrackingPage() {
                 setToken(payload.new);
                 setEtaMins(payload.new.estimatedWaitMins || 0);
                 
+                // Persist for offline
+                localStorage.setItem(`token_cache_${tokenId}`, JSON.stringify({
+                  token: payload.new,
+                  business: bData,
+                  timestamp: Date.now()
+                }));
+                setLastUpdated(Date.now());
+                
                 if (newStatus === "SERVING" && !hasFiredConfetti.current) {
                    fireTurnConfetti();
                    hasFiredConfetti.current = true;
-                   if (notifyEnabled) triggerTurnNotification();
+                   if (notifyEnabled) {
+                     triggerTurnNotification();
+                     sendTokenAlert(0, bData?.name);
+                   }
                 } else if (newStatus === "SERVED") {
                    setShowReview(true);
                 }
@@ -147,6 +199,7 @@ export default function TokenTrackingPage() {
                    setPeopleAhead(countAhead);
                    if (countAhead === 2 && notifyEnabled) {
                       triggerApproachingNotification();
+                      sendTokenAlert(2, bData?.name);
                    }
                 }
              }
@@ -182,28 +235,19 @@ export default function TokenTrackingPage() {
      frame();
   };
 
-  const toggleNotifications = async () => {
-     if (!notifyEnabled) {
-        if (!("Notification" in window)) {
-           alert("This browser does not support desktop notification");
-           return;
-        }
-        if (Notification.permission === "granted") {
-           setNotifyEnabled(true);
-           new Notification("QueueLess India", { body: "Notifications enabled! We'll alert you when it's your turn." });
-        } else if (Notification.permission !== "denied") {
-           const permission = await Notification.requestPermission();
-           if (permission === "granted") {
-              setNotifyEnabled(true);
-              new Notification("QueueLess India", { body: "Notifications enabled! We'll alert you when it's your turn." });
-           }
-        } else {
-           alert("Please enable notifications in your browser settings.");
-        }
-     } else {
-        setNotifyEnabled(false);
-     }
-  };
+   const toggleNotifications = async () => {
+      if (!notifyEnabled) {
+         const granted = await requestNotificationPermission();
+         if (granted) {
+            setNotifyEnabled(true);
+            new Notification("QueueLess India", { body: "Notifications enabled! We'll alert you when it's your turn." });
+         } else {
+            alert("Please enable notifications in your browser settings.");
+         }
+      } else {
+         setNotifyEnabled(false);
+      }
+   };
 
   const triggerApproachingNotification = () => {
      if (Notification.permission === "granted") {
@@ -232,8 +276,8 @@ export default function TokenTrackingPage() {
   const submitReview = async () => {
      setIsSubmittingReview(true);
      try {
-        await supabase.from("reviews").insert({ // Mock table insert
-           org_id: business?.id,
+        await supabase.from("reviews").insert({
+           business_id: business?.id,
            user_id: user?.id,
            rating,
            comment: reviewComment,
@@ -257,10 +301,10 @@ export default function TokenTrackingPage() {
   // --- Render ---
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
          <div className="relative w-20 h-20 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border-t-2 border-indigo-500 animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-r-2 border-emerald-500 animate-spin duration-700"></div>
+            <div className="absolute inset-0 rounded-full border-t-2 border-[#00F5A0] animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-r-2 border-[#00F5A0] animate-spin duration-700 opacity-50"></div>
          </div>
       </div>
     );
@@ -268,10 +312,10 @@ export default function TokenTrackingPage() {
 
   if (errorStatus === "not-found") {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 text-center">
+      <div className="min-h-screen bg-[#0A0A0F] flex flex-col items-center justify-center p-6 text-center">
          <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Token Not Found</h1>
          <p className="text-slate-400 font-medium mb-8 max-w-sm leading-relaxed">This token is invalid or has expired.</p>
-         <button onClick={() => router.push("/")} className="px-8 py-4 bg-white text-black font-bold rounded-full hover:scale-105 active:scale-95 transition-transform">
+         <button onClick={() => router.push("/")} className="px-8 py-4 bg-[#00F5A0] text-[#0A0A0F] font-bold rounded-full hover:scale-105 active:scale-95 transition-transform">
             Return Home
          </button>
       </div>
@@ -289,19 +333,19 @@ export default function TokenTrackingPage() {
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-1000 ${
-       isServing ? 'bg-emerald-950/40 text-white' : 
-       isServed ? 'bg-indigo-950/40 text-white' : 
-       isCancelled ? 'bg-slate-900 text-slate-300' : 
-       'bg-[#050505] text-white'
+       isServing ? 'bg-[#00F5A0]/5' : 
+       isServed ? 'bg-indigo-950/20' : 
+       isCancelled ? 'bg-slate-900/50' : 
+       'bg-[#0A0A0F] text-white'
     }`}>
       
       {/* Background Layer */}
-      {isServing && <div className="fixed inset-0 bg-emerald-600/20 blur-[150px] pointer-events-none animate-pulse" />}
-      {isServed && <div className="fixed inset-0 bg-indigo-600/20 blur-[150px] pointer-events-none" />}
+      {isServing && <div className="fixed inset-0 bg-[#00F5A0]/10 blur-[150px] pointer-events-none animate-pulse" />}
+      {isServed && <div className="fixed inset-0 bg-indigo-600/10 blur-[150px] pointer-events-none" />}
       {!isServing && !isServed && !isCancelled && (
         <>
-           <div className="fixed top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-purple-900/30 via-indigo-900/10 to-transparent pointer-events-none" />
-           <div className="fixed -bottom-1/4 -right-1/4 w-[50vh] h-[50vh] rounded-full bg-amber-600/10 blur-[120px] pointer-events-none" />
+           <div className="fixed top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-[#00F5A0]/10 via-transparent to-transparent pointer-events-none" />
+           <div className="fixed -bottom-1/4 -right-1/4 w-[50vh] h-[50vh] rounded-full bg-[#00F5A0]/5 blur-[120px] pointer-events-none" />
         </>
       )}
 
@@ -316,17 +360,41 @@ export default function TokenTrackingPage() {
            {!isFullScreen && (
              <motion.header 
                initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-               className="flex justify-between items-center mb-8"
+               className="flex flex-col gap-4 mb-8"
              >
-               <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
-                  <ChevronLeft size={20} className="text-white" />
-               </button>
-               <div className="flex gap-2 text-sm font-bold opacity-80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 bg-white/5">
-                  QueueLess Live
+               {/* Offline Banner */}
+               <AnimatePresence>
+                 {isOffline && (
+                   <motion.div 
+                     initial={{ height: 0, opacity: 0 }}
+                     animate={{ height: "auto", opacity: 1 }}
+                     exit={{ height: 0, opacity: 0 }}
+                     className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl p-4 flex flex-col items-center gap-1 justify-center text-xs font-bold shadow-sm backdrop-blur-md"
+                   >
+                     <div className="flex items-center gap-2">
+                       <AlertCircle size={14} className="animate-pulse" />
+                       <span>You're offline — viewing cached data</span>
+                     </div>
+                     {lastUpdated && (
+                       <span className="opacity-60 font-medium">
+                         Last updated: {new Date(lastUpdated).toLocaleTimeString()}
+                       </span>
+                     )}
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+
+               <div className="flex justify-between items-center w-full">
+                 <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
+                    <ChevronLeft size={20} className="text-white" />
+                 </button>
+                 <div className="flex gap-2 text-sm font-bold opacity-80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 bg-white/5">
+                    QueueLess Live
+                 </div>
+                 <button onClick={() => setIsFullScreen(true)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors tooltip" aria-label="Show to staff">
+                    <Maximize2 size={16} className="text-white" />
+                 </button>
                </div>
-               <button onClick={() => setIsFullScreen(true)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors tooltip" aria-label="Show to staff">
-                  <Maximize2 size={16} className="text-white" />
-               </button>
              </motion.header>
            )}
          </AnimatePresence>
@@ -410,14 +478,14 @@ export default function TokenTrackingPage() {
                         <p className="text-xl font-black text-white">{peopleAhead} <span className="text-xs font-medium text-slate-400">ahead</span></p>
                      </div>
                      
-                     <div className="relative h-2 bg-white/10 rounded-full overflow-hidden">
+                      <div className="relative h-2 bg-white/5 rounded-full overflow-hidden">
                         <motion.div 
-                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                          className="absolute top-0 left-0 h-full bg-[#00F5A0] rounded-full shadow-[0_0_10px_rgba(0,245,160,0.5)]"
                           initial={{ width: 0 }}
                           animate={{ width: `${progressPercent}%` }}
                           transition={{ duration: 1, ease: "easeOut" }}
                         />
-                     </div>
+                      </div>
                      <div className="flex justify-between mt-2 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                         <span>Start</span>
                         <span>Counter</span>
@@ -483,7 +551,7 @@ export default function TokenTrackingPage() {
                         </div>
                         <div className="text-left">
                            <p className={`font-bold text-sm ${notifyEnabled ? 'text-indigo-200' : 'text-slate-200'}`}>Smart Alerts</p>
-                           <p className={`text-xs ${notifyEnabled ? 'text-indigo-400/80' : 'text-slate-500'}`}>{notifyEnabled ? 'We will notify you when next' : 'Tap to receive push notifications'}</p>
+                           <p className={`text-xs ${notifyEnabled ? 'text-indigo-400/80' : 'text-slate-500'}`}>{notifyEnabled ? 'We will email you when next' : 'Tap to receive push notifications'}</p>
                         </div>
                      </div>
                      <div className={`w-12 h-6 rounded-full p-1 transition-colors ${notifyEnabled ? 'bg-indigo-500' : 'bg-white/10'}`}>
@@ -491,16 +559,45 @@ export default function TokenTrackingPage() {
                      </div>
                   </button>
 
-                  <div className="grid grid-cols-2 gap-4">
+                   {/* QR Code */}
+                   <div className="flex justify-center">
+                     <div className="bg-white p-4 rounded-2xl border border-white/10 shadow-lg">
+                       <QRCode value={typeof window !== 'undefined' ? window.location.href : ''} size={100} bgColor="#ffffff" fgColor="#000000" />
+                       <p className="text-[10px] text-center text-slate-500 mt-2 font-bold uppercase tracking-widest">Show at counter</p>
+                     </div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-3">
+                      {/* WhatsApp Share */}
+                      <button
+                        onClick={() => {
+                          const text = `My queue token at ${business?.name}: ${token?.tokenNumber}. Track here: ${window.location.href}`;
+                          window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                        }}
+                        className="bg-emerald-500/10 border border-emerald-500/20 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 hover:bg-emerald-500/20 transition-colors"
+                      >
+                         <Share2 size={20} className="text-emerald-400" />
+                         <span className="text-xs font-bold text-emerald-400">WhatsApp</span>
+                      </button>
+                      {/* Directions */}
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((business?.name || '') + ' ' + (business?.location || ''))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-blue-500/10 border border-blue-500/20 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 hover:bg-blue-500/20 transition-colors"
+                      >
+                         <Navigation size={20} className="text-blue-400" />
+                         <span className="text-xs font-bold text-blue-400">Directions</span>
+                      </a>
                      {/* Call Business */}
-                     <a href={`tel:${business?.phone || '0000000000'}`} className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors pointer">
+                     <a href={`tel:${business?.phone || '0000000000'}`} className="bg-white/5 border border-white/10 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors">
                         <Phone size={20} className="text-slate-300" />
-                        <span className="text-xs font-bold text-slate-300">Call Business</span>
+                        <span className="text-xs font-bold text-slate-300">Call</span>
                      </a>
                      {/* Leave Queue */}
                      <button onClick={() => setShowCancelConfirm(true)} className="bg-rose-500/10 border border-rose-500/20 rounded-[1.5rem] p-4 flex flex-col items-center justify-center gap-2 hover:bg-rose-500/20 transition-colors">
                         <X size={20} className="text-rose-400" />
-                        <span className="text-xs font-bold text-rose-400">Leave Queue</span>
+                        <span className="text-xs font-bold text-rose-400">Leave</span>
                      </button>
                   </div>
                </motion.div>
@@ -591,6 +688,14 @@ export default function TokenTrackingPage() {
             </div>
          )}
       </AnimatePresence>
+
+      {/* Guest Upgrade Modal */}
+      {isGuestUpgradeOpen && (
+        <EmailOTPModal 
+          onClose={() => setIsGuestUpgradeOpen(false)}
+          onSuccess={() => { setIsGuestUpgradeOpen(false); /* The page will re-render with auth state */ }}
+        />
+      )}
 
     </div>
   );

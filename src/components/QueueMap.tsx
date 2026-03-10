@@ -295,10 +295,10 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
             </div>
 
             <div className="flex gap-3">
-               <Link href={`/customer/business/${selectedBusiness.id}`} className="flex-1 text-center py-3.5 rounded-2xl font-bold text-sm bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+               <Link href={`/b/${selectedBusiness.id}`} className="flex-1 text-center py-3.5 rounded-2xl font-bold text-sm bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
                   View Profile
                </Link>
-               <Link href={`/customer/business/${selectedBusiness.id}`} className="flex-[1.5] text-center py-3.5 rounded-2xl font-bold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 transition flex items-center justify-center gap-2">
+               <Link href={`/b/${selectedBusiness.id}`} className="flex-[1.5] text-center py-3.5 rounded-2xl font-bold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 transition flex items-center justify-center gap-2">
                   Join Queue <ArrowRight size={16} />
                </Link>
             </div>

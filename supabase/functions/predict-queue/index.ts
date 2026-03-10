@@ -1,7 +1,7 @@
-// @ts-nocheck
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { GoogleGenerativeAI } from 'https://esm.sh/@google/generative-ai@0.2.1'
+// @ts-nocheck: ignoring vendor types for edge runtime
+import { serve } from "std/http/server"
+import { createClient } from 'supabase'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -82,13 +82,15 @@ serve(async (req) => {
       - Current Time: ${new Date().toLocaleTimeString()}
       - Day of Week: ${new Date().toLocaleDateString('en-US', { weekday: 'long' })}
       
-      Predict the crowd flow and return a JSON object with EXACTLY these keys:
+      Predict crowd flow and return a JSON object with EXACTLY these keys:
       - "bestTimeToVisit" (string, e.g., "10:00 AM")
-      - "currentWaitTime" (number, estimated minutes based on 4 mins per person)
+      - "currentWaitTime" (number, estimated minutes)
       - "predictedWaitNextHour" (number, estimated minutes)
       - "predictedPeakHours" (string, e.g., "5:00 PM - 7:00 PM")
       - "confidence" (string, e.g., "85%")
+      - "strategies" (array of 3 strings, e.g., ["Tuesday 10-11AM is consistently your busiest hour", "Consider opening a second counter on weekday mornings", ...])
       
+      Insights should be data-driven, highlighting busy hours, wait time issues, and staffing suggestions.
       Return ONLY valid JSON without Markdown formatting.
     `;
 
@@ -107,8 +109,9 @@ serve(async (req) => {
       status: 200,
     })
 
-  } catch (error: any) {
-     return new Response(JSON.stringify({ error: error.message }), {
+  } catch (error) {
+     const err = error as Error;
+     return new Response(JSON.stringify({ error: err.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })

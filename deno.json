@@ -1,0 +1,8 @@
+{
+  "workspace": [
+    "./supabase/functions/generate-token",
+    "./supabase/functions/predict-queue",
+    "./supabase/functions/book-slot",
+    "./supabase/functions/send-whatsapp"
+  ]
+}

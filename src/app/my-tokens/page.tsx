@@ -29,17 +29,63 @@ export default function MyTokensPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!isAuthenticated) {
-      router.push("/");
-      return;
-    }
-    fetchTokens();
+    
+    const handleSync = () => {
+      if (isAuthenticated) {
+        fetchTokens();
+      } else {
+        fetchGuestTokens();
+      }
+    };
+
+    handleSync();
+    
+    window.addEventListener('online', handleSync);
+    return () => window.removeEventListener('online', handleSync);
   }, [user, isAuthenticated, loading]);
+
+  const fetchGuestTokens = () => {
+    setFetchingTokens(true);
+    try {
+      const guestSession = localStorage.getItem('queueless_guest_session');
+      if (guestSession) {
+        const session = JSON.parse(guestSession);
+        if (session.activeTokenId) {
+          const guestToken: TokenRecord = {
+            id: session.activeTokenId,
+            tokenNumber: session.activeTokenNumber,
+            orgId: session.orgId || 'unknown',
+            status: 'WAITING',
+            createdAt: new Date().toISOString(),
+            estimatedWaitMins: 5,
+            businessName: session.businessName || 'Your Queue'
+          };
+          setActiveTokens([guestToken]);
+        }
+      }
+    } catch (e) {
+      console.error("Guest fetch error", e);
+    } finally {
+      setFetchingTokens(false);
+    }
+  };
 
   const fetchTokens = async () => {
     if (!user) return;
     setFetchingTokens(true);
     try {
+      // Try cache first if offline
+      if (!navigator.onLine) {
+        const cached = localStorage.getItem(`tokens_cache_${user.id}`);
+        if (cached) {
+          const { active, past } = JSON.parse(cached);
+          setActiveTokens(active);
+          setPastTokens(past);
+          setFetchingTokens(false);
+          return;
+        }
+      }
+
       const { data: tokens, error } = await supabase
         .from("tokens")
         .select("*")
@@ -60,8 +106,14 @@ export default function MyTokensPage() {
         })
       );
 
-      setActiveTokens(enriched.filter(t => ["WAITING", "SERVING"].includes(t.status)));
-      setPastTokens(enriched.filter(t => ["SERVED", "CANCELLED"].includes(t.status)));
+      const active = enriched.filter(t => ["WAITING", "SERVING"].includes(t.status));
+      const past = enriched.filter(t => ["SERVED", "CANCELLED"].includes(t.status));
+      
+      setActiveTokens(active);
+      setPastTokens(past);
+
+      // Cache for offline
+      localStorage.setItem(`tokens_cache_${user.id}`, JSON.stringify({ active, past }));
     } catch (err) {
       console.error("Error fetching tokens:", err);
     } finally {
@@ -89,11 +141,11 @@ export default function MyTokensPage() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         onClick={() => isActive && router.push(`/track/${token.tokenNumber}`)}
-        className={`bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-4 transition-all ${isActive ? "hover:bg-white/10 cursor-pointer active:scale-[0.98]" : ""}`}
+        className={`bg-[#111118] border border-white/5 rounded-2xl p-5 flex items-center gap-4 transition-all ${isActive ? "hover:border-[#00F5A0]/30 hover:bg-[#111118]/80 cursor-pointer active:scale-[0.98]" : ""}`}
       >
         {/* Token Icon */}
-        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex flex-col items-center justify-center flex-shrink-0">
-          <span className="text-[9px] font-black text-indigo-400 uppercase tracking-wide leading-none">{token.tokenNumber.split("-")[0]}</span>
+        <div className="w-12 h-12 rounded-xl bg-[#00F5A0]/10 border border-[#00F5A0]/20 flex flex-col items-center justify-center flex-shrink-0">
+          <span className="text-[9px] font-black text-[#00F5A0] uppercase tracking-wide leading-none">{token.tokenNumber.split("-")[0]}</span>
           <span className="text-lg font-black text-white leading-tight">{token.tokenNumber.split("-")[1] || token.tokenNumber}</span>
         </div>
 
@@ -124,9 +176,9 @@ export default function MyTokensPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans">
+    <div className="min-h-screen bg-[#0A0A0F] text-white font-sans">
       {/* Background */}
-      <div className="fixed top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-indigo-900/30 via-purple-900/10 to-transparent pointer-events-none" />
+      <div className="fixed top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-[#00F5A0]/10 via-transparent to-transparent pointer-events-none" />
 
       <main className="relative z-10 max-w-lg mx-auto px-5 pt-12 pb-24">
         {/* Header */}
@@ -141,12 +193,12 @@ export default function MyTokensPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1.5 mb-8">
+        <div className="flex bg-[#111118] border border-white/5 rounded-2xl p-1.5 mb-8">
           {(["active", "past"] as TabType[]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === tab ? "bg-white text-black shadow-md" : "text-slate-400 hover:text-white"}`}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === tab ? "bg-[#00F5A0] text-[#0A0A0F] shadow-lg shadow-[#00F5A0]/20" : "text-slate-400 hover:text-white"}`}
             >
               {tab === "active" ? `Active${activeTokens.length > 0 ? ` (${activeTokens.length})` : ""}` : "Past"}
             </button>

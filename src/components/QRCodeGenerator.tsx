@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Printer, CheckCircle2, LayoutTemplate, MessageCircle } from "lucide-react";
+import { Copy, Printer, CheckCircle2, LayoutTemplate, MessageCircle, Globe } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 
 interface QRCodeGeneratorProps {
@@ -13,7 +13,9 @@ interface QRCodeGeneratorProps {
 }
 
 export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
-  const joinUrl = `https://queueless-india.vercel.app/join/${business.id}`;
+  
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://queueless-india.vercel.app';
+  const currentUrl = `${origin}/b/${business.id}`;
   
   const [copied, setCopied] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState<"A4" | "A5" | "Sticker">("A4");
@@ -27,7 +29,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(joinUrl);
+      await navigator.clipboard.writeText(currentUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch(err) {
@@ -36,22 +38,35 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
   };
 
   const handleWhatsApp = () => {
-    const text = encodeURIComponent(`Skip the queue at ${business.name}! Scan or click: ${joinUrl}`);
+    const text = encodeURIComponent(`Skip the queue at ${business.name}! Scan or click: ${currentUrl}`);
     window.open(`https://wa.me/?text=${text}`, "_blank");
   };
 
   return (
-    <div className="w-full bg-slate-950 rounded-[2.5rem] border border-slate-800 p-8 md:p-12 shadow-2xl overflow-hidden flex flex-col xl:flex-row gap-12 font-sans relative">
+    <div className="w-full bg-[#0A0A0F] rounded-[2.5rem] border border-white/5 p-8 md:p-12 shadow-2xl overflow-hidden flex flex-col xl:flex-row gap-12 font-sans relative">
        {/* Background Glow */}
-       <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-blue-500/20 rounded-full blur-[120px] pointer-events-none"></div>
+       <div className="absolute -top-[20%] -right-[10%] w-[60%] h-[60%] bg-[#00F5A0]/5 rounded-full blur-[120px] pointer-events-none"></div>
 
        {/* Left Controls */}
        <div className="xl:w-[400px] shrink-0 flex flex-col z-10">
           <h2 className="text-3xl font-black text-white mb-3">Print & Share</h2>
           <p className="text-slate-400 mb-8 leading-relaxed text-sm">Generate high-resolution QR codes to place at your front desk or entryway. Customers can simply scan to join the live waitlist.</p>
 
+          <div className="flex flex-col gap-4 mb-10">
+             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Target Link</span>
+             <div className="flex bg-[#111118] p-4 rounded-2xl border border-white/5 items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#00F5A0]/10 flex items-center justify-center text-[#00F5A0]">
+                   <Globe size={18} />
+                </div>
+                <div>
+                   <p className="text-xs font-black text-white uppercase tracking-widest">Business Profile</p>
+                   <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Single entry point for all customers</p>
+                </div>
+             </div>
+          </div>
+
           <div className="flex flex-col gap-4 mb-8">
-             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">1. Select Print Format</span>
+             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">2. Select Print Format</span>
              
              {/* Format Selector Grid */}
              <div className="grid gap-3">
@@ -63,33 +78,33 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
                  <button 
                    key={tmp.id}
                    onClick={() => setActiveTemplate(tmp.id as any)}
-                   className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${activeTemplate === tmp.id ? 'bg-blue-600/10 border-blue-500 text-blue-400' : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/50'}`}
+                   className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${activeTemplate === tmp.id ? 'bg-[#00F5A0]/10 border-[#00F5A0] text-[#00F5A0]' : 'bg-[#111118] border-white/5 text-slate-300 hover:border-white/20 hover:bg-[#111118]/80'}`}
                  >
-                   <div className={`p-3 rounded-xl shadow-inner ${activeTemplate === tmp.id ? 'bg-blue-900/30' : 'bg-slate-950'}`}>
-                     <LayoutTemplate size={20} className={activeTemplate === tmp.id ? "text-blue-400" : "text-slate-500"} />
+                   <div className={`p-3 rounded-xl shadow-inner ${activeTemplate === tmp.id ? 'bg-[#00F5A0]/20' : 'bg-[#0A0A0F]'}`}>
+                     <LayoutTemplate size={20} className={activeTemplate === tmp.id ? "text-[#00F5A0]" : "text-slate-500"} />
                    </div>
                    <div>
                      <h3 className="font-bold">{tmp.title}</h3>
                      <p className="text-xs opacity-70 mt-0.5">{tmp.desc}</p>
                    </div>
-                   {activeTemplate === tmp.id && <CheckCircle2 size={18} className="ml-auto text-blue-500" />}
+                   {activeTemplate === tmp.id && <CheckCircle2 size={18} className="ml-auto text-[#00F5A0]" />}
                  </button>
                ))}
              </div>
           </div>
 
           <div className="flex flex-col gap-4 mb-8">
-             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">2. Generate</span>
+             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">3. Generate</span>
              <button 
                onClick={handlePrint}
-               className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-white/10 active:scale-95"
+               className="w-full bg-[#00F5A0] text-[#0A0A0F] hover:brightness-110 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00F5A0]/10 active:scale-95"
              >
                <Printer size={18} /> Print {activeTemplate} Format
              </button>
           </div>
 
           <div className="flex flex-col gap-4 mt-auto">
-             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">3. Digital Sharing</span>
+             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">4. Digital Sharing</span>
              <div className="flex gap-3">
                 <button 
                   onClick={handleCopy}
@@ -109,7 +124,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
        </div>
 
        {/* Right Preview */}
-       <div className="flex-1 bg-slate-900/50 rounded-3xl border border-slate-800 p-4 md:p-8 flex flex-col items-center justify-center overflow-auto relative z-10 backdrop-blur-sm min-h-[600px]">
+       <div className="flex-1 bg-[#111118]/50 rounded-3xl border border-white/5 p-4 md:p-8 flex flex-col items-center justify-center overflow-auto relative z-10 backdrop-blur-sm min-h-[600px]">
           
           <div className="mb-4 text-slate-500 text-sm font-medium flex items-center gap-2">
             <Printer size={16} /> Live Print Preview
@@ -131,7 +146,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
                        
                        <div className="bg-white p-10 rounded-[3rem] shadow-[0_0_80px_rgba(0,0,0,0.08)] border-4 border-slate-100 mb-20">
                          <QRCodeSVG 
-                           value={joinUrl} 
+                           value={currentUrl} 
                            size={450} 
                            level="H" 
                            includeMargin={true}
@@ -145,7 +160,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
                      
                      <div className="absolute bottom-12 inset-x-16 border-t-4 border-slate-200 pt-8 flex justify-between items-center text-slate-400 font-bold text-2xl uppercase tracking-wider">
                        <span>Provided by QueueLess India</span>
-                       <span>queueless-india.vercel.app</span>
+                       <span>{typeof window !== 'undefined' ? window.location.hostname : 'queueless.app'}</span>
                      </div>
                   </div>
                 )}
@@ -168,7 +183,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
                      {/* Bottom Half (Front facing) */}
                      <div className="h-1/2 flex items-center justify-center p-10 gap-10">
                        <div className="bg-white p-4 rounded-3xl shadow-xl border-2 border-slate-100 shrink-0">
-                         <QRCodeSVG value={joinUrl} size={220} level="H" includeMargin={true} fgColor="#0f172a" />
+                         <QRCodeSVG value={currentUrl} size={220} level="H" includeMargin={true} fgColor="#0f172a" />
                        </div>
                        <div className="flex flex-col flex-1">
                          <h1 className="text-5xl font-black mb-4 leading-tight">{business.name}</h1>
@@ -190,7 +205,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
                      <h1 className="text-3xl font-black mb-6 text-center uppercase tracking-widest max-w-[80%] leading-tight">{business.name}</h1>
                      
                      <div className="relative">
-                       <QRCodeSVG value={joinUrl} size={240} level="H" includeMargin={false} fgColor="#0f172a" />
+                       <QRCodeSVG value={currentUrl} size={240} level="H" includeMargin={false} fgColor="#0f172a" />
                        {/* Center logo overlay */}
                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                          <div className="w-14 h-14 bg-white rounded-xl shadow-lg flex items-center justify-center">

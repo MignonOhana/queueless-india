@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import PhoneAuthModal from "@/components/auth/PhoneAuthModal";
+import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut, Ticket, MapPin, ChevronDown } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function UserMenu() {
         >
           Login
         </button>
-        <PhoneAuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        {isAuthOpen && <EmailOTPModal onClose={() => setIsAuthOpen(false)} onSuccess={() => setIsAuthOpen(false)} />}
       </>
     );
   }

@@ -20,10 +20,12 @@ export default function LiveDemoSection() {
   const [queue, setQueue] = useState(INITIAL_QUEUE);
   const [isJoining, setIsJoining] = useState(false);
   const [joinedToken, setJoinedToken] = useState<string | null>(null);
-  const [visitorName] = useState(() => {
+  const [visitorName, setVisitorName] = useState("Visitor");
+
+  useEffect(() => {
     const names = ["Rahul", "Pooja", "Aditya", "Sneha", "Kiran", "Divya", "Arjun"];
-    return names[Math.floor(Math.random() * names.length)];
-  });
+    setVisitorName(names[Math.floor(Math.random() * names.length)]);
+  }, []);
 
   const handleJoinDemo = async () => {
     setIsJoining(true);

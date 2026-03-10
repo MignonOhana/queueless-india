@@ -1,32 +1,20 @@
 {
   "name": "QueueLess India",
   "short_name": "QueueLess",
-  "description": "Never wait in a physical line ever again. The ultimate smart queue system for India.",
-  "start_url": "/home",
+  "description": "Skip the queue. Track your turn.",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0ea5e9",
+  "background_color": "#0A0A0F",
+  "theme_color": "#00F5A0",
   "orientation": "portrait",
   "icons": [
-    {
-      "src": "/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
-  "categories": ["utilities", "business", "lifestyle"],
-  "dir": "ltr",
-  "lang": "en-IN",
-  "prefer_related_applications": false
+  "shortcuts": [
+    { "name": "Find Queue Near Me", "url": "/discover", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My Active Token", "url": "/my-tokens", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": [],
+  "categories": ["utilities", "productivity"]
 }

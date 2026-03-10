@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
+import "@/styles/tokens.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import OfflineBanner from "@/components/OfflineBanner";
 import SmoothScroll from "@/components/SmoothScroll";
-import SceneCanvasWrapper from "@/components/Spatial/SceneCanvasWrapper";
 import MobileNav from "@/components/MobileNav";
+import { Toaster } from "sonner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import PageTransition from "@/components/ui/PageTransition";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,14 +18,29 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "QueueLess India",
   description: "Join queues digitally and arrive only when your turn is near.",
+  applicationName: "QueueLess India",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "QueueLess",
+  },
+  icons: {
+    apple: "/icon-192.png",
   },
   formatDetection: {
     telephone: false,
@@ -30,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0ea5e9",
+  themeColor: "#00F5A0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -45,18 +63,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased font-sans bg-background text-foreground transition-colors duration-300 relative`} suppressHydrationWarning>
+      <body className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased font-sans bg-[#0A0A0F] text-[#F0F0F8] transition-colors duration-300 relative`} suppressHydrationWarning>
         
-        {/* Phase 8: Global Ambient Spatial WebGL Canvas */}
-        <SceneCanvasWrapper className="opacity-40 mix-blend-screen" />
+        <AnimatedBackground />
         
-        <div className="relative z-10">
+        <div className="relative z-10 min-h-screen flex flex-col">
           <OfflineBanner />
           <SmoothScroll>
-            <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false}>
               <LanguageProvider>
                 <AuthProvider>
-                  {children}
+                  <Toaster position="top-center" expand={false} richColors theme="dark" />
+                  <PageTransition>
+                    {children}
+                  </PageTransition>
                   <PWAInstallPrompt />
                   <MobileNav />
                 </AuthProvider>

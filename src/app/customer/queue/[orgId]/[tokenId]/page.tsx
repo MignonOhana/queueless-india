@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { getDistance, estimateTravelTime } from "@/lib/geolocation";
+import { sendTokenAlert } from "@/lib/notifications";
 
 export default function TicketPage({
   params,
@@ -27,6 +28,7 @@ export default function TicketPage({
   const [showAlert, setShowAlert] = useState(false);
   const [isPriority, setIsPriority] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [isLate, setIsLate] = useState(false);
   const [travelTimeMins, setTravelTimeMins] = useState<number | null>(null);
   const [isTimeToLeave, setIsTimeToLeave] = useState(false);
@@ -44,22 +46,43 @@ export default function TicketPage({
     window.addEventListener('offline', handleOffline);
     
     setIsOffline(!window.navigator.onLine);
+
+    if (!window.navigator.onLine) {
+      const cached = localStorage.getItem(`token_cache_full_${myToken}`);
+      if (cached) {
+        const { timestamp } = JSON.parse(cached);
+        setLastUpdated(timestamp);
+      }
+    }
     
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [myToken]);
 
   useEffect(() => {
     if (orgId && myToken) {
       localStorage.setItem("active_org", orgId);
       localStorage.setItem("active_token", myToken);
+      localStorage.setItem("queueless_joined_once", "true");
+      
+      // Cache data for offline
+      if (queueData.ticketStatus) {
+        localStorage.setItem(`token_cache_full_${myToken}`, JSON.stringify({
+          orgId,
+          myToken,
+          queueData,
+          timestamp: Date.now()
+        }));
+        setLastUpdated(Date.now());
+      }
+
       if (localStorage.getItem("priority_token") === myToken) {
         setIsPriority(true);
       }
     }
-  }, [orgId, myToken]);
+  }, [orgId, myToken, queueData]);
 
   // Track user location and calculate travel time
   useEffect(() => {
@@ -91,13 +114,17 @@ export default function TicketPage({
   // Simulate an alert when people ahead drops to 1 or 2
   useEffect(() => {
     if (queueData.peopleAhead <= 2 && queueData.peopleAhead > 0) {
-      setShowAlert(true);
+      if (!showAlert) {
+        setShowAlert(true);
+        sendTokenAlert(queueData.peopleAhead, orgId.replace("-", " "));
+      }
+    } else if (queueData.peopleAhead === 0 && queueData.ticketStatus === "SERVING") {
+      sendTokenAlert(0, orgId.replace("-", " "));
     } else {
       setShowAlert(false);
     }
 
     // Mark as late if they are next (0 ahead) but haven't been called/served yet
-    // In a real app, this would compare token createdAt + estimatedWait vs Date.now()
     if (queueData.peopleAhead === 0 && queueData.ticketStatus === "WAITING") {
        setIsLate(true);
     } else {
@@ -156,10 +183,17 @@ export default function TicketPage({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-2xl p-4 flex items-start gap-3 justify-center text-sm font-bold shadow-sm backdrop-blur-md"
+              className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl p-4 flex flex-col items-center gap-1 justify-center text-xs font-bold shadow-sm backdrop-blur-md"
             >
-              <Activity size={18} className="animate-pulse shrink-0" />
-              <span>Connection lost. Trying to reconnect to real-time sync...</span>
+              <div className="flex items-center gap-2">
+                <Activity size={16} className="animate-pulse shrink-0" />
+                <span>Connection lost — viewing cached data</span>
+              </div>
+              {lastUpdated && (
+                <span className="opacity-60 font-medium tracking-wide font-mono">
+                  SYNC AT {new Date(lastUpdated).toLocaleTimeString()}
+                </span>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

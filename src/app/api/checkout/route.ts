@@ -14,8 +14,8 @@ export async function POST(request: Request) {
     if (keyId && keySecret) {
       // Execute genuine Razorpay Sandbox/Live Order
       const rzp = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
+        key_id: keyId || 'rzp_test_placeholder',
+        key_secret: keySecret || 'placeholder_secret',
       });
 
       const options = {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Phone, ArrowRight, ShieldCheck, UserCircle, QrCode } from "lucide-react";
+import { Mail, ArrowRight, ShieldCheck, UserCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface FastAuthProps {
@@ -11,26 +11,18 @@ interface FastAuthProps {
 }
 
 export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) {
-  const [step, setStep] = useState<"phone" | "otp" | "loading">("phone");
-  const [phone, setPhone] = useState("");
+  const [step, setStep] = useState<"email" | "otp" | "loading">("email");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  function toE164India(phoneStr: string): string {
-    const digits = phoneStr.replace(/\D/g, '')
-    if (digits.startsWith('91') && digits.length === 12) return '+' + digits
-    if (digits.length === 10) return '+91' + digits
-    return phoneStr 
-  }
 
   // Real OTP Send
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const formattedPhone = toE164India(phone);
-    if (!/^\+91[6-9]\d{9}$/.test(formattedPhone)) {
-      setError('Please enter a valid 10-digit Indian mobile number');
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -40,24 +32,25 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
     
     try {
       const { error: authError } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
+        email,
+        options: {
+          shouldCreateUser: true,
+        }
       });
 
       if (authError) {
-        if (authError.message.includes('422')) {
-          setError("Invalid phone number format");
-        } else if (authError.message.includes('429')) {
+        if (authError.message.includes('429')) {
           setError("Too many attempts. Please wait a minute.");
         } else {
           setError(authError.message);
         }
-        setStep("phone");
+        setStep("email");
       } else {
         setStep("otp");
       }
     } catch (err: any) {
       setError(err.message);
-      setStep("phone");
+      setStep("email");
     } finally {
       setIsSubmitting(false);
     }
@@ -73,11 +66,10 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
     setStep("loading");
     
     try {
-       const formattedPhone = toE164India(phone);
        const { data, error: verifyErr } = await supabase.auth.verifyOtp({
-          phone: formattedPhone,
+          email,
           token: code,
-          type: 'sms'
+          type: 'email'
        });
        if (verifyErr) {
           if (verifyErr.message.includes('429')) {
@@ -94,7 +86,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
     }
   };
 
-  // Real Guest Login Trigger
+  // Real Guest Login Trigger (Emergency Fallback)
   const handleGuestLogin = async () => {
     setStep("loading");
     try {
@@ -103,7 +95,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
       if (data.user) onSuccess(data.user.id);
     } catch (err: any) {
       setError(err.message);
-      setStep("phone");
+      setStep("email");
     }
   };
 
@@ -115,9 +107,9 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
     <div className={wrapClasses}>
       <AnimatePresence mode="wait">
         
-        {step === "phone" && (
+        {step === "email" && (
           <motion.div 
-            key="phone"
+            key="email"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
@@ -128,33 +120,31 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
                 <ShieldCheck className="text-white w-8 h-8" />
               </div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Join the Queue</h2>
-              <p className="text-slate-500 dark:text-slate-400">Enter your phone number to track your token live via SMS.</p>
+              <p className="text-slate-500 dark:text-slate-400">Enter your email to receive a secure join code instantly.</p>
             </div>
 
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
                 <div className="relative flex items-center">
-                  <span className="absolute left-4 text-slate-400 font-bold border-r border-slate-200 dark:border-slate-700 pr-3">+91</span>
                   <input
-                    type="tel"
-                    maxLength={10}
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Mobile Number"
-                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-4 pl-16 pr-4 font-bold text-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@email.com"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl py-4 px-4 font-bold text-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     autoFocus
                   />
-                  <Phone className="absolute right-4 text-slate-400" size={20} />
+                  <Mail className="absolute right-4 text-slate-400" size={20} />
                 </div>
                 {error && <p className="text-rose-500 text-sm font-medium mt-2 text-center">{error}</p>}
               </div>
 
               <button 
                 type="submit"
-                disabled={phone.length < 10 || isSubmitting}
+                disabled={!email || isSubmitting}
                 className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-xl font-bold text-lg hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                {isSubmitting ? "Sending OTP..." : <><span className="flex items-center gap-2">Send OTP <ArrowRight size={20} /></span></>}
+                {isSubmitting ? "Sending OTP..." : <><span className="flex items-center gap-2">Send Join Code <ArrowRight size={20} /></span></>}
               </button>
             </form>
 
@@ -183,28 +173,41 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
             className="flex flex-col h-full"
           >
             <div className="text-center mb-10">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Verify Number</h2>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Check Email</h2>
               <p className="text-slate-500 dark:text-slate-400">
-                We sent a 4-digit code to <br/>
-                <strong className="text-slate-900 dark:text-white">+91 {phone.slice(0, 5)} {phone.slice(5)}</strong>
+                We sent a 6-digit code to <br/>
+                <strong className="text-slate-900 dark:text-white">{email}</strong>
               </p>
             </div>
 
             <form onSubmit={handleVerifyOtp} className="space-y-8">
-              <div className="flex justify-center gap-4">
+              <div className="flex justify-center gap-2 sm:gap-4">
                 {otp.map((digit, index) => (
                   <input
                     key={index}
                     id={`otp-${index}`}
                     type="text"
-                    maxLength={1}
+                    inputMode="numeric"
+                    maxLength={6} // Allow paste directly into first field
                     value={digit}
                     onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length > 1) {
+                        // Handle paste
+                        const pasted = val.slice(0, 6).split('');
+                        const newOtp = [...otp];
+                        pasted.forEach((char, idx) => {
+                          if (idx < 6) newOtp[idx] = char;
+                        });
+                        setOtp(newOtp);
+                        document.getElementById(`otp-${Math.min(5, pasted.length)}`)?.focus();
+                        return;
+                      }
                       const newOtp = [...otp];
-                      newOtp[index] = e.target.value.replace(/\D/g, '');
+                      newOtp[index] = val;
                       setOtp(newOtp);
                       // Auto-advance
-                      if (e.target.value && index < 5) {
+                      if (val && index < 5) {
                         document.getElementById(`otp-${index + 1}`)?.focus();
                       }
                     }}
@@ -214,7 +217,7 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
                       }
                     }}
                     disabled={isSubmitting}
-                    className="w-16 h-16 text-center text-2xl font-black bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                    className="w-12 h-14 sm:w-16 sm:h-16 text-center text-2xl font-black bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
                     autoFocus={index === 0}
                   />
                 ))}
@@ -232,10 +235,10 @@ export default function FastAuth({ onSuccess, isModal = false }: FastAuthProps) 
             </form>
 
             <button 
-              onClick={() => setStep("phone")}
+              onClick={() => setStep("email")}
               className="mt-6 text-sm flex items-center justify-center font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700"
             >
-              Change Phone Number
+              Change Email Address
             </button>
           </motion.div>
         )}

@@ -1,0 +1,115 @@
+:root {
+  /* Colors - Fintech Premium Palette */
+  --color-bg-primary: #0A0A0F;
+  --color-bg-secondary: #0D0D15;
+  --color-bg-card: rgba(255, 255, 255, 0.03);
+  --color-border: rgba(255, 255, 255, 0.08);
+  
+  --color-accent-green: #00F5A0;
+  --color-accent-orange: #FF6B35;
+  --color-accent-blue: #38BDF8;
+  --color-accent-purple: #8B5CF6;
+  
+  --color-text-primary: #F0F0F8;
+  --color-text-secondary: #8888A8;
+  --color-text-dim: #555566;
+  
+  --color-danger: #FF4D6D;
+  --color-warning: #FBBF24;
+  --color-success: #00F5A0;
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(20px);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  
+  /* Transitions */
+  --ease-premium: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Reusable Utility Classes */
+
+.glass-card {
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  transition: all 0.3s var(--ease-premium);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.btn-primary {
+  background: var(--color-accent-green);
+  color: #0A0A0F;
+  font-weight: 800;
+  padding: 14px 28px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  transition: all 0.2s var(--ease-premium);
+  box-shadow: 0 0 24px rgba(0, 245, 160, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 32px rgba(0, 245, 160, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Token Status Classes */
+.status-waiting { color: var(--color-warning); }
+.status-serving { color: var(--color-accent-green); animation: pulse-status 2s infinite; }
+.status-served  { color: var(--color-text-secondary); }
+.status-noshow  { color: var(--color-danger); }
+
+@keyframes pulse-status {
+  0%, 100% { opacity: 1; filter: brightness(1.2); }
+  50% { opacity: 0.7; filter: brightness(1); }
+}
+
+/* Perforated Edge Effect */
+.perforated-edge {
+  position: relative;
+}
+
+.perforated-edge::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-image: linear-gradient(to right, var(--color-border) 50%, transparent 50%);
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+}
+
+/* Mesh Gradient Background */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-color: var(--color-bg-primary);
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(0, 245, 160, 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.08) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.08) 0, transparent 50%),
+    radial-gradient(at 0% 100%, rgba(255, 107, 53, 0.08) 0, transparent 50%);
+  filter: blur(80px);
+}

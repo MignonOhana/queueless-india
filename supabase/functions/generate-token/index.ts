@@ -1,6 +1,6 @@
-// @ts-nocheck
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-nocheck: ignoring vendor types for edge runtime
+import { serve } from 'std/http/server'
+import { createClient } from 'supabase'
 
 // Interface for strongly typed inputs
 interface GenerateTokenPayload {
@@ -37,7 +37,12 @@ serve(async (req) => {
     )
 
     // 1. Find or create the active queue session for TODAY
-    // Usually, admin creates it, but we handle the fallback
+    const { data: bizData } = await supabaseClient
+      .from('businesses')
+      .select('name, whatsapp_enabled')
+      .eq('id', orgId)
+      .single()
+
     let { data: queue, error: qErr } = await supabaseClient
       .from('queues')
       .select('id, last_issued_number, total_waiting')
@@ -93,14 +98,43 @@ serve(async (req) => {
 
     if (insertErr) throw insertErr;
 
+    // --- WHATSAPP NOTIFICATION ---
+    if (bizData?.whatsapp_enabled && customerPhone) {
+      try {
+        const trackingUrl = `https://queueless-india.vercel.app/track/${tokenStr}`
+        await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-whatsapp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+          },
+          body: JSON.stringify({
+            phone: customerPhone,
+            template: 'token_confirmed',
+            params: [
+              bizData.name, 
+              tokenStr, 
+              (queue.total_waiting || 0) + 1, 
+              estimatedWaitMins,
+              trackingUrl
+            ],
+            businessId: orgId
+          })
+        })
+      } catch (err) {
+        console.error("WhatsApp notification failed:", err.message)
+      }
+    }
+
     return new Response(JSON.stringify(tokenDoc), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
 
-  } catch (error: any) {
+  } catch (error) {
+     const err = error as Error;
      // Handle Capacity Constraints gracefully
-     if (error.message && error.message.includes("Queue is full")) {
+     if (err.message && err.message.includes("Queue is full")) {
        return new Response(JSON.stringify({ error: "QUEUE_FULL", message: "This queue is currently at maximum capacity. Please try again later." }), {
          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
          status: 429, // Too Many Requests
@@ -114,7 +148,7 @@ serve(async (req) => {
        });
      }
 
-     return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: error.message }), {
+     return new Response(JSON.stringify({ error: "INTERNAL_ERROR", message: err.message }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
       })

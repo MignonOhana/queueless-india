@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, Building2, Clock, Sparkles, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Building2, Clock, Sparkles, CheckCircle2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import PageTransition from "@/components/PageTransition";
-
+import { createClient } from "@/lib/supabase/client";
 import { createBusiness } from "@/lib/queueService";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 
 export default function BusinessRegister() {
   const router = useRouter();
@@ -19,37 +21,54 @@ export default function BusinessRegister() {
     serviceMins: "15",
     opHours: "09:00-17:00",
     aiEnabled: true,
-    smsEnabled: true
+    smsEnabled: true,
+    email: "",
   });
   
+  const [showOTP, setShowOTP] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleNext = () => setStep(s => Math.min(4, s + 1));
+  const handleNext = () => setStep(s => Math.min(5, s + 1));
   const handleBack = () => setStep(s => Math.max(1, s - 1));
 
-  const handleSubmit = async () => {
+  const supabase = createClient();
+  const handleFinalSubmit = async (_verifiedUser: any) => {
     setIsSubmitting(true);
     try {
-      const biz = await createBusiness({
+      // CRITICAL: Always get the authenticated user from the session, not the callback param
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error("Authentication failed. Please try again.");
+      }
+
+      // Create Business Record linked to verified User
+      await createBusiness({
         name: formData.businessName,
         category: formData.category,
         location: formData.location,
         serviceMins: parseInt(formData.serviceMins) || 15,
         opHours: formData.opHours,
         aiEnabled: formData.aiEnabled,
-        smsEnabled: formData.smsEnabled
-      });
+        smsEnabled: formData.smsEnabled,
+        owner_id: user.id  // ← from getUser(), never null
+      }, supabase);
+
+      // Tag user as business_owner in user_profiles
+      await supabase.from('user_profiles').upsert({
+        id: user.id,
+        role: 'business_owner',
+        full_name: user.email?.split('@')[0] || 'Business Owner',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
       
-      // Auto-login to dashboard for this specific orgId
-      localStorage.setItem("admin_org", biz.id);
-      
-      setStep(4); // Success step
+      setShowOTP(false);
+      setStep(5); // Success step
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Error creating business");
+      alert(e.message || "Error creating business");
       setIsSubmitting(false);
     }
   };
@@ -79,19 +98,19 @@ export default function BusinessRegister() {
       <div className="flex-1 flex flex-col items-center justify-center p-6 relative pt-24">
         
         {/* Progress Bar */}
-        {step < 4 && (
+        {step < 5 && (
           <div className="w-full max-w-md mb-8">
             <div className="flex justify-between mb-2 px-1">
-              <span className="text-xs font-bold text-slate-500 uppercase">Step {step} of 3</span>
+              <span className="text-xs font-bold text-slate-500 uppercase">Step {step} of 4</span>
               <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">
-                {step === 1 ? "Basics" : step === 2 ? "Queue Setup" : "Smart Features"}
+                {step === 1 ? "Basics" : step === 2 ? "Queue Setup" : step === 3 ? "Account" : "Smart Features"}
               </span>
             </div>
             <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
               <motion.div 
                 className="h-full bg-blue-600"
-                initial={{ width: `${(step - 1) * 33}%` }}
-                animate={{ width: `${step * 33.33}%` }}
+                initial={{ width: `${(step - 1) * 25}%` }}
+                animate={{ width: `${step * 25}%` }}
                 transition={{ duration: 0.3 }}
               />
             </div>
@@ -212,8 +231,60 @@ export default function BusinessRegister() {
               </motion.div>
             )}
 
-            {/* STEP 3: Smart Features */}
+            {/* STEP 3: Account */}
             {step === 3 && (
+              <motion.div 
+                key="step3" variants={stepVariants} initial="hidden" animate="visible" exit="exit"
+                className="flex flex-col h-full"
+              >
+                <div className="flex items-center gap-3 mb-6 text-indigo-600 dark:text-indigo-400">
+                   <Users size={28} />
+                   <h2 className="text-2xl font-black text-slate-900 dark:text-white">Account Security</h2>
+                </div>
+                
+                <div className="space-y-6 flex-1">
+                  <div className="mb-4">
+                    <GoogleSignInButton redirectTo="/dashboard" />
+                    <div className="relative mt-8 mb-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                      </div>
+                      <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-slate-500 bg-white dark:bg-slate-900 px-4">
+                        — or continue with email —
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Work Email</label>
+                    <input 
+                      type="email" 
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="admin@business.com"
+                      className="w-full px-5 py-3.5 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:border-blue-500 outline-none font-medium transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <button onClick={handleBack} className="w-1/3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold py-4 rounded-xl hover:bg-slate-200 transition-colors">
+                    Back
+                  </button>
+                  <button 
+                    onClick={handleNext} 
+                    disabled={!formData.email || !formData.email.includes('@')}
+                    className="w-2/3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors"
+                  >
+                    Continue <ArrowRight size={18} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 4: Smart Features */}
+            {step === 4 && (
               <motion.div 
                 key="step3" variants={stepVariants} initial="hidden" animate="visible" exit="exit"
                 className="flex flex-col h-full"
@@ -256,7 +327,7 @@ export default function BusinessRegister() {
                     Back
                   </button>
                   <button 
-                    onClick={handleSubmit} 
+                    onClick={() => setShowOTP(true)} 
                     disabled={isSubmitting}
                     className="w-2/3 bg-blue-600 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/30"
                   >
@@ -266,8 +337,8 @@ export default function BusinessRegister() {
               </motion.div>
             )}
 
-            {/* STEP 4: Success */}
-            {step === 4 && (
+            {/* STEP 5: Success */}
+            {step === 5 && (
               <motion.div 
                 key="step4" variants={stepVariants} initial="hidden" animate="visible" exit="exit"
                 className="flex flex-col items-center justify-center text-center h-full"
@@ -288,6 +359,14 @@ export default function BusinessRegister() {
           </AnimatePresence>
         </div>
       </div>
+
+      {showOTP && (
+        <EmailOTPModal 
+          defaultEmail={formData.email}
+          onClose={() => setShowOTP(false)}
+          onSuccess={handleFinalSubmit}
+        />
+      )}
     </PageTransition>
   );
 }
