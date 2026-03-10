@@ -10,15 +10,15 @@ export interface User {
   email?: string;
   createdAt: Date;
   preferences: {
-    notifications: 'sms' | 'whatsapp' | 'push';
-    language: 'en' | 'hi' | 'pa';
+    notifications: "sms" | "whatsapp" | "push";
+    language: "en" | "hi" | "pa";
   };
 }
 
 export interface Business {
   orgId: string;
   name: string;
-  category: 'hospitals' | 'banks' | 'salons' | 'government' | 'events';
+  category: "hospitals" | "banks" | "salons" | "government" | "events";
   description?: string;
   location: {
     address: string;
@@ -28,7 +28,7 @@ export interface Business {
   phone?: string;
   coverImageUrl?: string;
   isVerified: boolean;
-  plan: 'free' | 'growth' | 'enterprise';
+  plan: "free" | "growth" | "enterprise";
   metrics: {
     rating: number;
     totalReviews: number;
@@ -74,7 +74,7 @@ export interface StaffMember {
   id: string;
   businessId: string;
   userId: string;
-  role: 'owner' | 'operator' | 'viewer';
+  role: "owner" | "operator" | "viewer";
   name?: string;
   phone?: string;
   isActive: boolean;
@@ -116,13 +116,13 @@ export interface Token {
   customerPhone: string;
   serviceId: string;
   tokenNumber: string; // e.g. 'OPD-12'
-  status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
-  
+  status: "WAITING" | "SERVING" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
+
   // Marketplace Additions
   isPriority: boolean; // True if Fast Pass was purchased
   bookedFor: Date | null; // Null if joined live, Date if pre-booked
   paymentId?: string; // Reference to Payment document
-  
+
   metrics: {
     joinedAt: Date;
     servedAt: Date | null;
@@ -139,16 +139,49 @@ export interface Payment {
   tokenId: string; // The token that was upgraded
   amount: number; // in INR
   currency: string;
-  status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
+  status: "PENDING" | "SUCCESS" | "FAILED" | "REFUNDED";
   createdAt: Date;
 }
 
 export interface Notification {
-  notificationId: string;
-  userId: string;
-  channel: 'sms' | 'whatsapp' | 'push';
-  type: 'QUEUE_JOINED' | 'TURN_APPROACHING' | 'NOW_SERVING' | 'EVENT_PROMO';
-  payload: string; // Message content
-  status: 'SENT' | 'FAILED' | 'DELIVERED';
-  createdAt: Date;
+  id: string;
+  token_id: string | null;
+  business_id: string | null;
+  customer_phone: string | null;
+  message: string;
+  type: "sms" | "whatsapp" | "push" | "email";
+  status: "pending" | "sent" | "failed" | "delivered";
+  sent_at: string | null;
+  created_at: string;
+}
+
+export interface DailyStat {
+  id: string;
+  business_id: string;
+  stat_date: string;
+  total_tokens_issued: number;
+  total_served: number;
+  total_no_shows: number;
+  avg_wait_mins: number;
+  avg_service_mins: number;
+  peak_hour: number | null;
+  customer_satisfaction: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdvanceBooking {
+  id: string;
+  business_id: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string | null;
+  booking_date: string;
+  booking_time: string;
+  service_type: string | null;
+  notes: string | null;
+  status: "confirmed" | "cancelled" | "completed" | "no_show";
+  token_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
