@@ -31,18 +31,23 @@ export default function LiveDemoSection() {
     setIsJoining(true);
     try {
       // Try Supabase edge function first, fallback to mock
-      const { data, error } = await supabase.functions.invoke("generate-token", {
-        body: {
+      const response = await fetch("/api/queue/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           orgId: DEMO_ORG_ID,
           counterPrefix: "H",
           userId: null,
           customerName: visitorName + " (Demo)",
           customerPhone: "+919999000000",
-        },
+        }),
       });
 
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to join demo queue");
+
       let tokenNum: string;
-      if (error || !data?.tokenNumber) {
+      if (!data?.tokenNumber) {
         // Mock fallback
         tokenNum = `H-${String(Math.floor(Math.random() * 900) + 100)}`;
       } else {

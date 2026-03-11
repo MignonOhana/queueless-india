@@ -16,36 +16,27 @@ export interface User {
 }
 
 export interface Business {
-  orgId: string;
+  id: string; // id is a human-readable slug e.g. 'aiims-delhi'
   name: string;
   category: "hospitals" | "banks" | "salons" | "government" | "events";
   description?: string;
-  location: {
-    address: string;
-    city: string;
-    coordinates?: [number, number];
-  };
+  location?: string; // Address text
+  latitude?: number;
+  longitude?: number;
   phone?: string;
   coverImageUrl?: string;
   isVerified: boolean;
+  owner_id: string; // UUID of the owner
   plan: "free" | "growth" | "enterprise";
-  metrics: {
-    rating: number;
-    totalReviews: number;
-  };
-  settings: {
-    isOpen: boolean;
-    fastPassEnabled: boolean;
-    fastPassPrice: number; // in INR
-    advanceBookingEnabled: boolean;
-    whatsappEnabled: boolean;
-  };
-  services: {
-    id: string; // e.g. 'opd'
-    prefix: string; // e.g. 'OPD'
-    name: string;
-    averageServiceTimeMins: number; // used by AI predictor
-  }[];
+  avg_rating: number;
+  total_reviews: number;
+  is_open?: boolean; // actually used in dashboard updates
+  whatsapp_enabled: boolean;
+  fastPassEnabled: boolean;
+  fastPassPrice: number;
+  serviceMins: number;
+  opHours: string;
+  op_hours_json?: Record<string, { open: string; close: string }[] | null>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -93,6 +84,19 @@ export interface FastPassTransaction {
   createdAt: Date;
 }
 
+export interface Queue {
+  id: string; // UUID
+  org_id: string; // Business slug (e.g. 'aiims-delhi')
+  counter_id: string;
+  session_date: string;
+  last_issued_number: number;
+  currently_serving_token_id: string | null;
+  total_waiting: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface QueueSession {
   sessionId: string; // typically {orgId}_{YYYYMMDD}
   orgId: string;
@@ -108,27 +112,20 @@ export interface QueueSession {
 }
 
 export interface Token {
-  tokenId: string;
-  orgId: string;
-  sessionId: string;
+  id: string; // UUID
+  orgId: string; // Business slug (e.g. 'aiims-delhi')
+  queue_id: string; // UUID reference to queues.id
   userId: string | null; // null if printed locally for walk-in
   customerName: string;
   customerPhone: string;
-  serviceId: string;
-  tokenNumber: string; // e.g. 'OPD-12'
+  counterId: string; // e.g. 'opd'
+  tokenNumber: string; // e.g. 'OPD-012'
   status: "WAITING" | "SERVING" | "COMPLETED" | "CANCELLED" | "NO_SHOW";
-
-  // Marketplace Additions
-  isPriority: boolean; // True if Fast Pass was purchased
-  bookedFor: Date | null; // Null if joined live, Date if pre-booked
-  paymentId?: string; // Reference to Payment document
-
-  metrics: {
-    joinedAt: Date;
-    servedAt: Date | null;
-    completedAt: Date | null;
-    predictedWaitMins: number;
-  };
+  estimatedWaitMins: number;
+  isPriority: boolean;
+  createdAt: Date;
+  servedAt: Date | null;
+  completedAt: Date | null;
 }
 
 export interface Payment {

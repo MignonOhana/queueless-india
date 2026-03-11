@@ -26,15 +26,8 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // 1. Check for cached prediction
-    const now = new Date()
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hour = now.getHours();
-    
-    const dateKey = `${year}-${month}-${day}_H${hour}`
-    const predictionId = `${orgId}_${dateKey}`
+    // predictions.id = businesses.id (slug)
+    const predictionId = orgId
 
     const { data: cachedPred, error: fetchErr } = await supabaseClient
       .from('predictions')

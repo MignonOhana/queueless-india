@@ -26,6 +26,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   }, [businessId]);
 
   const fetchStaff = async () => {
+    if (!businessId) return;
     setIsLoading(true);
     const { data, error } = await supabase
       .from('staff_members')
@@ -43,6 +44,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!businessId) return;
     const { data, error } = await supabase
       .from('staff_members')
       .insert([{ ...newStaff, business_id: businessId, is_active: true }])

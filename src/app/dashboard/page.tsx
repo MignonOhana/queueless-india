@@ -221,6 +221,18 @@ export default function BusinessDashboard() {
     );
   }
 
+  // Loading gate: wait for businessData to be ready before rendering dashboard
+  if (!businessData?.id) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#00F5A0]/20 border-t-[#00F5A0] rounded-full animate-spin" />
+          <p className="text-[#00F5A0] font-black uppercase tracking-widest text-xs">Loading Business...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0A0F] font-sans pb-32">
       
@@ -252,10 +264,16 @@ export default function BusinessDashboard() {
                 <LiveIndicator />
                 <button 
                    onClick={async () => {
-                     const newVal = !businessData?.is_open;
-                     setBusinessData({...businessData, is_open: newVal});
-                     await supabase.from('businesses').update({ is_open: newVal }).eq('id', businessData?.id);
-                     toast.success(`Queue is now ${newVal ? 'OPEN' : 'CLOSED'}`);
+                     try {
+                       const newVal = !businessData?.is_open;
+                       setBusinessData({...businessData, is_open: newVal});
+                       const { error } = await supabase.from('businesses').update({ is_open: newVal }).eq('id', businessData?.id).select();
+                       if (error) throw error;
+                       toast.success(`Queue is now ${newVal ? 'OPEN' : 'CLOSED'}`);
+                     } catch (err: any) {
+                       toast.error(`Update failed: ${err.message}`);
+                       setBusinessData({...businessData, is_open: businessData?.is_open});
+                     }
                    }}
                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${
                      businessData?.is_open 
@@ -459,9 +477,15 @@ export default function BusinessDashboard() {
                                return;
                             }
                             const val = e.target.checked;
-                            setBusinessData({...businessData, whatsapp_enabled: val});
-                            await supabase.from("businesses").update({ whatsapp_enabled: val }).eq("id", businessData?.id);
-                            toast.success(`WhatsApp Alerts ${val ? 'Enabled' : 'Disabled'}`);
+                            try {
+                              setBusinessData({...businessData, whatsapp_enabled: val});
+                              const { error } = await supabase.from("businesses").update({ whatsapp_enabled: val }).eq("id", businessData?.id).select();
+                              if (error) throw error;
+                              toast.success(`WhatsApp Alerts ${val ? 'Enabled' : 'Disabled'}`);
+                            } catch (err: any) {
+                              toast.error(`Update failed: ${err.message}`);
+                              setBusinessData({...businessData, whatsapp_enabled: !val});
+                            }
                           }}
                           className="w-5 h-5 accent-[#00F5A0] cursor-pointer"
                        />
@@ -476,9 +500,15 @@ export default function BusinessDashboard() {
                           checked={businessData?.fastPassEnabled || false}
                           onChange={async (e) => {
                             const val = e.target.checked;
-                            setBusinessData({...businessData, fastPassEnabled: val});
-                            await supabase.from("businesses").update({ fastPassEnabled: val }).eq("id", businessData?.id);
-                            toast.success(`Fast Pass ${val ? 'Enabled' : 'Disabled'}`);
+                            try {
+                              setBusinessData({...businessData, fastPassEnabled: val});
+                              const { error } = await supabase.from("businesses").update({ fastPassEnabled: val }).eq("id", businessData?.id).select();
+                              if (error) throw error;
+                              toast.success(`Fast Pass ${val ? 'Enabled' : 'Disabled'}`);
+                            } catch (err: any) {
+                              toast.error(`Update failed: ${err.message}`);
+                              setBusinessData({...businessData, fastPassEnabled: !val});
+                            }
                           }}
                        />
                     </div>
@@ -494,8 +524,13 @@ export default function BusinessDashboard() {
                           />
                           <button 
                             onClick={async () => {
-                              await supabase.from("businesses").update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id);
-                              toast.success("Price updated");
+                              try {
+                                const { error } = await supabase.from("businesses").update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id).select();
+                                if (error) throw error;
+                                toast.success("Price updated");
+                              } catch (err: any) {
+                                toast.error(`Update failed: ${err.message}`);
+                              }
                             }}
                             className="px-6 py-3 rounded-xl bg-[#00F5A0] text-[#0A0A0F] font-black uppercase text-[10px]"
                           >

@@ -39,7 +39,23 @@ export default function ProfilePage() {
   }, [profile]);
 
   const handleSaveProfile = async () => {
-    await updateProfile(formData);
+    const normalizePhone = (p: string) => {
+      let cleaned = p.replace(/\D/g, "");
+      if (cleaned.startsWith("91") && cleaned.length === 12) {
+        cleaned = cleaned.substring(2);
+      } else if (cleaned.startsWith("0") && cleaned.length === 11) {
+        cleaned = cleaned.substring(1);
+      }
+      return cleaned;
+    };
+
+    const digits = normalizePhone(formData.phone);
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      alert("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
+    await updateProfile({ ...formData, phone: "+91" + digits });
     setIsEditing(false);
   };
 

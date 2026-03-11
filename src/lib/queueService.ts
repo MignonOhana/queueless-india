@@ -15,17 +15,22 @@ export const joinQueue = async (
   supabase: SupabaseClient = defaultSupabase,
 ) => {
   try {
-    const { data, error } = await supabase.functions.invoke("generate-token", {
-      body: {
+    const response = await fetch("/api/queue/join", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         orgId,
         counterPrefix,
         userId,
         customerName,
         customerPhone,
-      },
+      }),
     });
 
-    if (error) throw error;
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Failed to join queue");
 
     // The edge function returns the inserted token document
     return {

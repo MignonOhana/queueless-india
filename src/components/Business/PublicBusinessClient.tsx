@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useGuestSession } from '@/hooks/useGuestSession';
 import { getDistance } from '@/lib/geolocation';
@@ -29,6 +30,7 @@ interface PublicBusinessClientProps {
 export default function PublicBusinessClient({ business, initialWaitingCount, initialReviews }: PublicBusinessClientProps) {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const { guestVisit, isLoaded, isReturningGuest, guestName, guestPhone, saveGuestSession } = useGuestSession(business.id);
 
   const [waitingCount, setWaitingCount] = useState(initialWaitingCount);
@@ -41,6 +43,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(true);
   const [joinedToken, setJoinedToken] = useState<any>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
@@ -139,28 +142,46 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
 
   const handleJoinQueue = async (asGuest: boolean) => {
     if (!name.trim()) { setPhoneError("Name is required"); return; }
+    
+    const normalizePhone = (p: string) => {
+      let cleaned = p.replace(/\D/g, "");
+      if (cleaned.startsWith("91") && cleaned.length === 12) {
+        cleaned = cleaned.substring(2);
+      } else if (cleaned.startsWith("0") && cleaned.length === 11) {
+        cleaned = cleaned.substring(1);
+      }
+      return cleaned;
+    };
+
+    const digits = normalizePhone(phone);
+
     if (asGuest) {
-      const digits = phone.replace(/\D/g, "");
-      if (!/^[6-9]\d{9}$/.test(digits)) { setPhoneError("Enter a valid 10-digit mobile number"); return; }
+      if (!/^[6-9]\d{9}$/.test(digits)) { 
+        setPhoneError("Please enter a valid 10-digit Indian mobile number"); 
+        return; 
+      }
     }
 
     setIsJoining(true);
     try {
       const counterPrefix = business?.services?.[0]?.prefix || "Q";
       const userId = asGuest ? null : user?.id;
-      const customerPhone = asGuest ? "+91" + phone.replace(/\D/g, "") : user?.phone || phone;
+      const customerPhone = asGuest ? "+91" + digits : user?.phone || "+91" + digits;
 
-      const { data, error } = await supabase.functions.invoke("generate-token", {
-        body: { 
+      const response = await fetch("/api/queue/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
           orgId: business.id, 
           counterPrefix, 
           userId, 
           customerName: name.trim(), 
           customerPhone 
-        }
+        })
       });
-      
-      if (error) throw error;
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to join queue");
       
       // Persist guest session
       if (asGuest) {
@@ -170,6 +191,12 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           activeTokenId: data.id, 
           activeTokenNumber: data.tokenNumber 
         });
+
+        // UX-1: WhatsApp-First flow trigger
+        if (notifyWhatsApp && business?.phone) {
+          const message = `Hi, my token number is ${data.tokenNumber}. Please let me know when it's my turn.`;
+          window.open(`https://wa.me/${business.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+        }
       }
 
       setJoinedToken({ 
@@ -208,18 +235,37 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
   };
 
   const isBusinessOpen = () => {
-    if (!business.settings?.businessHours) return true; // Fallback
     const now = new Date();
-    const day = now.toLocaleDateString('en-US', { weekday: 'long' });
-    const hours = business.settings.businessHours[day] || business.settings.businessHours['default'];
+    const dayOfWeek = now.getDay();
+    const dayNamesShort = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const dayKey = dayNamesShort[dayOfWeek];
+
+    // Check JSON hours first
+    if (business.op_hours_json?.[dayKey]) {
+      const shifts = business.op_hours_json[dayKey];
+      if (shifts === null) return false;
+
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      return shifts.some((shift: { open: string; close: string }) => {
+        const [sH, sM] = shift.open.split(":").map(Number);
+        const [eH, eM] = shift.close.split(":").map(Number);
+        return currentTime >= sH * 60 + sM && currentTime <= eH * 60 + eM;
+      });
+    }
+
+    if (!business.settings?.businessHours) return true; // Fallback
+    const day = now.toLocaleDateString("en-US", { weekday: "long" });
+    const hours =
+      business.settings.businessHours[day] ||
+      business.settings.businessHours["default"];
     if (!hours || hours.closed) return false;
-    
+
     const [start, end] = hours.slots?.[0] || ["09:00", "20:00"];
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    const [sH, sM] = start.split(':').map(Number);
-    const [eH, eM] = end.split(':').map(Number);
-    
-    return currentTime >= (sH * 60 + sM) && currentTime <= (eH * 60 + eM);
+    const [sH, sM] = start.split(":").map(Number);
+    const [eH, eM] = end.split(":").map(Number);
+
+    return currentTime >= sH * 60 + sM && currentTime <= eH * 60 + eM;
   };
 
   const avgWait = waitingCount * (business.avg_service_time || 5);
@@ -285,7 +331,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                 <div className="flex items-center justify-between mb-6">
                    <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Live Queue Status</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{t('liveStatus')}</span>
                    </div>
                    <span className={`text-[10px] font-black px-2 py-1 rounded-md ${isOpen ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'} uppercase tracking-widest`}>
                       {isOpen ? 'Open Now' : 'Closed'}
@@ -295,11 +341,11 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                 <div className="grid grid-cols-2 gap-4">
                    <div className="text-center p-4 rounded-2xl bg-black/40">
                       <p className="text-2xl font-black text-white">{waitingCount}</p>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">Waiting</p>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{t('position')}</p>
                    </div>
                    <div className="text-center p-4 rounded-2xl bg-black/40">
                       <p className="text-2xl font-black text-[#00F5A0]">~{avgWait}m</p>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">Est. Wait</p>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{t('waitTime')}</p>
                    </div>
                 </div>
              </div>
@@ -320,12 +366,12 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                        <h3 className="text-5xl font-black text-white mb-2 tracking-tighter">{joinedToken.tokenNumber}</h3>
                        <div className="flex justify-center gap-6 mb-6">
                           <div>
-                             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Position</p>
+                             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">{t('position')}</p>
                              <p className="text-xl font-black">#{joinedToken.position}</p>
                           </div>
                           <div className="w-px bg-white/10" />
                           <div>
-                             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">Est. Wait</p>
+                             <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">{t('waitTime')}</p>
                              <p className="text-xl font-black">{joinedToken.estimatedWaitMins}m</p>
                           </div>
                        </div>
@@ -343,7 +389,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                          onClick={() => setJoinMode(isAuthenticated ? 'account' : 'choose')}
                          className="w-full flex items-center justify-center gap-2 py-5 rounded-[2rem] bg-[#00F5A0] text-[#0A0A0F] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,160,0.2)] disabled:opacity-50 disabled:grayscale"
                        >
-                          {isOpen ? <>Join Queue <ArrowRight size={18} /></> : "Closed for now"}
+                          {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
                        </button>
 
                        {business.settings?.fastPassEnabled && isOpen && (
@@ -384,7 +430,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                        <div className="space-y-3">
                           <input 
                             type="text" 
-                            placeholder="Full Name" 
+                            placeholder={t('yourName') || "Your Name"} 
                             value={name} 
                             onChange={e => setName(e.target.value)}
                             className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-[#00F5A0] focus:ring-1 focus:ring-[#00F5A0] outline-none"
@@ -393,7 +439,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                              <span className="px-4 py-4 text-zinc-500 font-black">+91</span>
                              <input 
                                type="tel" 
-                               placeholder="Mobile Number" 
+                               placeholder={t('mobileNumber') || "Mobile Number"} 
                                value={phone} 
                                onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                                className="bg-transparent flex-1 py-4 pr-5 text-white font-bold outline-none"
@@ -408,7 +454,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                             onClick={() => handleJoinQueue(true)}
                             className="flex-1 py-4 bg-[#00F5A0] text-[#0A0A0F] font-black rounded-2xl uppercase tracking-widest text-xs disabled:opacity-50"
                           >
-                             {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : "Join Now"}
+                             {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : (t('join') || "Join Now")}
                           </button>
                           
                           {business.settings?.fastPassEnabled && (
@@ -488,14 +534,50 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                     className="overflow-hidden"
                   >
                      <div className="p-6 pt-2 space-y-3 bg-[#111118]/50 rounded-b-[2rem] border-x border-b border-white/5">
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
-                          const hours = business.settings?.businessHours?.[day] || { slots: [["09:00", "20:00"]] };
+                        {[
+                          "Monday",
+                          "Tuesday",
+                          "Wednesday",
+                          "Thursday",
+                          "Friday",
+                          "Saturday",
+                          "Sunday",
+                        ].map((day) => {
+                          const dayKey = day.toLowerCase().slice(0, 3);
+                          const jsonHours = business.op_hours_json?.[dayKey];
+
+                          if (jsonHours !== undefined) {
+                            return (
+                              <div
+                                key={day}
+                                className="flex justify-between items-center text-xs font-medium"
+                              >
+                                <span className="text-zinc-500">{day}</span>
+                                <span className="text-white">
+                                  {jsonHours === null
+                                    ? "Closed"
+                                    : jsonHours
+                                        .map((s: { open: string; close: string }) => `${s.open} - ${s.close}`)
+                                        .join(", ")}
+                                </span>
+                              </div>
+                            );
+                          }
+
+                          const hours = business.settings?.businessHours?.[day] || {
+                            slots: [["09:00", "20:00"]],
+                          };
                           return (
-                            <div key={day} className="flex justify-between items-center text-xs font-medium">
-                               <span className="text-zinc-500">{day}</span>
-                               <span className="text-white">
-                                  {hours.closed ? 'Closed' : `${hours.slots?.[0]?.[0]} - ${hours.slots?.[0]?.[1]}`}
-                               </span>
+                            <div
+                              key={day}
+                              className="flex justify-between items-center text-xs font-medium"
+                            >
+                              <span className="text-zinc-500">{day}</span>
+                              <span className="text-white">
+                                {hours.closed
+                                  ? "Closed"
+                                  : `${hours.slots?.[0]?.[0]} - ${hours.slots?.[0]?.[1]}`}
+                              </span>
                             </div>
                           );
                         })}

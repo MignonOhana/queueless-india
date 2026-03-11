@@ -20,6 +20,7 @@ interface Props {
   businessId: string;
   businessName: string;
   opHours?: string;    // e.g., "09:00-17:00"
+  opHoursJson?: Record<string, { open: string; close: string }[] | null>;
   serviceMins?: number;
   closedDays?: number[]; // 0=Sun, 6=Sat
 }
@@ -27,23 +28,54 @@ interface Props {
 export default function AdvanceBookingForm({
   businessId,
   businessName,
-  opHours = '09:00-17:00',
+  opHours = "09:00-17:00",
+  opHoursJson,
   serviceMins = 15,
   closedDays = [0], // Sunday closed by default
 }: Props) {
   const supabase = createClient();
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedSlot, setSelectedSlot] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [booked, setBooked] = useState(false);
 
   // Parse operating hours into slot list
   const slots = useMemo(() => {
-    const [startStr, endStr] = opHours.split('-');
-    const [startH, startM] = startStr.split(':').map(Number);
-    const [endH, endM] = endStr.split(':').map(Number);
+    if (!selectedDate) return [];
+
+    const date = new Date(selectedDate);
+    const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const dayKey = dayNames[date.getDay()];
+
+    const daySlots = opHoursJson?.[dayKey];
+
+    if (daySlots && daySlots.length > 0) {
+      const result: string[] = [];
+      daySlots.forEach((shift) => {
+        const [startH, startM] = shift.open.split(":").map(Number);
+        const [endH, endM] = shift.close.split(":").map(Number);
+        let current = startH * 60 + startM;
+        const end = endH * 60 + endM;
+
+        while (current + serviceMins <= end) {
+          const h = Math.floor(current / 60);
+          const m = current % 60;
+          result.push(
+            `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+          );
+          current += serviceMins;
+        }
+      });
+      return result;
+    }
+
+    // Fallback to legacy opHours text parsing
+    // predictions.id = businesses.id (slug)
+    const [startStr, endStr] = opHours.split("-");
+    const [startH, startM] = startStr.split(":").map(Number);
+    const [endH, endM] = endStr.split(":").map(Number);
 
     const result: string[] = [];
     let current = startH * 60 + startM;
@@ -52,15 +84,27 @@ export default function AdvanceBookingForm({
     while (current + serviceMins <= end) {
       const h = Math.floor(current / 60);
       const m = current % 60;
-      result.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      result.push(
+        `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`,
+      );
       current += serviceMins;
     }
     return result;
-  }, [opHours, serviceMins]);
+  }, [selectedDate, opHours, opHoursJson, serviceMins]);
 
   const isDateBlocked = (dateStr: string): boolean => {
     const date = new Date(dateStr);
     const dayOfWeek = date.getDay();
+    const dayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const dayKey = dayNames[dayOfWeek];
+
+    // Check JSON hours first
+    if (opHoursJson) {
+      if (opHoursJson[dayKey] === null) return true;
+      if (opHoursJson[dayKey] !== undefined) return false; // If explicitly set to something non-null, it's open
+    }
+
+    // Fallback to legacy closedDays
     if (closedDays.includes(dayOfWeek)) return true;
     if (INDIAN_HOLIDAYS_2026.includes(dateStr)) return true;
     return false;
@@ -81,10 +125,28 @@ export default function AdvanceBookingForm({
   };
 
   const handleBook = async () => {
+    const normalizePhone = (p: string) => {
+      let cleaned = p.replace(/\D/g, "");
+      if (cleaned.startsWith("91") && cleaned.length === 12) {
+        cleaned = cleaned.substring(2);
+      } else if (cleaned.startsWith("0") && cleaned.length === 11) {
+        cleaned = cleaned.substring(1);
+      }
+      return cleaned;
+    };
+
+    const digits = normalizePhone(customerPhone);
+
     if (!selectedDate || !selectedSlot || !customerName) {
       toast.error('Please fill all fields');
       return;
     }
+
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -93,7 +155,7 @@ export default function AdvanceBookingForm({
         business_id: businessId,
         user_id: user?.id || null,
         customer_name: customerName,
-        customer_phone: customerPhone,
+        customer_phone: "+91" + digits,
         booking_date: selectedDate,
         booking_time: selectedSlot,
         status: 'confirmed',

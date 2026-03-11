@@ -3,6 +3,7 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { supabase } from '@/lib/supabaseClient';
 import PublicBusinessClient from '@/components/Business/PublicBusinessClient';
 import { notFound } from 'next/navigation';
+import LanguageSelector from '@/components/LanguageSelector';
 
 interface Props {
   params: { businessId: string };
@@ -65,7 +66,12 @@ export default async function PublicBusinessPage({ params }: Props) {
     .limit(5);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0F]">
+    <main className="min-h-screen bg-[#0A0A0F] relative">
+       {/* Regional Language Support (UX-2) */}
+       <div className="absolute top-6 right-6 z-[100]">
+          <LanguageSelector variant="compact" />
+       </div>
+
        <PublicBusinessClient 
          business={business} 
          initialWaitingCount={waitingCount || 0} 

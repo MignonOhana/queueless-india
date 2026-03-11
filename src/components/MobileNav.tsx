@@ -1,6 +1,6 @@
 "use client";
 
-import { Compass, ListOrdered, QrCode, Bell, User, Map as MapIcon } from "lucide-react";
+import { Home, ListOrdered, QrCode, Search, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -25,10 +25,10 @@ export default function MobileNav() {
   }
 
   const navItems = [
-    { name: "Home", icon: Compass, href: "/home" },
-    { name: "Queue", icon: ListOrdered, href: queueUrl },
+    { name: "Home", icon: Home, href: "/home" },
+    { name: "My Queues", icon: ListOrdered, href: queueUrl },
     { name: "SCAN", icon: QrCode, href: "/customer/scanner", isCenter: true },
-    { name: "Map", icon: MapIcon, href: "/map/heatmap" },
+    { name: "Search", icon: Search, href: "/map" },
     { name: "Profile", icon: User, href: "/customer/profile" }, 
   ];
 
@@ -58,7 +58,7 @@ export default function MobileNav() {
           }
 
           return (
-            <Link key={item.name} href={item.href} className="flex flex-col items-center justify-center w-16 h-12">
+            <Link key={item.name} href={item.href} className="flex flex-col items-center justify-center min-w-[48px] min-h-[48px]">
               <motion.div 
                 whileTap={{ scale: 0.9 }}
                 className={`p-1.5 rounded-xl transition-colors ${isActive ? "bg-[#0B6EFE]/10 text-[#0B6EFE]" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"}`}
