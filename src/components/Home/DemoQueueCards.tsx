@@ -119,7 +119,7 @@ export function DemoQueueCards() {
                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-2xl mb-3 border border-white/5">
                   {demo.icon}
                 </div>
-                <h3 className="text-base font-white text-white leading-tight mb-1">
+                <h3 className="text-base font-black text-white leading-tight mb-1">
                   {demo.name}
                 </h3>
                 <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">

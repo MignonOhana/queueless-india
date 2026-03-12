@@ -3,27 +3,22 @@
 import { usePathname } from "next/navigation";
 import CustomerNav from "./Navigation/CustomerNav";
 import AdminNav from "./Navigation/AdminNav";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { userRole, loading } = useAuth();
 
-  // Route determining logic
-  
-  // 1. Digital Display boards have no navigation, maximizing screen space for tokens
-  if (pathname.startsWith("/display")) {
+  // 1. Digital Display boards have no navigation
+  if (pathname.startsWith("/display") || loading) {
     return null;
   }
 
-  // Hide on new mobile-first /home marketplace
-  if (pathname.startsWith("/home")) {
-    return null;
-  }
-
-  // 2. Admin/Business Dashboard
-  if (pathname.startsWith("/dashboard")) {
+  // 2. Conditional Nav based on Role
+  if (userRole === "business_owner") {
     return <AdminNav />;
   }
 
-  // 3. The general app flow (Landing Page, Customer Queue, Map) gets the Customer Nav
+  // 3. Guests and Customers get CustomerNav (includes Landing/Home)
   return <CustomerNav />;
 }
