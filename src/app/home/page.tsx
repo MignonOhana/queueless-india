@@ -14,7 +14,7 @@ import { haversineDistance, estimateTravelTime } from "@/lib/geolocation";
 // Dynamically import Leaflet map to avoid SSR errors
 const LeafletMiniMap = dynamic(() => import("@/components/Map/LeafletMiniMap"), { 
   ssr: false, 
-  loading: () => <div className="w-full h-full bg-slate-100 dark:bg-slate-800 animate-pulse rounded-2xl flex items-center justify-center font-bold text-slate-400">Loading Map...</div> 
+  loading: () => <div className="w-full h-full bg-white/5 dark:bg-slate-800 animate-pulse rounded-2xl flex items-center justify-center font-bold text-zinc-500">Loading Map...</div> 
 });
 
 const CATEGORIES = [
@@ -87,15 +87,15 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
     >
       <div 
         onClick={() => router.push(`/b/${lastBiz.id}`)}
-        className="bg-white border border-[#0B6EFE]/20 shadow-lg shadow-[#0B6EFE]/5 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:border-[#0B6EFE] transition-all"
+        className="bg-white border border-[#00F5A0]/20 shadow-lg shadow-[#00F5A0]/5 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:border-[#00F5A0] transition-all"
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 rounded-xl bg-[#0B6EFE]/10 flex items-center justify-center text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-[#00F5A0]/10 flex items-center justify-center text-xl shrink-0">
             {lastBiz.icon}
           </div>
           <div className="min-w-0">
             <h4 className="font-bold text-slate-900 text-sm truncate">Welcome back → {lastBiz.name}</h4>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-tight">
               Now serving: #{(queueStates[lastBiz.id] || 100) - lastBiz.queueLength} 
               {activeToken && <span className="text-[#0B6EFE] ml-2">| Your token: #{activeToken}</span>}
             </p>
@@ -381,16 +381,16 @@ export default function HomePage() {
       return (
         <div 
           onClick={() => router.push(`/b/${biz.id}`)}
-          className="bg-white rounded-2xl p-4 min-w-[260px] max-w-[260px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 flex gap-4 active:scale-95 transition-transform cursor-pointer hover:shadow-lg"
+          className="bg-[#111118] rounded-2xl p-4 min-w-[260px] max-w-[260px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-white/10 flex gap-4 active:scale-95 transition-transform cursor-pointer hover:shadow-lg"
         >
-          <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 relative">
+          <div className="w-16 h-16 rounded-xl bg-slate-50 border border-white/10 overflow-hidden shrink-0 relative">
              {/* eslint-disable-next-line @next/next/no-img-element */}
              <img src={biz.image} alt={biz.name} className="w-full h-full object-cover" />
              <div className="absolute inset-0 bg-black/10 flex items-center justify-center text-2xl drop-shadow-md">{biz.icon}</div>
           </div>
           <div className="flex flex-col justify-center flex-1 min-w-0">
-             <h4 className="font-bold text-slate-800 text-sm truncate">{biz.name}</h4>
-             <p className="text-slate-500 text-xs mb-1 truncate">{biz.address} • {biz.distance}km</p>
+             <h4 className="font-bold text-zinc-200 text-sm truncate">{biz.name}</h4>
+             <p className="text-zinc-500 text-xs mb-1 truncate">{biz.address} • {biz.distance}km</p>
              <div className="flex items-center gap-1 text-xs font-bold text-[#22C55E]">
                 <Clock size={12} /> {biz.waitTime} min wait
              </div>
@@ -402,13 +402,13 @@ export default function HomePage() {
     return (
       <div 
         onClick={() => router.push(`/b/${biz.id}`)}
-        className="bg-white rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-slate-100 active:scale-95 transition-transform cursor-pointer hover:shadow-xl group"
+        className="bg-[#111118] rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-white/10 active:scale-95 transition-transform cursor-pointer hover:shadow-xl group"
       >
-        <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4 bg-slate-100">
+        <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4 bg-white/5">
            {/* eslint-disable-next-line @next/next/no-img-element */}
            <img src={biz.image} alt={biz.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-           <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider text-slate-800">
+           <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider text-zinc-200">
              {biz.distance} km
            </div>
            <div className="absolute bottom-2 left-2 flex items-center gap-2">
@@ -425,7 +425,7 @@ export default function HomePage() {
         <div className="flex justify-between items-start mb-2">
            <div className="flex-1 min-w-0 pr-2">
               <h3 className="font-bold text-slate-900 text-base leading-tight truncate">{biz.name}</h3>
-              <p className="text-slate-500 text-xs mt-0.5 truncate">{biz.address}</p>
+              <p className="text-zinc-500 text-xs mt-0.5 truncate">{biz.address}</p>
            </div>
            <div className="flex flex-col items-end gap-1 shrink-0">
              {biz.avg_rating && biz.avg_rating > 0 ? (
@@ -433,9 +433,9 @@ export default function HomePage() {
                  <Star size={12} fill="currentColor" /> {biz.avg_rating}
                </div>
              ) : (
-               <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-black uppercase">New</span>
+               <span className="bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded text-[10px] font-black uppercase">New</span>
              )}
-             {biz.isFavorite && <Heart size={16} className="fill-[#0B6EFE] text-[#0B6EFE]" />}
+             {biz.isFavorite && <Heart size={16} className="fill-[#00F5A0] text-[#0B6EFE]" />}
            </div>
         </div>
         
@@ -445,17 +445,17 @@ export default function HomePage() {
                  <Clock size={14} /> {biz.waitTime} min wait
               </div>
               {biz.bestTimeToVisit && (
-                 <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                 <div className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
                     ⏰ Best: {biz.bestTimeToVisit.split('(')[0].trim()}
                  </div>
               )}
            </div>
            <div className="text-right">
-              <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                <Activity size={14} className="text-slate-400" />
+              <div className="text-xs font-semibold text-zinc-500 bg-white/5 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                <Activity size={14} className="text-zinc-500" />
                 Token {(TOKEN_PREFIXES[biz.category] || TOKEN_PREFIXES["default"])}-{queueStates[biz.id] || 100}
               </div>
-              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+              <p className="text-[10px] font-bold text-zinc-500 mt-1 uppercase tracking-tight">
                 Now serving: #{(queueStates[biz.id] || 100) - biz.queueLength}
               </p>
            </div>
@@ -463,11 +463,11 @@ export default function HomePage() {
 
         {/* Capacity Bar */}
         <div className="mt-4">
-           <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+           <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
               <span>Queue Load</span>
               <span>{queueStates[biz.id] || 100}/{biz.max_capacity || 50} slots used</span>
            </div>
-           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, ((queueStates[biz.id] || 100) / (biz.max_capacity || 50)) * 100)}%` }}
@@ -481,41 +481,41 @@ export default function HomePage() {
         </div>
         
         {/* Actions */}
-        <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-2 gap-2">
-           <button className="bg-[#0B6EFE]/10 text-[#0B6EFE] font-bold text-sm py-2 rounded-xl hover:bg-[#0B6EFE] hover:text-white transition-colors">View Queue</button>
-           <button className="bg-[#0B6EFE] text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-[#0B6EFE]/30 hover:bg-[#0B6EFE]/90 transition-colors">Join Now</button>
+        <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-2">
+           <button className="bg-[#00F5A0]/10 text-[#0B6EFE] font-bold text-sm py-2 rounded-xl hover:bg-[#00F5A0] hover:text-black transition-colors">View Queue</button>
+           <button className="bg-[#0B6EFE] text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-[#00F5A0]/30 hover:bg-[#00F5A0]/90 transition-colors">Join Now</button>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#F8FAFC] pb-28 font-sans selection:bg-[#0B6EFE]/30 selection:text-[#0B6EFE]">
+    <div className="min-h-screen overflow-x-hidden bg-[#0A0A0F] pb-28 font-sans selection:bg-[#00F5A0]/30 selection:text-[#00F5A0]">
       
       {/* SECTION 1 - LOCATION HEADER */ }
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-slate-200/50 shadow-sm">
+      <header className="sticky top-0 z-40 bg-[#0A0A0F]/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-white/10">
          <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <Link href="/" className="w-10 h-10 shrink-0 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 hover:text-[#0B6EFE] transition-colors">
+               <Link href="/" className="w-10 h-10 shrink-0 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-[#00F5A0] transition-colors">
                  <ChevronLeft size={20} />
                </Link>
                <div>
-                  <div className="flex items-center gap-1 text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+                  <div className="flex items-center gap-1 text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">
                     <MapPin size={12} className="text-[#F59E0B]" /> Current Location
                   </div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-slate-900 font-extrabold text-lg flex items-center">{locationName}</h2>
-                    <ChevronDown size={18} className={`text-[#0B6EFE] ${isLocating ? 'animate-bounce' : ''}`} />
+                    <h2 className="text-white font-extrabold text-lg flex items-center">{locationName}</h2>
+                    <ChevronDown size={18} className={`text-[#00F5A0] ${isLocating ? 'animate-bounce' : ''}`} />
                   </div>
                </div>
             </div>
             {/* User Profile Hook */}
             <Link 
                href={user ? "/customer/dashboard" : "/customer"}
-               className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden shadow-inner hover:ring-2 hover:ring-[#0B6EFE] transition-all"
+               className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden shadow-inner hover:ring-2 hover:ring-[#00F5A0] transition-all"
             >
                {/* eslint-disable-next-line @next/next/no-img-element */}
-               <img src={`https://ui-avatars.com/api/?name=${user?.id || 'User'}&background=0B6EFE&color=fff`} alt="User" />
+               <img src={`https://ui-avatars.com/api/?name=${user?.id || 'User'}&background=00F5A0&color=0A0A0F`} alt="User" />
             </Link>
          </div>
 
@@ -527,15 +527,15 @@ export default function HomePage() {
             >
                <Link 
                   href="/customer/dashboard"
-                  className="w-full flex items-center justify-between p-3 bg-[#0B6EFE]/10 border border-[#0B6EFE]/20 rounded-xl group hover:bg-[#0B6EFE]/20 transition-all"
+                  className="w-full flex items-center justify-between p-3 bg-[#00F5A0]/10 border border-[#00F5A0]/20 rounded-xl group hover:bg-[#00F5A0]/20 transition-all"
                >
                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-lg bg-[#0B6EFE] flex items-center justify-center text-white">
+                     <div className="w-8 h-8 rounded-lg bg-[#00F5A0] flex items-center justify-center text-black">
                         <Ticket size={16} />
                      </div>
-                     <span className="text-xs font-black text-[#0B6EFE] uppercase tracking-widest">Active Tokens Found</span>
+                     <span className="text-xs font-black text-[#00F5A0] uppercase tracking-widest">Active Tokens Found</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[#0B6EFE] font-black text-[10px] uppercase">
+                  <div className="flex items-center gap-2 text-[#00F5A0] font-black text-[10px] uppercase">
                      Dashboard <ChevronRight size={14} />
                   </div>
                </Link>
@@ -547,19 +547,19 @@ export default function HomePage() {
             <div className="flex gap-3">
                <div className="relative group flex-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#0B6EFE] transition-colors" />
+                     <Search className="w-5 h-5 text-zinc-500 group-focus-within:text-[#00F5A0] transition-colors" />
                   </div>
                   <input 
                      type="text" 
                      placeholder="Search hospitals, banks, salons, events..." 
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
-                     className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-[1.2rem] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B6EFE]/50 focus:border-[#0B6EFE] transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.03)]"
+                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.2rem] text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#00F5A0]/50 focus:border-[#00F5A0] transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.1)]"
                   />
                </div>
                <button 
                   onClick={() => router.push('/customer/scanner')}
-                  className="w-14 h-14 bg-white border border-slate-200 rounded-[1.2rem] flex items-center justify-center text-slate-900 hover:text-[#0B6EFE] hover:border-[#0B6EFE] transition-all shadow-sm shrink-0"
+                  className="w-14 h-14 bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center justify-center text-zinc-400 hover:text-[#00F5A0] hover:border-[#00F5A0] transition-all shadow-sm shrink-0"
                   title="Scan Store QR"
                >
                   <QrCode size={24} />
@@ -573,7 +573,7 @@ export default function HomePage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-10">
          
          <section className="bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] p-5 shadow-[0_8px_30px_rgba(30,27,75,0.2)] relative overflow-hidden border border-white/10 z-0">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[80px] opacity-20 pointer-events-none -z-10" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/100 rounded-full blur-[80px] opacity-20 pointer-events-none -z-10" />
             <div className="flex items-center justify-between mb-4 relative z-10">
                <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
@@ -597,7 +597,7 @@ export default function HomePage() {
                        <div className={`p-2 rounded-lg shrink-0 shadow-inner ${
                          item.type === 'ALERT' ? 'bg-emerald-500/20 text-emerald-400' :
                          item.type === 'FALLBACK' ? 'bg-amber-500/20 text-amber-400' :
-                         'bg-indigo-500/20 text-indigo-400'
+                         'bg-indigo-500/100/20 text-indigo-400'
                        }`}>
                           {item.type === 'ALERT' ? <Zap size={16} /> : 
                            item.type === 'FALLBACK' ? <TrendingUp size={16} /> : 
@@ -618,7 +618,7 @@ export default function HomePage() {
                     <div className="flex items-start gap-3 h-10">
                        <div className={`p-2 rounded-lg shrink-0 shadow-inner ${
                          pulseItems[0].type === 'ALERT' ? 'bg-emerald-500/20 text-emerald-400' :
-                         'bg-indigo-500/20 text-indigo-400'
+                         'bg-indigo-500/100/20 text-indigo-400'
                        }`}>
                           <Activity size={16} />
                        </div>
@@ -665,17 +665,17 @@ export default function HomePage() {
                   <h3 className="text-xl font-bold mb-1">City Hospital</h3>
                   <div className="flex items-center justify-between mt-4">
                      <div>
-                        <p className="text-slate-400 text-xs font-semibold mb-1">Token Number</p>
+                        <p className="text-zinc-500 text-xs font-semibold mb-1">Token Number</p>
                         <p className="text-3xl font-black text-[#F59E0B]">H-042</p>
                      </div>
                      <div className="text-right">
-                        <p className="text-slate-400 text-xs font-semibold mb-1">Status</p>
+                        <p className="text-zinc-500 text-xs font-semibold mb-1">Status</p>
                         <p className="text-lg font-bold">5 Ahead</p>
                      </div>
                   </div>
                   <button 
                     onClick={() => router.push(`/customer/queue/${activeTokenMap.orgId}/${activeTokenMap.tokenId}`)}
-                    className="w-full mt-6 bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-slate-100 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-6 bg-white text-slate-900 font-bold py-3 rounded-xl hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
                   >
                      View Queue Status <ArrowRight size={16} />
                   </button>
@@ -693,8 +693,8 @@ export default function HomePage() {
                         onClick={() => setActiveCategory(cat.id)}
                         className={`flex flex-col items-center gap-2 w-20 py-3 rounded-2xl transition-all shadow-sm ${
                            activeCategory === cat.id 
-                           ? "bg-[#0B6EFE] text-white shadow-[#0B6EFE]/30 scale-105 border-transparent" 
-                           : "bg-white border border-slate-100 text-slate-600 hover:border-slate-300"
+                           ? "bg-[#00F5A0] text-black shadow-[#00F5A0]/30 scale-105 border-transparent" 
+                           : "bg-white/5 border border-white/10 text-zinc-400 hover:border-white/20"
                         }`}
                      >
                         <span className="text-2xl drop-shadow-sm">{cat.icon}</span>
@@ -708,11 +708,11 @@ export default function HomePage() {
          {/* Search Filter Warning if empty */}
          {filteredBusinesses.length === 0 && (
             <div className="text-center py-12">
-               <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-300 mb-4 shadow-sm">
+               <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-zinc-600 mb-4 shadow-sm">
                   <Search size={24} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 mb-1">No queues found</h3>
-               <p className="text-slate-500 text-sm">Try widening your search or category.</p>
+               <h3 className="text-lg font-bold text-zinc-200 mb-1">No queues found</h3>
+               <p className="text-zinc-500 text-sm">Try widening your search or category.</p>
             </div>
          )}
 
@@ -722,7 +722,7 @@ export default function HomePage() {
                {/* SECTION 8 - FAVORITE BUSINESSES / TRENDING fallback */}
                <section>
                   <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                     <h2 className="text-lg font-black text-white flex items-center gap-2">
                        {user && favoriteQueues.length > 0 ? "⭐ Your Favorites" : "🔥 Trending Near You"}
                      </h2>
                   </div>
@@ -739,7 +739,7 @@ export default function HomePage() {
                {/* SECTION 5 - FASTEST QUEUES */}
                <section>
                   <div className="flex items-center justify-between mb-4 mt-2">
-                     <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">⚡ Fastest Service Nearby</h2>
+                     <h2 className="text-lg font-black text-white flex items-center gap-2">⚡ Fastest Service Nearby</h2>
                   </div>
                   <div className="-mx-4 px-4 overflow-x-auto no-scrollbar pb-4">
                      <div className="flex gap-4 w-max">
@@ -749,18 +749,18 @@ export default function HomePage() {
                </section>
 
                {/* SECTION 7 - MAP PREVIEW */}
-               <section className="bg-white rounded-3xl p-5 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] h-80 relative overflow-hidden group cursor-pointer block">
+               <section className="bg-[#111118] rounded-3xl p-5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.03)] h-80 relative overflow-hidden group cursor-pointer block">
                   <div className="absolute top-5 left-5 right-5 z-10 flex justify-between items-start pointer-events-none">
-                     <h2 className="text-lg font-black text-slate-900 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg">City Map View</h2>
+                     <h2 className="text-lg font-black text-white bg-[#0A0A0F]/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg">City Map View</h2>
                   </div>
                   <LeafletMiniMap center={userLoc ? [userLoc.lat, userLoc.lng] : CURRENT_LOCATION.coordinates} markers={liveBusinesses.slice(0, 10).map(b => ({ id: b.id, name: b.name, position: b.coordinates, waitTime: b.waitTime }))} />
                   
                   {/* Fake View Map overlay */}
                   <div 
                      onClick={() => router.push('/map')}
-                     className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-6 z-10 pointers-events-auto"
+                     className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/80 to-transparent flex items-end justify-center pb-6 z-10 pointers-events-auto"
                   >
-                     <button className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                     <button className="bg-[#00F5A0] text-black px-6 py-3 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2 hover:-translate-y-1 transition-transform">
                         Explore Full Map <ArrowRight size={16} />
                      </button>
                   </div>
@@ -769,7 +769,7 @@ export default function HomePage() {
                {/* SECTION 6 - POPULAR QUEUES */}
                <section>
                   <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">🔥 Popular Right Now</h2>
+                     <h2 className="text-lg font-black text-white flex items-center gap-2">🔥 Popular Right Now</h2>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      {popularQueues.map(biz => <QueueCard key={`pop-${biz.id}`} biz={biz} />)}
@@ -781,7 +781,7 @@ export default function HomePage() {
          {/* SECTION 4 - STANDARD NEARBY QUEUES FEED */}
          {(searchQuery.length > 0 || activeCategory !== "all") && (
             <section>
-               <h2 className="text-lg font-black text-slate-900 mb-4 px-1">{filteredBusinesses.length} Queues nearby</h2>
+               <h2 className="text-lg font-black text-white mb-4 px-1">{filteredBusinesses.length} Queues nearby</h2>
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {filteredBusinesses.map(biz => <QueueCard key={biz.id} biz={biz} />)}
                </div>
