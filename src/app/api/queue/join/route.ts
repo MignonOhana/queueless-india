@@ -12,9 +12,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const supabase = await createClient();
 
+    // Extract authenticated user server-side (don't trust client-sent userId)
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // If user is authenticated, always use their server-verified ID
+    // If not authenticated (guest join), userId stays null
+    const secureBody = {
+      ...body,
+      userId: user?.id ?? body.userId ?? null,
+    };
+
     // Proxy to the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke("generate-token", {
-      body,
+      body: secureBody,
     });
 
     if (error) {
