@@ -40,6 +40,7 @@ export const metadata: Metadata = {
     title: "QueueLess",
   },
   icons: {
+    icon: "/favicon.png",
     apple: "/icon-192.png",
   },
   formatDetection: {
