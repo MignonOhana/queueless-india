@@ -22,10 +22,10 @@ export default function AdminNav() {
 
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "My Business", href: "/dashboard/business", icon: LayoutDashboard }, // Placeholder icon or find better one
     { name: "Live Queue", href: "#live-queue", icon: Users },
     { name: "Map", href: "/map/heatmap", icon: MapPin },
     { name: "Analytics", href: "#analytics", icon: BarChart3 },
-    { name: "Staff", href: "#staff", icon: UserCircle },
     { name: "Settings", href: "#settings", icon: Settings },
   ];
 

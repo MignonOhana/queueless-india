@@ -28,17 +28,25 @@ export default function MobileNav() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Hide the navigation on non-customer routes or if not visible
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/display') || !isVisible) {
+  // Hide the navigation on display routes or if not visible
+  if (pathname.startsWith('/display') || !isVisible) {
     return null;
   }
 
-  const navItems = [
-    { name: "Home", icon: Home, href: "/home" },
-    { name: "My Tokens", icon: ListOrdered, href: "/my-tokens" },
-    { name: "Explore", icon: Search, href: "/map" },
-    { name: "Profile", icon: User, href: user ? "/customer/profile" : "/login" },
-  ];
+  const { userRole } = useAuth();
+
+  const navItems = userRole === "business_owner" 
+    ? [
+        { name: "Dashboard", icon: Home, href: "/dashboard" },
+        { name: "My Business", icon: Search, href: "/dashboard/business" },
+        { name: "Profile", icon: User, href: "/dashboard/profile" },
+      ]
+    : [
+        { name: "Home", icon: Home, href: "/home" },
+        { name: "My Tokens", icon: ListOrdered, href: "/my-tokens" },
+        { name: "Explore", icon: Search, href: "/map" },
+        { name: "Profile", icon: User, href: user ? "/customer/profile" : "/login" },
+      ];
 
   return (
     <div className="md:hidden fixed bottom-0 inset-x-0 z-50 pointer-events-none pb-safe">

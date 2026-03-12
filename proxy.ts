@@ -49,20 +49,40 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/b/${businessId}`, request.url));
   }
 
-  // 4. Authenticated User Protection (Business Owner)
-  if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // 4. Authenticated User Protection & Role-based Routing
+  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/home"];
+  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/");
+
+  if (!user && !isPublicRoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // 5. Dashboard Access Protection — skip for demo mode
-  // The dashboard page itself handles demo mode, so we only redirect
-  // if the user explicitly navigates to a sub-path of /dashboard
-  // For the main /dashboard page, we allow unauthenticated access so the
-  // demo login button is accessible.
+  if (user) {
+    // Fetch role from profile for routing decisions
+    const { data: profile } = await supabase
+      .from("user_profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    
+    const role = profile?.role;
 
-  // 6. Anti-Loop Logic: If user goes back to a "callback" or "redirecting" page, move them along
-  if (pathname === "/auth/callback" && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (pathname === "/login") {
+      return NextResponse.redirect(new URL(role === "business_owner" ? "/dashboard" : "/home", request.url));
+    }
+
+    if (role === "customer" && pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
+
+    if (role === "business_owner" && pathname.startsWith("/customer")) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    // Anti-Loop Logic: If user goes back to a "callback" page, move them along
+    if (pathname === "/auth/callback") {
+      return NextResponse.redirect(new URL(role === "business_owner" ? "/dashboard" : "/home", request.url));
+    }
   }
 
   return supabaseResponse;

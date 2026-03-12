@@ -244,7 +244,7 @@ export default function BusinessRegister() {
                 
                 <div className="space-y-6 flex-1">
                   <div className="mb-4">
-                    <GoogleSignInButton redirectTo="/dashboard" />
+                    <GoogleSignInButton redirectTo="/dashboard" role="business_owner" />
                     <div className="relative mt-8 mb-4">
                       <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>

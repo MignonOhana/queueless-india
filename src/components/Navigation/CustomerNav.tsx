@@ -6,11 +6,13 @@ import { Map, MapPin, QrCode, Ticket, Bell, User, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CustomerNav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   // Scroll detection for Pro UI
   useEffect(() => {
@@ -118,8 +120,15 @@ export default function CustomerNav() {
             <div className="flex flex-col gap-4">
               <Link onClick={() => setMobileMenuOpen(false)} href="/" className="font-bold text-lg text-slate-900 dark:text-white py-2 border-b border-slate-100 dark:border-slate-800">Home</Link>
               <Link onClick={() => setMobileMenuOpen(false)} href="/about" className="font-bold text-lg text-slate-900 dark:text-white py-2 border-b border-slate-100 dark:border-slate-800">About Us</Link>
-              <Link onClick={() => setMobileMenuOpen(false)} href="/policies" className="font-bold text-lg text-slate-900 dark:text-white py-2 border-b border-slate-100 dark:border-slate-800">Policies</Link>
-              <Link onClick={() => setMobileMenuOpen(false)} href="/dashboard" className="font-bold text-lg text-slate-900 dark:text-white py-2 border-b border-slate-100 dark:border-slate-800">Business Login</Link>
+              <Link onClick={() => setMobileMenuOpen(false)} href="/pricing" className="font-bold text-lg text-slate-900 dark:text-white py-2 border-b border-slate-100 dark:border-slate-800">Pricing</Link>
+              {!user ? (
+                <>
+                  <Link onClick={() => setMobileMenuOpen(false)} href="/login" className="font-bold text-lg text-[#0B6EFE] py-2 border-b border-slate-100 dark:border-slate-800">Login</Link>
+                  <Link onClick={() => setMobileMenuOpen(false)} href="/register" className="font-bold text-lg text-orange-500 py-2">Register Business</Link>
+                </>
+              ) : (
+                <Link onClick={() => setMobileMenuOpen(false)} href="/customer/profile" className="font-bold text-lg text-slate-900 dark:text-white py-2">My Profile</Link>
+              )}
             </div>
           </motion.div>
         )}

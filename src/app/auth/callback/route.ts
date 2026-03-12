@@ -29,7 +29,15 @@ export async function GET(request: NextRequest) {
         },
       },
     );
-    await supabase.auth.exchangeCodeForSession(code);
+    const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
+    
+    const role = requestUrl.searchParams.get("role");
+    if (session?.user && role) {
+      await supabase
+        .from("user_profiles")
+        .update({ role })
+        .eq("id", session.user.id);
+    }
   }
 
   return NextResponse.redirect(new URL(next, requestUrl.origin));

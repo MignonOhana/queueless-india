@@ -1,4 +1,4 @@
-export type Role = "CUSTOMER" | "ADMIN" | "STAFF";
+export type Role = "CUSTOMER" | "ADMIN" | "STAFF" | "customer" | "business_owner";
 
 export type QueueStatus = "WAITING" | "SERVING" | "SERVED" | "CANCELLED";
 

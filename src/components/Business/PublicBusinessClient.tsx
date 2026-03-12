@@ -29,7 +29,7 @@ interface PublicBusinessClientProps {
 
 export default function PublicBusinessClient({ business, initialWaitingCount, initialReviews }: PublicBusinessClientProps) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, userRole } = useAuth();
   const { t } = useLanguage();
   const { guestVisit, isLoaded, isReturningGuest, guestName, guestPhone, saveGuestSession } = useGuestSession(business.id);
 
@@ -399,18 +399,34 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                     </motion.div>
                   ) : joinMode === 'info' ? (
                     <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                       <button 
-                         disabled={!isOpen}
-                         onClick={() => setJoinMode(isAuthenticated ? 'account' : 'choose')}
-                         className="w-full flex items-center justify-center gap-2 py-5 rounded-[2rem] bg-[#00F5A0] text-[#0A0A0F] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,160,0.2)] disabled:opacity-50 disabled:grayscale"
-                       >
-                          {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
-                       </button>
+                       {userRole === "business_owner" ? (
+                         <div className="w-full p-6 py-8 rounded-[2rem] bg-indigo-500/10 border border-indigo-500/20 text-center">
+                            <ShieldCheck size={32} className="mx-auto text-indigo-400 mb-3" />
+                            <p className="text-white font-bold">Business Owner View</p>
+                            <p className="text-zinc-500 text-xs mt-1">You are viewing this as a business owner. Queue joining is disabled for your role.</p>
+                            <button 
+                              onClick={() => router.push('/dashboard')}
+                              className="mt-6 text-indigo-400 font-black uppercase tracking-widest text-[10px] hover:underline"
+                            >
+                              Go to My Dashboard
+                            </button>
+                         </div>
+                       ) : (
+                         <>
+                           <button 
+                             disabled={!isOpen}
+                             onClick={() => setJoinMode(isAuthenticated ? 'account' : 'choose')}
+                             className="w-full flex items-center justify-center gap-2 py-5 rounded-[2rem] bg-[#00F5A0] text-[#0A0A0F] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,160,0.2)] disabled:opacity-50 disabled:grayscale"
+                           >
+                              {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
+                           </button>
 
-                       {business.settings?.fastPassEnabled && isOpen && (
-                          <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#00F5A0] bg-[#00F5A0]/5 py-3 rounded-2xl border border-[#00F5A0]/10">
-                             <Zap size={14} fill="currentColor" /> Skip the line for ₹{business.settings?.fastPassPrice || 49}
-                          </div>
+                           {business.settings?.fastPassEnabled && isOpen && (
+                              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#00F5A0] bg-[#00F5A0]/5 py-3 rounded-2xl border border-[#00F5A0]/10">
+                                 <Zap size={14} fill="currentColor" /> Skip the line for ₹{business.settings?.fastPassPrice || 49}
+                              </div>
+                           )}
+                         </>
                        )}
                     </motion.div>
                   ) : joinMode === 'choose' ? (

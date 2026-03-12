@@ -10,6 +10,7 @@ import { MOCK_BUSINESSES, CURRENT_LOCATION, Business } from "@/lib/mockHomeData"
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
 import { haversineDistance, estimateTravelTime } from "@/lib/geolocation";
+import { DemoQueueCards } from "@/components/Home/DemoQueueCards";
 
 // Dynamically import Leaflet map to avoid SSR errors
 const LeafletMiniMap = dynamic(() => import("@/components/Map/LeafletMiniMap"), { 
@@ -117,7 +118,7 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
 
 export default function HomePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTokenMap, setActiveTokenMap] = useState<any>(null); // To store active queue if joined
@@ -482,8 +483,26 @@ export default function HomePage() {
         
         {/* Actions */}
         <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-2">
-           <button className="bg-[#00F5A0]/10 text-[#0B6EFE] font-bold text-sm py-2 rounded-xl hover:bg-[#00F5A0] hover:text-black transition-colors">View Queue</button>
-           <button className="bg-[#0B6EFE] text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-[#00F5A0]/30 hover:bg-[#00F5A0]/90 transition-colors">Join Now</button>
+           <button 
+             onClick={(e) => {
+               e.stopPropagation();
+               router.push(`/b/${biz.id}`);
+             }}
+             className="bg-[#00F5A0]/10 text-[#00F5A0] font-bold text-sm py-2 rounded-xl hover:bg-[#00F5A0] hover:text-black transition-colors"
+           >
+             View Details
+           </button>
+           {userRole !== "business_owner" && (
+             <button 
+               onClick={(e) => {
+                 e.stopPropagation();
+                 router.push(`/b/${biz.id}`);
+               }}
+               className="bg-[#0B6EFE] text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-[#0B6EFE]/30 hover:bg-[#0B6EFE]/90 transition-colors"
+             >
+               Join Now
+             </button>
+           )}
         </div>
       </div>
     );
@@ -511,7 +530,7 @@ export default function HomePage() {
             </div>
             {/* User Profile Hook */}
             <Link 
-               href={user ? "/customer/dashboard" : "/customer"}
+               href={user ? (userRole === "business_owner" ? "/dashboard" : "/customer/profile") : "/login"}
                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden shadow-inner hover:ring-2 hover:ring-[#00F5A0] transition-all"
             >
                {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -631,6 +650,9 @@ export default function HomePage() {
                </motion.div>
             </div>
          </section>
+
+         {/* INTERACTIVE DEMO SECTION */}
+         <DemoQueueCards />
 
          {/* SECTION 9 - ACTIVE QUEUE CARD (Sticky behavior implied by being top of feed) */}
          {activeTokenMap && (

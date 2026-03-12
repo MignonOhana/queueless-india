@@ -1,226 +1,347 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, QrCode, Building2, Clock, Users, Activity, MapPin } from 'lucide-react';
+import { 
+  X, 
+  QrCode, 
+  Camera, 
+  AlertCircle, 
+  Search, 
+  CheckCircle2, 
+  Loader2,
+  ArrowLeft
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import jsQR from 'jsqr';
+import { toast } from 'sonner';
 
-// Mock data for a scanned store
-const mockStoreData = {
-  id: "city-hospital",
-  name: "City Hospital",
-  location: "Andheri East, Mumbai",
-  services: [
-    { id: "opd", name: "OPD Consultation", waitTime: 15, load: "yellow", peopleWaiting: 12 },
-    { id: "billing", name: "Billing & Discharge", waitTime: 5, load: "green", peopleWaiting: 2 },
-    { id: "lab", name: "Laboratory", waitTime: 45, load: "red", peopleWaiting: 28 },
-    { id: "pharmacy", name: "Pharmacy", waitTime: 10, load: "green", peopleWaiting: 4 }
-  ]
-};
+type ScannerState = 'idle' | 'requesting' | 'scanning' | 'success' | 'denied' | 'error';
 
 export default function QRScanner() {
-  const [mounted, setMounted] = useState(false);
-  const [scannedData, setScannedData] = useState<string | null>(null);
-  const [isJoining, setIsJoining] = useState(false);
   const router = useRouter();
+  
+  // Refs for media
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
+  // State
+  const [state, setState] = useState<ScannerState>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [scannedBusiness, setScannedBusiness] = useState<string | null>(null);
+  const [lastScanTime, setLastScanTime] = useState(0);
 
-  useEffect(() => {
-    setMounted(true);
+  // Cleanup helper
+  const stopCamera = useCallback(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
   }, []);
 
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-
-  useEffect(() => {
-    if (!mounted || scannedData) return;
-
-    if (scannerRef.current) return;
-
-    const element = document.getElementById('qr-reader');
-    if (!element) return;
-
-    scannerRef.current = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-      false
-    );
-
-    scannerRef.current.render((decodedText) => {
-      // Vibration haptics for mobile
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(200);
+  // Request camera access
+  const startCamera = async () => {
+    setState('requesting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute('playsinline', 'true'); // Required for iOS Safari
+        videoRef.current.play();
+        setState('scanning');
       }
-
-      // Simulate instantly finding the store on any scan for demo purposes
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
+    } catch (err: any) {
+      console.error("Camera access error:", err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setState('denied');
+      } else {
+        setState('error');
+        setErrorMessage(err.message || "Failed to access camera");
       }
-      setScannedData(decodedText);
-      // In a real app we would fetch the exact store details via the decodedText ID here.
-    }, (err) => {
-        // Just ignore errors while scanning
-    });
-
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(e => console.error("Failed to clear scanner", e));
-        scannerRef.current = null;
-      }
-    };
-  }, [mounted, scannedData]);
-
-  if (!mounted) return null;
-
-  const handleJoinQueue = (serviceId: string) => {
-    setIsJoining(true);
-    // Simulate API Call delay
-    setTimeout(() => {
-      // Generate dummy token
-      const token = `${serviceId.substring(0,1).toUpperCase()}-${Math.floor(Math.random() * 80) + 10}`;
-      router.push(`/customer/queue/${mockStoreData.id}/${token}`);
-    }, 1500);
+    }
   };
 
+  // Processing loop
+  const scanFrame = useCallback(() => {
+    if (state !== 'scanning' || !videoRef.current || !canvasRef.current) return;
+
+    const now = Date.now();
+    // Scan every 300ms
+    if (now - lastScanTime >= 300) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+
+      if (context && video.readyState === video.HAVE_ENOUGH_DATA) {
+        // Set canvas size to match video aspect ratio for decoding
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+          processDecodedData(code.data);
+        }
+      }
+      setLastScanTime(now);
+    }
+
+    animationFrameRef.current = requestAnimationFrame(scanFrame);
+  }, [state, lastScanTime]);
+
+  // Handle detected data
+  const processDecodedData = (data: string) => {
+    // Check if it matches: queueless-india.vercel.app/b/[businessId]
+    // Or just a plain businessId (e.g. city-hospital)
+    let businessId = '';
+    
+    // Pattern helper
+    const urlPattern = /queueless-india\.vercel\.app\/b\/([^/?#\s]+)/i;
+    const match = data.match(urlPattern);
+
+    if (match) {
+      businessId = match[1];
+    } else if (data && !data.includes('/') && !data.includes(' ')) {
+      // Treat as a direct slug if it's reasonably formatted
+      businessId = data;
+    }
+
+    if (businessId) {
+      // Success!
+      stopCamera();
+      setState('success');
+      setScannedBusiness(businessId);
+      
+      // Navigate after a short success pause
+      setTimeout(() => {
+        router.push(`/b/${businessId}`);
+      }, 1500);
+    } else {
+      // Unrecognized
+      toast.error("Not a QueueLess QR code", {
+        id: "qr-recognition-error",
+        duration: 2000
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (state === 'scanning') {
+      animationFrameRef.current = requestAnimationFrame(scanFrame);
+    }
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, [state, scanFrame]);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, [stopCamera]);
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col items-center justify-center font-sans overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-[#0A0A0F] text-white font-sans overflow-hidden">
       
-      {/* Background blur map */}
-      <div className="absolute inset-0 bg-[url('https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/77.2090,28.6139,12,0/800x800?access_token=pk.eyJ1IjoiZXhhbXBsZSIsImEiOiJDSU5lLVlnIn0.123')] bg-cover bg-center opacity-20 blur-md pointer-events-none" />
-      
-      {!scannedData && (
-        <Link href="/customer" className="absolute top-6 left-6 z-50 text-white bg-white/10 backdrop-blur-md p-3 rounded-full hover:bg-white/20 transition-all border border-white/10 shadow-lg">
-          <X size={24} />
+      {/* HEADER */}
+      <div className="absolute top-0 inset-x-0 z-50 p-6 flex items-center justify-between bg-gradient-to-b from-[#0A0A0F] to-transparent">
+        <Link href="/home" className="p-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+          <ArrowLeft size={24} />
         </Link>
-      )}
-      
-      <AnimatePresence mode="wait">
-        {!scannedData ? (
-          <motion.div 
-            key="scanner"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center bg-black"
-          >
-            {/* The actual video feed container */}
-            <div id="qr-reader" className="absolute inset-0 w-full h-full object-cover [&_video]:object-cover [&_video]:w-full [&_video]:h-full [&>div]:hidden [&_video]:!block">
-               {/* html5-qrcode injects here automatically */}
-            </div>
+        <h1 className="text-xs font-black uppercase tracking-[0.3em] text-zinc-500">Scan QR Code</h1>
+        <div className="w-12 h-12" /> {/* Spacer */}
+      </div>
 
-            {/* Custom Overlay Scanning Frame */}
-            <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
-               <div className="relative w-64 h-64 border-2 border-indigo-500 rounded-3xl grid place-items-center">
-                  {/* Corner accents */}
-                  <div className="absolute -top-[2px] -left-[2px] w-8 h-8 border-t-4 border-l-4 border-indigo-400 rounded-tl-3xl"></div>
-                  <div className="absolute -top-[2px] -right-[2px] w-8 h-8 border-t-4 border-r-4 border-indigo-400 rounded-tr-3xl"></div>
-                  <div className="absolute -bottom-[2px] -left-[2px] w-8 h-8 border-b-4 border-l-4 border-indigo-400 rounded-bl-3xl"></div>
-                  <div className="absolute -bottom-[2px] -right-[2px] w-8 h-8 border-b-4 border-r-4 border-indigo-400 rounded-br-3xl"></div>
-                  
-                  {/* Scanning scanline animation */}
-                  <motion.div 
-                    animate={{ y: [0, 240, 0] }} 
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-0 inset-x-4 h-0.5 bg-indigo-500 shadow-[0_0_15px_rgba(99,102,241,1)]"
-                  />
-               </div>
-               
-               <p className="text-white mt-10 font-bold tracking-widest uppercase text-sm bg-black/30 px-6 py-3 rounded-full backdrop-blur-xl border border-white/10 flex items-center gap-2">
-                 <QrCode size={18} className="text-indigo-400" />
-                 Scan to Join Queue
-               </p>
-            </div>
-            
-            {/* Developer Tool: Simulate Scan Button positioned at safe bottom */}
-            <button 
-              onClick={() => {
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(200);
-                setScannedData("demo-scan-123");
-              }} 
-              className="absolute bottom-32 z-30 px-6 py-4 rounded-xl bg-white/10 text-white font-bold backdrop-blur-xl border border-white/20 active:scale-95 transition-transform"
+      <main className="h-full flex flex-col items-center justify-center p-6">
+        
+        <AnimatePresence mode="wait">
+          {state === 'idle' || state === 'requesting' ? (
+            <motion.div 
+              key="permission"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="text-center max-w-sm space-y-8"
             >
-              Simulate Scan For Demo
-            </button>
-          </motion.div>
+              <div className="w-24 h-24 bg-[#00F5A0]/10 rounded-[2.5rem] flex items-center justify-center mx-auto border border-[#00F5A0]/20 text-[#00F5A0]">
+                <Camera size={48} />
+              </div>
+              <div>
+                <h2 className="text-3xl font-black tracking-tight mb-3">Join Instantly</h2>
+                <p className="text-zinc-500 font-medium leading-relaxed">
+                  Scan a business QR code to skip the wait and join their virtual queue in one tap.
+                </p>
+              </div>
+              <button 
+                onClick={startCamera}
+                disabled={state === 'requesting'}
+                className="w-full py-5 bg-[#00F5A0] text-[#0A0A0F] rounded-[2rem] font-black uppercase tracking-widest text-xs shadow-xl shadow-[#00F5A0]/10 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {state === 'requesting' ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Requesting...
+                  </>
+                ) : (
+                  <>
+                    Allow Camera Access
+                    <CheckCircle2 size={18} />
+                  </>
+                )}
+              </button>
+            </motion.div>
+          ) : state === 'scanning' ? (
+            <motion.div 
+              key="camera"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center pt-24"
+            >
+              <video 
+                ref={videoRef}
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+              />
 
-        ) : (
+              {/* Hiddan canvas for processing */}
+              <canvas ref={canvasRef} className="hidden" />
 
-          <motion.div 
-            key="preview"
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-0 inset-x-0 w-full h-[85vh] rounded-t-[2.5rem] md:h-auto md:max-w-md md:rounded-[2.5rem] md:static bg-slate-50 dark:bg-slate-900 overflow-hidden flex flex-col shadow-2xl z-50 border-t border-slate-200 dark:border-slate-800"
-          >
-             {/* Mobile bottom sheet drag handle */}
-             <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mt-4 mb-2 md:hidden" />
-             <div className="absolute top-4 right-4 z-50">
-                <button onClick={() => setScannedData(null)} className="p-2 rounded-full bg-black/20 text-white backdrop-blur-md hover:bg-black/40 transition-colors">
-                  <X size={20} />
-                </button>
-             </div>
-
-             <div className="h-48 bg-gradient-to-br from-indigo-500 to-purple-600 relative shrink-0">
-                <div className="absolute inset-0 bg-black/20" />
-                <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center text-indigo-600 border-4 border-slate-50 dark:border-slate-900 border-solid">
-                  <Building2 size={36} />
-                </div>
-             </div>
-
-             <div className="px-6 pt-14 pb-8 flex-1 overflow-y-auto">
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-1">{mockStoreData.name}</h2>
-                <p className="text-sm font-medium text-slate-500 flex items-center gap-1.5 mb-8"><MapPin size={14}/> {mockStoreData.location}</p>
-
-                <h3 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-xs">Select Service</h3>
+              {/* SCAN OVERLAY */}
+              <div className="absolute inset-0 z-20 pointer-events-none flex flex-col items-center justify-center">
+                <div className="absolute inset-0 bg-black/40" />
                 
-                <div className="space-y-3">
-                   {mockStoreData.services.map((svc) => (
-                      <button 
-                        key={svc.id}
-                        onClick={() => handleJoinQueue(svc.id)}
-                        disabled={isJoining}
-                        className={`w-full text-left bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm hover:border-indigo-400 transition-all flex items-center justify-between group active:scale-[0.98] ${isJoining ? 'opacity-50 pointer-events-none' : ''}`}
-                      >
-                         <div>
-                            <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-500 transition-colors">{svc.name}</h4>
-                            <div className="flex items-center gap-3 mt-1.5 text-xs font-semibold">
-                               <span className="flex items-center gap-1 text-slate-500"><Users size={12}/> {svc.peopleWaiting} waiting</span>
-                               <span className="flex items-center gap-1 text-slate-500"><Clock size={12}/> {svc.waitTime}m wait</span>
-                            </div>
-                         </div>
-                         
-                         {/* Load Indicator Ring */}
-                         <div className="flex items-center justify-center relative w-12 h-12">
-                            <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 36 36">
-                              <circle cx="18" cy="18" r="16" className="stroke-slate-100 dark:stroke-slate-700" strokeWidth="4" fill="none" />
-                              <circle 
-                                cx="18" cy="18" r="16" 
-                                className={
-                                  svc.load === "green" ? "stroke-emerald-500" : 
-                                  svc.load === "yellow" ? "stroke-amber-500" : "stroke-rose-500"
-                                } 
-                                strokeWidth="4" fill="none" strokeDasharray="100" strokeDashoffset={svc.load === "green" ? 75 : svc.load === "yellow" ? 40 : 15} strokeLinecap="round" />
-                            </svg>
-                            <span className="text-[10px] font-black uppercase tracking-tighter text-slate-700 dark:text-slate-300">
-                               {svc.load === "green" ? "LOW" : svc.load === "yellow" ? "MED" : "HIGH"}
-                            </span>
-                         </div>
-                      </button>
-                   ))}
+                {/* Clear viewport for scanning */}
+                <div className="relative w-72 h-72">
+                  <div className="absolute inset-0 shadow-[0_0_0_9999px_rgba(10,10,15,0.6)]" />
+                  
+                  {/* Corner brackets */}
+                  <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-[#00F5A0] rounded-tl-3xl shadow-[0_0_15px_rgba(0,245,160,0.3)]" />
+                  <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-[#00F5A0] rounded-tr-3xl shadow-[0_0_15px_rgba(0,245,160,0.3)]" />
+                  <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-[#00F5A0] rounded-bl-3xl shadow-[0_0_15px_rgba(0,245,160,0.3)]" />
+                  <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-[#00F5A0] rounded-br-3xl shadow-[0_0_15px_rgba(0,245,160,0.3)]" />
+                  
+                  {/* Scanline */}
+                  <motion.div 
+                    animate={{ y: [0, 280, 0] }} 
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-x-4 h-0.5 bg-gradient-to-r from-transparent via-[#00F5A0] to-transparent shadow-[0_0_20px_rgba(0,245,160,0.8)]"
+                  />
+                  
+                  <div className="absolute inset-0 flex items-center justify-center opacity-20">
+                    <QrCode size={48} className="text-[#00F5A0]" />
+                  </div>
                 </div>
-             </div>
 
-             {/* Joining Overlay */}
-             {isJoining && (
-                <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-                   <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
-                   <p className="font-bold text-slate-900 dark:text-white">Generating Token...</p>
+                <div className="mt-12 text-center space-y-2">
+                  <p className="font-black uppercase tracking-[0.2em] text-[#00F5A0] text-xs">Align QR Code</p>
+                  <p className="text-zinc-400 text-sm font-medium">Scanning for businesses...</p>
                 </div>
-             )}
+              </div>
+            </motion.div>
+          ) : state === 'success' ? (
+            <motion.div 
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center space-y-6"
+            >
+              <div className="w-24 h-24 bg-[#00F5A0] rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-[#00F5A0]/20">
+                <CheckCircle2 size={48} className="text-[#0A0A0F]" />
+              </div>
+              <div>
+                <p className="text-[#00F5A0] font-black uppercase tracking-widest text-xs mb-2">QR Recognized</p>
+                <h2 className="text-3xl font-black tracking-tight mb-2">Finding Store...</h2>
+                <p className="text-zinc-500 font-medium">Redirecting you to the business page</p>
+              </div>
+              <div className="flex justify-center">
+                <Loader2 size={32} className="animate-spin text-zinc-700" />
+              </div>
+            </motion.div>
+          ) : state === 'denied' ? (
+            <motion.div 
+              key="denied"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center max-w-sm space-y-6"
+            >
+              <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto text-rose-500">
+                <AlertCircle size={40} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight mb-3 text-white">Permission Denied</h2>
+                <p className="text-zinc-500 font-medium text-sm leading-relaxed">
+                  We need camera access to scan QR codes. Please enable camera permission in your browser settings and refresh the page.
+                </p>
+              </div>
+              <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left">
+                <p className="text-xs font-bold text-zinc-400 mb-2 uppercase tracking-widest">How to enable:</p>
+                <ol className="text-xs text-zinc-500 space-y-2 list-decimal list-inside">
+                  <li>Tap the lock or settings icon in your browser bar</li>
+                  <li>Find "Camera" and set to "Allow"</li>
+                  <li>Reload this page</li>
+                </ol>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="error"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center max-w-sm space-y-6"
+            >
+              <div className="w-20 h-20 bg-rose-500/10 rounded-3xl flex items-center justify-center mx-auto text-rose-500">
+                <AlertCircle size={40} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight mb-2 text-white">Oops! Something went wrong</h2>
+                <p className="text-zinc-500 font-medium text-sm">
+                  {errorMessage || "We couldn't access your camera. Make sure no other app is using it."}
+                </p>
+              </div>
+              <button 
+                onClick={startCamera}
+                className="px-8 py-4 bg-white/5 border border-white/10 rounded-2xl font-bold hover:bg-white/10 transition-all text-sm"
+              >
+                Try Again
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-          </motion.div>
+        {/* BOTTOM FALLBACK */}
+        {(state !== 'success' && state !== 'scanning') && (
+          <div className="absolute bottom-12 inset-x-6">
+            <Link 
+              href="/map" 
+              className="w-full py-5 rounded-[2rem] border border-white/10 flex items-center justify-center gap-3 text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+            >
+              <span className="font-bold text-sm">Use Manual Search Instead</span>
+              <Search size={18} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         )}
-      </AnimatePresence>
 
+      </main>
+
+      {/* FOOTER INDICATOR */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-16 h-1 bg-zinc-800 rounded-full" />
     </div>
   );
 }

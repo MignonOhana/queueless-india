@@ -29,22 +29,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initial role from localStorage for immediate UI responsiveness
+    const savedRole = typeof window !== "undefined" ? localStorage.getItem("ql_user_role") : null;
+    if (savedRole) {
+      setUserRole(savedRole as Role);
+    }
+
     // Check active session on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        setUserRole((session.user.user_metadata?.role as Role) || "CUSTOMER");
+        setUser(session.user);
+        
+        // Fetch role from user_profiles (Supabase is source of truth)
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+        
+        const finalRole = profile?.role || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+        setUserRole(finalRole);
+        localStorage.setItem("ql_user_role", finalRole);
       }
       setLoading(false);
     });
 
     // Listen for auth changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        setUserRole((session.user.user_metadata?.role as Role) || "CUSTOMER");
+        setUser(session.user);
+        
+        // Always sync role from DB on auth change
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+          
+        const finalRole = profile?.role || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+        setUserRole(finalRole);
+        localStorage.setItem("ql_user_role", finalRole);
       } else {
+        setUser(null);
         setUserRole(null);
+        localStorage.removeItem("ql_user_role");
       }
       setLoading(false);
     });
@@ -56,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setUserRole(null);
+    localStorage.removeItem("ql_user_role");
   };
 
   return (
