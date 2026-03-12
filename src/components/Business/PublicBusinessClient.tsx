@@ -14,7 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useRouter } from 'next/navigation';
 import { useGuestSession } from '@/hooks/useGuestSession';
-import { getDistance } from '@/lib/geolocation';
+import { haversineDistance as getDistance } from '@/lib/geolocation';
 import { EmailOTPModal } from '@/components/auth/EmailOTPModal';
 import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
@@ -375,6 +375,21 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                              <p className="text-xl font-black">{joinedToken.estimatedWaitMins}m</p>
                           </div>
                        </div>
+
+                       {/* PWA Install Banner */}
+                       <div className="mb-6 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-left">
+                          <div className="flex-1 pr-4">
+                             <p className="text-white font-bold text-xs uppercase tracking-tight">📱 Add to Home Screen</p>
+                             <p className="text-zinc-400 text-[10px] mt-0.5">Stay updated even when your screen is off</p>
+                          </div>
+                          <button 
+                             onClick={() => window.dispatchEvent(new Event('trigger-pwa-install'))}
+                             className="px-4 py-2 bg-emerald-500 text-black font-black text-[10px] uppercase rounded-xl hover:bg-emerald-400 transition-colors"
+                          >
+                             Add Now
+                          </button>
+                       </div>
+
                        <button 
                          onClick={() => router.push(`/track/${joinedToken.tokenId}`)}
                          className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all shadow-xl"

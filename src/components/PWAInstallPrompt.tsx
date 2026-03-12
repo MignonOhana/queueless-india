@@ -10,41 +10,52 @@ export default function PWAInstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if joined queue at least once
-    const hasJoinedQueue = localStorage.getItem('queueless_joined_once');
-    if (!hasJoinedQueue) return;
-
-    // Check if dismissed recently (7 days)
-    const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at');
-    if (dismissedAt) {
-      const now = new Date().getTime();
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if (now - parseInt(dismissedAt) < sevenDays) return;
+    // 1. Visit Count Tracking
+    const currentCount = parseInt(localStorage.getItem('visit_count') || '0');
+    if (currentCount < 10) { // Limit sanity check
+       localStorage.setItem('visit_count', (currentCount + 1).toString());
     }
+
+    // 2. Dismissal Logic
+    const isDismissed = localStorage.getItem('pwa_prompt_dismissed') === 'true';
+    if (isDismissed) return;
+
+    // 3. iOS Standalone detection
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+    if (isStandalone) return;
 
     // iOS Detection
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
     
-    if (isIOSDevice && !isStandalone) {
-      setIsIOS(true);
-      setShowPrompt(true);
-      return;
-    }
+    // 4. Custom Event listener for targeted triggers
+    const handleTrigger = () => {
+      const count = parseInt(localStorage.getItem('visit_count') || '0');
+      if (count >= 2) {
+        if (isIOSDevice) {
+          setIsIOS(true);
+          setShowPrompt(true);
+        } else if (deferredPrompt) {
+          setShowPrompt(true);
+        }
+      }
+    };
 
-    // Android/Desktop beforeinstallprompt
+    window.addEventListener('trigger-pwa-install', handleTrigger);
+
+    // Standard beforeinstallprompt for Android/Chrome
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowPrompt(true);
+      // We don't auto-show here anymore per user request (show after join)
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('trigger-pwa-install', handleTrigger);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -57,7 +68,7 @@ export default function PWAInstallPrompt() {
   };
 
   const dismiss = () => {
-    localStorage.setItem('pwa_prompt_dismissed_at', new Date().getTime().toString());
+    localStorage.setItem('pwa_prompt_dismissed', 'true');
     setShowPrompt(false);
   };
 
@@ -88,7 +99,7 @@ export default function PWAInstallPrompt() {
               
               <div className="flex-1">
                 <h3 className="text-white font-semibold text-sm mb-1">
-                  Add QueueLess to your home screen
+                  Add QueueLess to your home screen for instant updates
                 </h3>
                 <p className="text-zinc-400 text-xs leading-relaxed mb-4">
                   {isIOS 

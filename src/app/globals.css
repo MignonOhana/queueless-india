@@ -119,3 +119,9 @@ h1, h2, h3, h4, h5, h6 {
   width: fit-content;
   animation: ticker 40s linear infinite;
 }
+
+@media (max-width: 768px) {
+  main {
+    padding-bottom: 70px;
+  }
+}

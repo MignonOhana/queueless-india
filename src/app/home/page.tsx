@@ -2,14 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Search, ChevronDown, ChevronLeft, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap, Ticket, ChevronRight } from "lucide-react";
+import { MapPin, Search, ChevronDown, ChevronLeft, Clock, Heart, ArrowRight, Activity, QrCode, TrendingUp, Zap, Ticket, ChevronRight, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { MOCK_BUSINESSES, CURRENT_LOCATION, Business } from "@/lib/mockHomeData";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/context/AuthContext";
-import { getDistance, estimateTravelTime } from "@/lib/geolocation";
+import { haversineDistance, estimateTravelTime } from "@/lib/geolocation";
 
 // Dynamically import Leaflet map to avoid SSR errors
 const LeafletMiniMap = dynamic(() => import("@/components/Map/LeafletMiniMap"), { 
@@ -28,14 +28,106 @@ const CATEGORIES = [
   { id: "Airport Services", name: "Airport Services", icon: "✈" },
 ];
 
+const CATEGORY_ICONS: Record<string, string> = {
+  "Hospital": "🏥",
+  "Hospitals": "🏥",
+  "Bank": "🏦",
+  "Banks": "🏦",
+  "Temple": "🛕",
+  "Government": "🏛",
+  "Railway Station": "🚆",
+  "Court": "⚖️",
+  "Post Office": "📮",
+  "Salon": "💇",
+  "Salons": "💇",
+  "Restaurant": "🍽",
+  "Restaurants": "🍽",
+  "default": "🏢"
+};
+
+const TOKEN_PREFIXES: Record<string, string> = {
+  "Hospital": "H",
+  "Hospitals": "H",
+  "Bank": "B",
+  "Government": "G",
+  "Temple": "T",
+  "Railway Station": "R",
+  "Court": "C",
+  "Post Office": "P",
+  "default": "Q"
+};
+
+const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Business[], queueStates: Record<string, number> }) => {
+  const router = useRouter();
+  const [lastBiz, setLastBiz] = useState<Business | null>(null);
+  const [activeToken, setActiveToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const lastId = localStorage.getItem("last_visited_business_id");
+    const savedToken = localStorage.getItem("active_token_number");
+    const savedOrg = localStorage.getItem("active_org");
+
+    if (lastId) {
+      const biz = businesses.find(b => b.id === lastId);
+      if (biz) setLastBiz(biz);
+    }
+    
+    if (savedToken && savedOrg === lastId) {
+      setActiveToken(savedToken);
+    }
+  }, [businesses]);
+
+  if (!lastBiz) return null;
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-2xl mx-auto px-4 mt-4"
+    >
+      <div 
+        onClick={() => router.push(`/b/${lastBiz.id}`)}
+        className="bg-white border border-[#0B6EFE]/20 shadow-lg shadow-[#0B6EFE]/5 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:border-[#0B6EFE] transition-all"
+      >
+        <div className="flex items-center gap-3 overflow-hidden">
+          <div className="w-10 h-10 rounded-xl bg-[#0B6EFE]/10 flex items-center justify-center text-xl shrink-0">
+            {lastBiz.icon}
+          </div>
+          <div className="min-w-0">
+            <h4 className="font-bold text-slate-900 text-sm truncate">Welcome back → {lastBiz.name}</h4>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+              Now serving: #{(queueStates[lastBiz.id] || 100) - lastBiz.queueLength} 
+              {activeToken && <span className="text-[#0B6EFE] ml-2">| Your token: #{activeToken}</span>}
+            </p>
+          </div>
+        </div>
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/customer/dashboard`);
+          }}
+          className="bg-[#0B6EFE] text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:brightness-110 shrink-0"
+        >
+          Resume
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 export default function HomePage() {
   const router = useRouter();
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeTokenMap, setActiveTokenMap] = useState<any>(null); // To store active queue if joined
-  const [liveBusinesses, setLiveBusinesses] = useState<Business[]>(MOCK_BUSINESSES);
+  const [liveBusinesses, setLiveBusinesses] = useState<Business[]>([]);
+  const [trendingBusinesses, setTrendingBusinesses] = useState<Business[]>([]);
   const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
+  const [locationName, setLocationName] = useState("Detecting location...");
+  const [isLocating, setIsLocating] = useState(true);
+  const [queueStates, setQueueStates] = useState<Record<string, number>>({});
+  const [pulseItems, setPulseItems] = useState<any[]>([]);
 
   useEffect(() => {
     // Check local storage for an active queue token
@@ -45,15 +137,53 @@ export default function HomePage() {
       setActiveTokenMap({ orgId: savedOrg, tokenId: savedToken });
     }
     
+    // Reverse Geocoding via Nominatim
+    const fetchCityName = async (lat: number, lng: number) => {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await response.json();
+        const city = data.address.city || data.address.town || data.address.village || data.address.suburb || "Current Location";
+        setLocationName(city);
+      } catch (err) {
+        console.error("Reverse geocoding failed", err);
+        setLocationName("Current Location");
+      } finally {
+        setIsLocating(false);
+      }
+    };
+
     // Fetch live organically created businesses from Supabase MVP DB
     const fetchLiveBusinesses = async (userLat?: number, userLng?: number) => {
-      const { data, error } = await supabase.from("businesses").select("*");
-      if (!error && data && data.length > 0) {
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("*")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null);
+        
+      if (!error && data) {
+        // Fetch Predictions
+        const { data: predData } = await supabase.from('predictions').select('id, bestTimeToVisit');
+        const predMap: Record<string, string> = {};
+        predData?.forEach(p => { predMap[p.id] = p.bestTimeToVisit; });
+
+        // Fetch Queue info
+        const { data: queueData } = await supabase.from("queues").select("org_id, last_issued_number, total_waiting, max_capacity");
+        const qMap: Record<string, number> = {};
+        const qLenMap: Record<string, number> = {};
+        const qCapMap: Record<string, number> = {};
+        if (queueData) {
+          queueData.forEach(q => {
+            qMap[q.org_id] = q.last_issued_number;
+            qLenMap[q.org_id] = q.total_waiting;
+            qCapMap[q.org_id] = q.max_capacity;
+          });
+          setQueueStates(qMap);
+        }
+
         const mappedData: Business[] = data.map((b: any) => {
-          
-          let calcDist = +(Math.random() * 5 + 0.5).toFixed(1); // fallback mock
-          if (userLat && userLng && b.latitude && b.longitude) {
-             calcDist = getDistance(userLat, userLng, Number(b.latitude), Number(b.longitude));
+          let calcDist = 0;
+          if (userLat && userLng) {
+             calcDist = haversineDistance(userLat, userLng, Number(b.latitude), Number(b.longitude));
           }
 
           return {
@@ -63,38 +193,159 @@ export default function HomePage() {
             address: b.location,
             distance: calcDist, 
             waitTime: b.serviceMins || 15, 
-            queueLength: Math.floor(Math.random() * 10),
-            image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop", 
-            icon: CATEGORIES.find(c => c.name === b.category)?.icon || "🏢",
-            coordinates: [Number(b.latitude) || 28.6139, Number(b.longitude) || 77.2090], 
+            queueLength: qLenMap[b.id] || 0,
+            image: b.image || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop", 
+            icon: CATEGORY_ICONS[b.category] || CATEGORY_ICONS["default"],
+            coordinates: [Number(b.latitude), Number(b.longitude)] as [number, number], 
             isFastest: b.fastPassEnabled,
             isPopular: true,
-            isFavorite: false
+            isFavorite: false,
+            max_capacity: qCapMap[b.id] || 50,
+            bestTimeToVisit: predMap[b.id],
+            avg_rating: b.avg_rating,
+            total_reviews: b.total_reviews
           };
         });
         
-        // Merge latest live data to the front of the list, keeping mock data to fill out page
-        setLiveBusinesses([...mappedData, ...MOCK_BUSINESSES]);
+        setLiveBusinesses(mappedData);
+
+        // Fetch Trending
+        const { data: trendData } = await supabase
+          .from("businesses")
+          .select("*")
+          .order('total_reviews', { ascending: false })
+          .limit(5);
+
+        if (trendData) {
+          const trendMapped = trendData.map((b: any) => {
+            let calcDist = 0;
+            if (userLat && userLng && b.latitude && b.longitude) {
+               calcDist = haversineDistance(userLat, userLng, Number(b.latitude), Number(b.longitude));
+            }
+            return {
+              id: b.id,
+              name: b.name,
+              category: b.category,
+              address: b.location,
+              distance: calcDist, 
+              waitTime: b.serviceMins || 15, 
+              queueLength: qLenMap[b.id] || 0,
+              image: b.image || "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop", 
+              icon: CATEGORY_ICONS[b.category] || CATEGORY_ICONS["default"],
+              coordinates: [Number(b.latitude) || 28.6139, Number(b.longitude) || 77.2090] as [number, number], 
+              isFastest: b.fastPassEnabled,
+              isPopular: true,
+              isFavorite: false,
+              max_capacity: qCapMap[b.id] || 50,
+              bestTimeToVisit: predMap[b.id],
+              avg_rating: b.avg_rating,
+              total_reviews: b.total_reviews
+            };
+          });
+          setTrendingBusinesses(trendMapped);
+        }
       }
     };
     
-    // Attempt to get user location first to calculate exact distances
+    // Geolocation Handling
+    const handleFallbackLocation = () => {
+      const savedCoords = localStorage.getItem("user_city_coords");
+      let lat = 28.6139;
+      let lng = 77.2090;
+      
+      if (savedCoords) {
+        try {
+          const parsed = JSON.parse(savedCoords);
+          lat = parsed.lat;
+          lng = parsed.lng;
+        } catch (e) {
+          console.error("Error parsing saved coords", e);
+        }
+      }
+      
+      setUserLoc({ lat, lng });
+      fetchLiveBusinesses(lat, lng);
+      fetchCityName(lat, lng);
+    };
+
     if (navigator.geolocation) {
        navigator.geolocation.getCurrentPosition(
           (pos) => {
-             setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-             fetchLiveBusinesses(pos.coords.latitude, pos.coords.longitude);
+             const { latitude, longitude } = pos.coords;
+             setUserLoc({ lat: latitude, lng: longitude });
+             fetchLiveBusinesses(latitude, longitude);
+             fetchCityName(latitude, longitude);
           },
           (err) => {
-             console.warn("Location denied, falling back to mock distances", err);
-             fetchLiveBusinesses(); // fallback
+             console.warn("Location denied, falling back", err);
+             handleFallbackLocation();
           },
           { enableHighAccuracy: true, timeout: 5000 }
        );
     } else {
-       fetchLiveBusinesses();
+       handleFallbackLocation();
     }
-    
+    // Live Pulse Logic
+    const fetchPulseData = async () => {
+      const { data, error } = await supabase.rpc('get_live_pulse_data');
+      if (!error && data) {
+        setPulseItems(data);
+      }
+    };
+
+    fetchPulseData();
+
+    // Realtime Subscriptions
+    const tokenSub = supabase
+      .channel('public:tokens')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' }, async (payload) => {
+        // Fetch new pulse data or manually prepend
+        const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single();
+        if (biz) {
+          const newItem = {
+            type: 'LIVE',
+            org_id: payload.new.orgId,
+            name: biz.name,
+            category: biz.category,
+            count: 1,
+            label: 'Someone just joined the queue'
+          };
+          setPulseItems(prev => [newItem, ...prev.slice(0, 7)]);
+        }
+      })
+      .subscribe();
+
+    const queueSub = supabase
+      .channel('public:queues')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'queues' }, (payload) => {
+        const oldWaiting = payload.old.total_waiting;
+        const newWaiting = payload.new.total_waiting;
+        
+        // Wait time dropped alert
+        if (oldWaiting - newWaiting > 5) {
+           setPulseItems(prev => [{
+             type: 'ALERT',
+             label: '⚡ Wait time dropped significantly!',
+             name: 'Nearby Queue'
+           }, ...prev.slice(0, 7)]);
+        }
+
+        // FastPass Alert (Low slots)
+        // Note: Assuming a threshold of 5 for low slots if we don't have total capacity
+        if (newWaiting > 20) { // Busy alert
+           setPulseItems(prev => [{
+             type: 'ALERT',
+             label: '🔥 Busy: Join now to save your spot',
+             name: 'Fast Track'
+           }, ...prev.slice(0, 7)]);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tokenSub);
+      supabase.removeChannel(queueSub);
+    };
   }, []);
 
   // Filter Data
@@ -106,7 +357,10 @@ export default function HomePage() {
     }).sort((a, b) => a.distance - b.distance); // Sort geographically nearest first
   }, [searchQuery, activeCategory]);
 
-  const fastestQueues = liveBusinesses.filter(b => b.isFastest);
+  const fastestQueues = liveBusinesses
+    .filter(b => b.isFastest)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 6);
   const popularQueues = liveBusinesses.filter(b => b.isPopular);
   const favoriteQueues = liveBusinesses.filter(b => b.isFavorite);
 
@@ -158,20 +412,60 @@ export default function HomePage() {
            </div>
         </div>
         <div className="flex justify-between items-start mb-2">
-           <div>
-              <h3 className="font-bold text-slate-900 text-base leading-tight">{biz.name}</h3>
-              <p className="text-slate-500 text-xs mt-0.5">{biz.address}</p>
+           <div className="flex-1 min-w-0 pr-2">
+              <h3 className="font-bold text-slate-900 text-base leading-tight truncate">{biz.name}</h3>
+              <p className="text-slate-500 text-xs mt-0.5 truncate">{biz.address}</p>
            </div>
-           {biz.isFavorite && <Heart size={16} className="fill-[#0B6EFE] text-[#0B6EFE] shrink-0" />}
+           <div className="flex flex-col items-end gap-1 shrink-0">
+             {biz.avg_rating && biz.avg_rating > 0 ? (
+               <div className="flex items-center gap-0.5 text-amber-500 font-bold text-xs">
+                 <Star size={12} fill="currentColor" /> {biz.avg_rating}
+               </div>
+             ) : (
+               <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-black uppercase">New</span>
+             )}
+             {biz.isFavorite && <Heart size={16} className="fill-[#0B6EFE] text-[#0B6EFE]" />}
+           </div>
         </div>
         
         <div className="flex items-center justify-between mt-4">
-           <div className="flex items-center gap-1.5 bg-[#22C55E]/10 text-[#22C55E] px-2.5 py-1 rounded-lg text-xs font-bold">
-              <Clock size={14} /> {biz.waitTime} min wait
+           <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5 bg-[#22C55E]/10 text-[#22C55E] px-2.5 py-1 rounded-lg text-xs font-bold w-fit">
+                 <Clock size={14} /> {biz.waitTime} min wait
+              </div>
+              {biz.bestTimeToVisit && (
+                 <div className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1 w-fit">
+                    ⏰ Best: {biz.bestTimeToVisit.split('(')[0].trim()}
+                 </div>
+              )}
            </div>
-           <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
-             <Activity size={14} className="text-slate-400" />
-             Token {biz.category.charAt(0).toUpperCase()}-{100 + biz.queueLength}
+           <div className="text-right">
+              <div className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                <Activity size={14} className="text-slate-400" />
+                Token {(TOKEN_PREFIXES[biz.category] || TOKEN_PREFIXES["default"])}-{queueStates[biz.id] || 100}
+              </div>
+              <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tight">
+                Now serving: #{(queueStates[biz.id] || 100) - biz.queueLength}
+              </p>
+           </div>
+        </div>
+
+        {/* Capacity Bar */}
+        <div className="mt-4">
+           <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+              <span>Queue Load</span>
+              <span>{queueStates[biz.id] || 100}/{biz.max_capacity || 50} slots used</span>
+           </div>
+           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, ((queueStates[biz.id] || 100) / (biz.max_capacity || 50)) * 100)}%` }}
+                className={`h-full rounded-full ${
+                  ((queueStates[biz.id] || 100) / (biz.max_capacity || 50)) < 0.4 ? 'bg-emerald-500' :
+                  ((queueStates[biz.id] || 100) / (biz.max_capacity || 50)) < 0.7 ? 'bg-amber-500' :
+                  'bg-rose-500'
+                }`}
+              />
            </div>
         </div>
         
@@ -199,8 +493,8 @@ export default function HomePage() {
                     <MapPin size={12} className="text-[#F59E0B]" /> Current Location
                   </div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-slate-900 font-extrabold text-lg flex items-center">{CURRENT_LOCATION.name}</h2>
-                    <ChevronDown size={18} className="text-[#0B6EFE]" />
+                    <h2 className="text-slate-900 font-extrabold text-lg flex items-center">{locationName}</h2>
+                    <ChevronDown size={18} className={`text-[#0B6EFE] ${isLocating ? 'animate-bounce' : ''}`} />
                   </div>
                </div>
             </div>
@@ -263,9 +557,10 @@ export default function HomePage() {
          </div>
       </header>
 
+      <RecentlyVisitedBanner businesses={liveBusinesses} queueStates={queueStates} />
+
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-10">
          
-         {/* SECTION 10 - LIVE QUEUE PULSE */}
          <section className="bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] p-5 shadow-[0_8px_30px_rgba(30,27,75,0.2)] relative overflow-hidden border border-white/10 z-0">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-[80px] opacity-20 pointer-events-none -z-10" />
             <div className="flex items-center justify-between mb-4 relative z-10">
@@ -277,46 +572,51 @@ export default function HomePage() {
             
             <div className="relative z-10 h-14 overflow-hidden mask-image:linear-gradient(to_bottom,transparent,black_15%,black_85%,transparent)">
                <motion.div
-                 animate={{ y: [0, -56, -112, -168, -224] }}
-                 transition={{ repeat: Infinity, duration: 15, ease: "linear" }}
+                 animate={{ y: pulseItems.length > 1 ? [0, -56 * (pulseItems.length - 1)] : 0 }}
+                 transition={{ 
+                   repeat: Infinity, 
+                   duration: Math.max(10, pulseItems.length * 3), 
+                   ease: "linear" 
+                 }}
                  className="flex flex-col gap-4"
+                 whileHover={{ animationPlayState: 'paused' }}
                >
-                  <div className="flex items-start gap-3 h-10">
-                     <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg shrink-0 shadow-inner"><TrendingUp size={16} /></div>
-                     <div>
-                        <p className="font-bold text-white text-sm">AIIMS Hospital</p>
-                        <p className="text-xs text-indigo-200 font-medium">3 people joined in the last 10 mins</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start gap-3 h-10">
-                     <div className="p-2 bg-amber-500/20 text-amber-400 rounded-lg shrink-0 shadow-inner"><Zap size={16} /></div>
-                     <div>
-                        <p className="font-bold text-white text-sm">Urban Salon</p>
-                        <p className="text-xs text-amber-200 font-medium">Fast Pass almost sold out!</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start gap-3 h-10">
-                     <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0 shadow-inner"><Activity size={16} /></div>
-                     <div>
-                        <p className="font-bold text-white text-sm">City Center OPD</p>
-                        <p className="text-xs text-emerald-200 font-medium">Wait time dropped by 15 mins</p>
-                     </div>
-                  </div>
-                  <div className="flex items-start gap-3 h-10">
-                     <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg shrink-0 shadow-inner"><TrendingUp size={16} /></div>
-                     <div>
-                        <p className="font-bold text-white text-sm">Axis Bank</p>
-                        <p className="text-xs text-indigo-200 font-medium">Queue is moving very fast currently</p>
-                     </div>
-                  </div>
-                  {/* Seamless loop clone of first element */}
-                  <div className="flex items-start gap-3 h-10">
-                     <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg shrink-0 shadow-inner"><TrendingUp size={16} /></div>
-                     <div>
-                        <p className="font-bold text-white text-sm">AIIMS Hospital</p>
-                        <p className="text-xs text-indigo-200 font-medium">3 people joined in the last 10 mins</p>
-                     </div>
-                  </div>
+                  {pulseItems.map((item, idx) => (
+                    <div key={`${item.org_id}-${idx}`} className="flex items-start gap-3 h-10">
+                       <div className={`p-2 rounded-lg shrink-0 shadow-inner ${
+                         item.type === 'ALERT' ? 'bg-emerald-500/20 text-emerald-400' :
+                         item.type === 'FALLBACK' ? 'bg-amber-500/20 text-amber-400' :
+                         'bg-indigo-500/20 text-indigo-400'
+                       }`}>
+                          {item.type === 'ALERT' ? <Zap size={16} /> : 
+                           item.type === 'FALLBACK' ? <TrendingUp size={16} /> : 
+                           <Activity size={16} />}
+                       </div>
+                       <div>
+                          <p className="font-bold text-white text-sm truncate max-w-[200px]">{item.name}</p>
+                          <p className={`text-xs font-medium ${
+                            item.type === 'ALERT' ? 'text-emerald-200' :
+                            item.type === 'FALLBACK' ? 'text-amber-200' :
+                            'text-indigo-200'
+                          }`}>{item.label}</p>
+                       </div>
+                    </div>
+                  ))}
+                  {/* Seamless loop clone */}
+                  {pulseItems.length > 0 && (
+                    <div className="flex items-start gap-3 h-10">
+                       <div className={`p-2 rounded-lg shrink-0 shadow-inner ${
+                         pulseItems[0].type === 'ALERT' ? 'bg-emerald-500/20 text-emerald-400' :
+                         'bg-indigo-500/20 text-indigo-400'
+                       }`}>
+                          <Activity size={16} />
+                       </div>
+                       <div>
+                          <p className="font-bold text-white text-sm">{pulseItems[0].name}</p>
+                          <p className="text-xs text-indigo-200 font-medium">{pulseItems[0].label}</p>
+                       </div>
+                    </div>
+                  )}
                </motion.div>
             </div>
          </section>
@@ -408,14 +708,19 @@ export default function HomePage() {
          {/* FEED CONTENT - Only show rows if not explicitly searching */}
          {searchQuery.length === 0 && activeCategory === "all" ? (
             <>
-               {/* SECTION 8 - FAVORITE BUSINESSES */}
+               {/* SECTION 8 - FAVORITE BUSINESSES / TRENDING fallback */}
                <section>
                   <div className="flex items-center justify-between mb-4">
-                     <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">⭐ Your Favorites</h2>
+                     <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                       {user && favoriteQueues.length > 0 ? "⭐ Your Favorites" : "🔥 Trending Near You"}
+                     </h2>
                   </div>
                   <div className="-mx-4 px-4 overflow-x-auto no-scrollbar pb-4">
                      <div className="flex gap-4 w-max">
-                        {favoriteQueues.map(biz => <QueueCard key={biz.id} biz={biz} layout="horizontal" />)}
+                        {user && favoriteQueues.length > 0 
+                          ? favoriteQueues.map(biz => <QueueCard key={biz.id} biz={biz} layout="horizontal" />)
+                          : trendingBusinesses.map(biz => <QueueCard key={`trend-${biz.id}`} biz={biz} layout="horizontal" />)
+                        }
                      </div>
                   </div>
                </section>
@@ -437,7 +742,7 @@ export default function HomePage() {
                   <div className="absolute top-5 left-5 right-5 z-10 flex justify-between items-start pointer-events-none">
                      <h2 className="text-lg font-black text-slate-900 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg">City Map View</h2>
                   </div>
-                  <LeafletMiniMap center={CURRENT_LOCATION.coordinates} markers={liveBusinesses.slice(0, 10).map(b => ({ id: b.id, name: b.name, position: b.coordinates, waitTime: b.waitTime }))} />
+                  <LeafletMiniMap center={userLoc ? [userLoc.lat, userLoc.lng] : CURRENT_LOCATION.coordinates} markers={liveBusinesses.slice(0, 10).map(b => ({ id: b.id, name: b.name, position: b.coordinates, waitTime: b.waitTime }))} />
                   
                   {/* Fake View Map overlay */}
                   <div 

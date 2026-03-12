@@ -8,7 +8,7 @@
  * @param lon2 Longitude of point 2 in decimal degrees
  * @returns The distance in kilometers
  */
-export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in kilometers
   
   // Convert decimal degrees to radians
