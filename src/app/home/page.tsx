@@ -355,14 +355,25 @@ export default function HomePage() {
       const matchSearch = b.name.toLowerCase().includes(searchQuery.toLowerCase()) || b.category.toLowerCase().includes(searchQuery.toLowerCase());
       return matchCategory && matchSearch;
     }).sort((a, b) => a.distance - b.distance); // Sort geographically nearest first
-  }, [searchQuery, activeCategory]);
+  }, [liveBusinesses, searchQuery, activeCategory]);
 
-  const fastestQueues = liveBusinesses
-    .filter(b => b.isFastest)
-    .sort((a, b) => a.distance - b.distance)
-    .slice(0, 6);
-  const popularQueues = liveBusinesses.filter(b => b.isPopular);
-  const favoriteQueues = liveBusinesses.filter(b => b.isFavorite);
+  const fastestQueues = useMemo(() => {
+    return [...liveBusinesses]
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 6);
+  }, [liveBusinesses]);
+
+  const popularQueues = useMemo(() => {
+    return [...liveBusinesses]
+      .sort((a, b) => (b.total_reviews || 0) - (a.total_reviews || 0))
+      .slice(0, 6);
+  }, [liveBusinesses]);
+
+  const favoriteQueues = useMemo(() => {
+    // Check localStorage for favorited or recently visited businesses
+    const lastId = typeof window !== 'undefined' ? localStorage.getItem("last_visited_business_id") : null;
+    return liveBusinesses.filter(b => b.id === lastId);
+  }, [liveBusinesses]);
 
   // Reusable Queue Card Component
   const QueueCard = ({ biz, layout = "vertical" }: { biz: Business, layout?: "vertical" | "horizontal" }) => {

@@ -9,7 +9,7 @@ import PageTransition from "@/components/PageTransition";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { getDistance, estimateTravelTime } from "@/lib/geolocation";
+import { haversineDistance, estimateTravelTime } from "@/lib/geolocation";
 import { sendTokenAlert } from "@/lib/notifications";
 
 export default function TicketPage({
@@ -91,7 +91,7 @@ export default function TicketPage({
     const calculateTravel = async (userLat: number, userLng: number) => {
        const { data, error } = await supabase.from('businesses').select('latitude, longitude').eq('id', orgId).maybeSingle();
        if (!error && data && data.latitude && data.longitude) {
-          const distanceKM = getDistance(userLat, userLng, Number(data.latitude), Number(data.longitude));
+          const distanceKM = haversineDistance(userLat, userLng, Number(data.latitude), Number(data.longitude));
           const tTime = estimateTravelTime(distanceKM);
           setTravelTimeMins(tTime);
        }
