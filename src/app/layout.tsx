@@ -75,9 +75,13 @@ export default function RootLayout({
               <LanguageProvider>
                 <AuthProvider>
                   <Toaster position="top-center" expand={false} richColors theme="dark" />
-                  <PageTransition>
-                    {children}
-                  </PageTransition>
+                  <div className="flex flex-1">
+                    <main className="flex-1 md:pl-64 transition-all duration-300">
+                      <PageTransition>
+                        {children}
+                      </PageTransition>
+                    </main>
+                  </div>
                   <PWAInstallPrompt />
                   <MobileNav />
                 </AuthProvider>

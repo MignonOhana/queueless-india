@@ -1,7 +1,6 @@
 "use client";
 
 import PageTransition from "@/components/PageTransition";
-import CustomerNav from "@/components/Navigation/CustomerNav";
 import { Bell, Clock, Ticket } from "lucide-react";
 
 export default function AlertsPage() {

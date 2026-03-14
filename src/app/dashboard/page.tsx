@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Clock, CheckCircle2, QrCode, Lock, LogOut, ChevronRight, ArrowRight, Globe, AlertCircle, TrendingUp, Settings, MoreVertical, LayoutDashboard, Activity, CalendarCheck, BarChart3, Loader2 } from "lucide-react";
+import { Users, Clock, CheckCircle2, QrCode, Lock, LogOut, ChevronRight, ArrowRight, Globe, AlertCircle, TrendingUp, Settings, MoreVertical, LayoutDashboard, Activity, CalendarCheck, BarChart3, Loader2, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +19,6 @@ import PlanBadge from "@/components/Dashboard/PlanBadge";
 import UpgradeModal from "@/components/pricing/UpgradeModal";
 import { PLAN_LIMITS, isFeatureLocked } from "@/lib/planGating";
 import QueueRow from "@/components/Dashboard/QueueRow";
-import DashboardNav from "@/components/Dashboard/DashboardNav";
 import GlassCard from "@/components/ui/GlassCard";
 import LiveIndicator from "@/components/ui/LiveIndicator";
 import CountUp from "@/components/ui/CountUp";
@@ -288,7 +287,7 @@ export default function BusinessDashboard() {
       )}
 
       {/* 🚀 DASHBOARD HEADER */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto flex items-center justify-between mb-8 sticky top-0 z-40 bg-background/80 backdrop-blur-md py-4 border-b border-white/5 px-4 md:px-0">
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
@@ -318,60 +317,72 @@ export default function BusinessDashboard() {
                 >
                    {businessData?.is_open ? '🟢 OPEN' : '⚪ CLOSED'}
                 </button>
-                <div className="h-4 w-px bg-white/10 mx-1" />
-                <Link 
-                   href={`/b/${businessData?.id}`}
-                   target="_blank"
-                   className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary hover:brightness-110 transition-all bg-primary/5 px-3 py-1 rounded-full border border-primary/20"
-                >
-                   <Globe size={12} /> View Public Profile
-                </Link>
              </div>
           </div>
+        </div>
+
+        {/* Unified Nav Bar in Header */}
+        <div className="hidden lg:flex items-center bg-zinc-900/50 border border-white/5 rounded-2xl p-1 gap-1">
+           <button 
+              onClick={() => setActiveTab('Overview')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Overview' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+           >
+              Overview
+           </button>
+           <button 
+              onClick={() => router.push('/dashboard/queue')}
+              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all"
+           >
+              Queue
+           </button>
+           <button 
+              onClick={() => router.push('/dashboard/qr')}
+              className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-zinc-500 hover:text-white transition-all"
+           >
+              QR Code
+           </button>
+           <button 
+              onClick={() => setActiveTab('Analytics')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Analytics' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+           >
+              Analytics
+           </button>
+           <button 
+              onClick={() => setActiveTab('Settings')}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'Settings' ? 'bg-primary text-black' : 'text-zinc-500 hover:text-white'}`}
+           >
+              Settings
+           </button>
         </div>
 
         <div className="flex items-center gap-3">
            <div className="text-right hidden sm:block">
               <p className="text-xl font-black text-white">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
               <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                Today
               </p>
            </div>
+           
+           <div className="h-10 w-px bg-white/10 hidden sm:block mx-1" />
+           
+           {/* Role Switcher */}
            <button 
-              onClick={() => router.push('/dashboard/queue')}
-              className="px-4 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors gap-2 font-black uppercase tracking-widest text-[10px]"
+              onClick={() => router.push('/home')}
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors hover:scale-105 active:scale-95"
+              title="Switch to Customer Mode"
            >
-              <Activity size={18} /> Queue Terminal
-           </button>
-           <button 
-              onClick={() => router.push('/dashboard/qr')}
-              className="px-4 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 hover:bg-white/10 transition-colors gap-2 font-black uppercase tracking-widest text-[10px]"
-           >
-              <QrCode size={18} /> My QR Code
-           </button>
-           <button 
-              id="qr-header-icon"
-              onClick={() => setActiveTab('QR')}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
-           >
-              <QrCode size={20} />
-           </button>
-           <button 
-              onClick={() => setActiveTab('Settings')}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
-           >
-              <Settings size={20} />
+              <UserCircle size={20} />
            </button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 md:px-0">
         
         {activeTab === "Overview" && (
           <div className="space-y-8">
             
             {/* ⚡ HERO STATS ROW */}
-            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-4 px-4 snap-x">
+            <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar snap-x">
                {/* 1. Currently Serving */}
                <GlassCard className="min-w-[300px] flex-shrink-0 snap-center bg-gradient-to-br from-primary/10 to-transparent">
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">Currently Serving</p>
@@ -450,11 +461,11 @@ export default function BusinessDashboard() {
                   <select 
                     value={selectedCounter}
                     onChange={(e) => setSelectedCounter(e.target.value)}
-                    className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold text-white outline-none cursor-pointer hover:bg-white/10 transition-colors"
+                    className="bg-zinc-900 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold text-white outline-none cursor-pointer hover:bg-white/10 transition-colors"
                   >
                     <option value="all">All Departments</option>
-                    <option value="opd" className="text-black">OPD (General)</option>
-                    <option value="spl" className="text-black">Specialist</option>
+                    <option value="opd" className="text-zinc-300">OPD (General)</option>
+                    <option value="spl" className="text-zinc-300">Specialist</option>
                   </select>
                </div>
 
@@ -579,7 +590,7 @@ export default function BusinessDashboard() {
                                 toast.error(`Update failed: ${err.message}`);
                               }
                             }}
-                            className="px-6 py-3 rounded-xl bg-[#00F5A0] text-[#0A0A0F] font-black uppercase text-[10px]"
+                            className="px-6 py-3 rounded-xl bg-primary text-black font-black uppercase text-[10px]"
                           >
                              Save
                           </button>
@@ -605,13 +616,6 @@ export default function BusinessDashboard() {
            </div>
         )}
       </div>
-
-      {/* 📱 BOTTOM NAVIGATION */}
-      <DashboardNav 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        tvUrl={`/display/${businessData?.id}`}
-      />
 
       {/* MODALS */}
       <QRCodeModal orgId={businessData?.id} isOpen={showQR} onClose={() => setShowQR(false)} />
