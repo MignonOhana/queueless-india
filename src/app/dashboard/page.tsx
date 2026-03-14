@@ -1,8 +1,9 @@
 "use client";
 
-import { Users, Clock, CheckCircle2, QrCode, Lock, LogOut, ChevronRight, ArrowRight, Globe, AlertCircle, TrendingUp, Settings, MoreVertical, LayoutDashboard, Activity, CalendarCheck, BarChart3 } from "lucide-react";
+import { Users, Clock, CheckCircle2, QrCode, Lock, LogOut, ChevronRight, ArrowRight, Globe, AlertCircle, TrendingUp, Settings, MoreVertical, LayoutDashboard, Activity, CalendarCheck, BarChart3, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAdminQueue } from "@/lib/useAdminQueue";
@@ -25,6 +26,7 @@ import CountUp from "@/components/ui/CountUp";
 import StaffManagement from "@/components/Dashboard/StaffManagement";
 import BusinessOnboarding from "@/components/Onboarding/BusinessOnboarding";
 import AnalyticsDashboard from "@/components/Analytics/AnalyticsDashboard";
+import OnboardingChecklist from "@/components/Dashboard/OnboardingChecklist";
 
 const QueueChart = dynamic(() => import("@/components/Analytics/QueueChart"), { 
   ssr: false, 
@@ -33,6 +35,7 @@ const QueueChart = dynamic(() => import("@/components/Analytics/QueueChart"), {
 
 export default function BusinessDashboard() {
   const supabase = createClient();
+  const router = useRouter();
   const [isCalling, setIsCalling] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -221,14 +224,46 @@ export default function BusinessDashboard() {
     );
   }
 
-  // Loading gate: wait for businessData to be ready before rendering dashboard
-  if (!businessData?.id) {
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const triggerUpdate = async () => {
+    setOnboardingLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const { data: biz } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('owner_id', session.user.id)
+        .maybeSingle();
+      setBusinessData(biz);
+    }
+    setOnboardingLoading(false);
+  };
+
+  // Onboarding View
+  if (!businessData || businessData.claim_status === 'claimed') {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-primary font-black uppercase tracking-widest text-xs">Loading Business...</p>
-        </div>
+      <div className="min-h-screen bg-background">
+        <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 z-10">
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
+              Q
+            </div>
+            <span className="font-extrabold text-xl tracking-tight text-white">
+              QueueLess<span className="text-blue-500"> Business</span>
+            </span>
+          </Link>
+          <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} className="text-zinc-500 hover:text-white transition-colors">
+            <LogOut size={20} />
+          </button>
+        </nav>
+        
+        {onboardingLoading ? (
+          <div className="flex-1 flex items-center justify-center py-20">
+            <Loader2 className="animate-spin text-primary" size={40} />
+          </div>
+        ) : (
+          <OnboardingChecklist business={businessData} onUpdate={triggerUpdate} />
+        )}
       </div>
     );
   }
@@ -302,6 +337,12 @@ export default function BusinessDashboard() {
                 {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
            </div>
+           <button 
+              onClick={() => router.push('/dashboard/queue')}
+              className="px-4 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 hover:bg-emerald-500/20 transition-colors gap-2 font-black uppercase tracking-widest text-[10px]"
+           >
+              <Activity size={18} /> Queue Terminal
+           </button>
            <button 
               id="qr-header-icon"
               onClick={() => setActiveTab('QR')}

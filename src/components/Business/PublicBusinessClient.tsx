@@ -204,8 +204,14 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
         estimatedWaitMins: data.estimatedWaitMins, 
         position: waitingCount + 1, 
         isGuest: asGuest, 
-        tokenId: data.id 
+        tokenId: data.id,
+        orgId: business.id
       });
+
+      // Redirect to the live tracking page after a short delay for confetti
+      setTimeout(() => {
+        router.push(`/customer/queue/${business.id}/${data.id}`);
+      }, 3000);
 
       // Confetti logic
       const end = Date.now() + 3000;

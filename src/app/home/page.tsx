@@ -129,6 +129,8 @@ export default function HomePage() {
   const [isLocating, setIsLocating] = useState(true);
   const [queueStates, setQueueStates] = useState<Record<string, number>>({});
   const [pulseItems, setPulseItems] = useState<any[]>([]);
+  const [visitCount, setVisitCount] = useState<number>(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     // Check local storage for an active queue token
@@ -136,6 +138,29 @@ export default function HomePage() {
     const savedToken = localStorage.getItem("active_token");
     if (savedOrg && savedToken) {
       setActiveTokenMap({ orgId: savedOrg, tokenId: savedToken });
+    }
+
+    // Fetch visit count for onboarding
+    const fetchVisitCount = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('visit_count')
+        .eq('id', user.id)
+        .single();
+        
+      if (!error && data) {
+        setVisitCount(data.visit_count);
+        // Show if first-time user (visit_count 0 or 1)
+        if (data.visit_count <= 1) {
+          setShowOnboarding(true);
+        }
+      }
+    };
+
+    if (user) {
+      fetchVisitCount();
     }
     
     // Reverse Geocoding via Nominatim
@@ -347,7 +372,18 @@ export default function HomePage() {
       supabase.removeChannel(tokenSub);
       supabase.removeChannel(queueSub);
     };
-  }, []);
+  }, [user]);
+
+  const handleDismissOnboarding = async () => {
+    if (!user) return;
+    setShowOnboarding(false);
+    
+    // Increment visit_count in DB
+    await supabase
+      .from('user_profiles')
+      .update({ visit_count: visitCount + 1 })
+      .eq('id', user.id);
+  };
 
   // Filter Data
   const filteredBusinesses = useMemo(() => {
@@ -588,6 +624,35 @@ export default function HomePage() {
       </header>
 
       <RecentlyVisitedBanner businesses={liveBusinesses} queueStates={queueStates} />
+
+      <AnimatePresence>
+        {showOnboarding && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="max-w-2xl mx-auto px-4 mt-4 overflow-hidden"
+          >
+            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex items-start gap-4 shadow-lg shadow-primary/5">
+              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-xl shrink-0">
+                👋
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-white text-sm">Welcome to QueueLess!</h4>
+                <p className="text-[11px] font-medium text-zinc-400 mt-0.5 leading-tight">
+                  Tap any business below to join their queue — no more standing in line.
+                </p>
+                <button 
+                  onClick={handleDismissOnboarding}
+                  className="mt-3 text-[10px] font-black uppercase tracking-widest text-primary hover:text-white transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-10">
          

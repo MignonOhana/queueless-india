@@ -32,7 +32,11 @@ export async function POST(req: NextRequest) {
        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      ...data,
+      id: data.id,
+      orgId: data.orgId
+    });
   } catch (error: any) {
     console.error("Queue join API error:", error);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
