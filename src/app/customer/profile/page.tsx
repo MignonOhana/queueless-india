@@ -43,19 +43,20 @@ export default function CustomerProfilePage() {
 
     const fetchProfileData = async () => {
       try {
-        // 1. Fetch User Profile
-        const { data: profileData, error: profileErr } = await supabase
-          .from("user_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // 1. Fetch User Profile via RPC (Safer than direct read)
+        const { data: profileData, error: profileErr } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
 
         if (profileErr) throw profileErr;
-        setProfile(profileData);
-        setEditForm({ 
-          full_name: profileData.full_name || "", 
-          email: profileData.email || user.email || "" 
-        });
+        if (profileData) {
+          setProfile(profileData);
+          setEditForm({ 
+            full_name: profileData.full_name || "", 
+            email: profileData.email || user.email || "" 
+          });
+        }
 
         // 2. Fetch Stats & Activity
         // Get all tokens for this user

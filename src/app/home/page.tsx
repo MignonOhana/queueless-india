@@ -140,20 +140,17 @@ export default function HomePage() {
       setActiveTokenMap({ orgId: savedOrg, tokenId: savedToken });
     }
 
-    // Fetch visit count for onboarding
+    // Fetch visit count for onboarding via RPC
     const fetchVisitCount = async () => {
-      if (!user) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
       
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('visit_count')
-        .eq('id', user.id)
-        .single();
+      const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
         
-      if (!error && data) {
-        setVisitCount(data.visit_count);
+      if (profile) {
+        setVisitCount(profile.visit_count || 0);
         // Show if first-time user (visit_count 0 or 1)
-        if (data.visit_count <= 1) {
+        if ((profile.visit_count || 0) <= 1) {
           setShowOnboarding(true);
         }
       }
@@ -311,11 +308,50 @@ export default function HomePage() {
     } else {
        handleFallbackLocation();
     }
-    // Live Pulse Logic
+    // Live Pulse Logic via RPC
     const fetchPulseData = async () => {
-      const { data, error } = await supabase.rpc('get_live_pulse_data');
-      if (!error && data) {
-        setPulseItems(data);
+      try {
+        const { data, error } = await supabase.rpc('get_live_pulse_data');
+        if (error) {
+          console.error("Pulse data fetch failed:", error);
+          return;
+        }
+        
+        if (data) {
+          // If it's the stats object, transform into displayable pulse items
+          if (!Array.isArray(data) && typeof data === 'object') {
+            const stats = data as any;
+            const transformedItems = [
+              { 
+                type: 'LIVE', 
+                name: 'Network Status', 
+                label: `${stats.active_queues || 0} active queues across India`,
+                org_id: 'system'
+              },
+              { 
+                type: 'ALERT', 
+                name: 'Tokens Today', 
+                label: `${stats.tokens_today || 0} customers saved time today`,
+                org_id: 'system'
+              }
+            ];
+            
+            if (stats.busiest_business) {
+              transformedItems.push({
+                type: 'FALLBACK',
+                name: 'High Demand',
+                label: `${stats.busiest_business} is busy now`,
+                org_id: 'system'
+              });
+            }
+            
+            setPulseItems(transformedItems);
+          } else if (Array.isArray(data)) {
+            setPulseItems(data);
+          }
+        }
+      } catch (err) {
+        console.error("Error in pulse data logic:", err);
       }
     };
 

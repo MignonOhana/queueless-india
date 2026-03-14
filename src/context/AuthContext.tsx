@@ -40,14 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUser(session.user);
         
-        // Fetch role from user_profiles (Supabase is source of truth)
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
+        // Fetch role via RPC (Security Definer) - works reliably across session timing
+        const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
         
-        const finalRole = profile?.role || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
         setUserRole(finalRole);
         localStorage.setItem("ql_user_role", finalRole);
       }
@@ -59,14 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUser(session.user);
         
-        // Always sync role from DB on auth change
-        const { data: profile } = await supabase
-          .from("user_profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
+        // Always sync role from DB on auth change via RPC
+        const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
           
-        const finalRole = profile?.role || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
         setUserRole(finalRole);
         localStorage.setItem("ql_user_role", finalRole);
       } else {
