@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Clock, Download } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import Navigation from "@/components/Navigation";
 
 // Lazy-load the heavy sections
 const HeroSection = dynamic(() => import("@/components/landing/HeroSection"), { ssr: false });
@@ -34,55 +35,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background font-sans overflow-x-hidden">
       {/* ── Navigation ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-tr from-primary to-[#00D4FF]"
-            >
-              <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
-            </div>
-            <span className="font-extrabold text-xl tracking-tight text-white">
-              QueueLess <span className="text-primary">India</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/home"
-              className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block"
-            >
-              Find a Queue
-            </Link>
-            <Link
-              href="/customer/dashboard"
-              className="text-sm font-bold text-primary hover:brightness-110 transition-colors hidden sm:block"
-            >
-              My Tokens
-            </Link>
-            {isMobile && !isStandalone && (
-              <button
-                onClick={triggerInstall}
-                className="flex items-center gap-1.5 text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:flex"
-              >
-                <Download size={14} /> Install App
-              </button>
-            )}
-            <Link
-              href="/login"
-              className="text-sm font-bold text-slate-400 hover:text-white transition-colors hidden sm:block"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="bg-white text-black px-5 py-2.5 rounded-full font-bold text-sm hover:bg-slate-100 transition-all shadow-md active:scale-95"
-            >
-              For Businesses
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* ── Sections ── */}
       <div className="pt-20">
