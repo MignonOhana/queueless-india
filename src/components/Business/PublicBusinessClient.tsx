@@ -279,11 +279,11 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           {business.cover_image_url ? (
             <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#0A0A0F] to-[#1E1E2E] flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-background to-surface flex items-center justify-center">
               <Globe size={48} className="text-white/10" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0F] via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           
           <Link href="/" className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-colors">
              <ChevronDown className="rotate-90" size={20} />
@@ -291,7 +291,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
        </div>
 
        <div className="px-6 -mt-12 relative z-10">
-          <div className="bg-[#111118]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl">
+          <div className="bg-surface/80 backdrop-blur-xl border border-border rounded-brand p-8 shadow-2xl">
              <div className="flex items-center gap-2 mb-4">
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
                    {business.category || "Business"}
@@ -340,11 +340,11 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
 
                 <div className="grid grid-cols-2 gap-4">
                    <div className="text-center p-4 rounded-2xl bg-black/40">
-                      <p className="text-2xl font-black text-white">{waitingCount}</p>
+                      <p className="text-2xl font-black text-white">0</p>
                       <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{t('position')}</p>
                    </div>
                    <div className="text-center p-4 rounded-2xl bg-black/40">
-                      <p className="text-2xl font-black text-[#00F5A0]">~{avgWait}m</p>
+                      <p className="text-2xl font-black text-primary">~{avgWait}m</p>
                       <p className="text-[10px] font-bold text-zinc-500 uppercase mt-1">{t('waitTime')}</p>
                    </div>
                 </div>
@@ -416,13 +416,13 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                            <button 
                              disabled={!isOpen}
                              onClick={() => setJoinMode(isAuthenticated ? 'account' : 'choose')}
-                             className="w-full flex items-center justify-center gap-2 py-5 rounded-[2rem] bg-[#00F5A0] text-[#0A0A0F] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,245,160,0.2)] disabled:opacity-50 disabled:grayscale"
+                             className="btn-primary w-full py-5 text-sm"
                            >
                               {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
                            </button>
 
                            {business.settings?.fastPassEnabled && isOpen && (
-                              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#00F5A0] bg-[#00F5A0]/5 py-3 rounded-2xl border border-[#00F5A0]/10">
+                              <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 py-3 rounded-2xl border border-primary/10">
                                  <Zap size={14} fill="currentColor" /> Skip the line for ₹{business.settings?.fastPassPrice || 49}
                               </div>
                            )}
@@ -435,7 +435,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                           onClick={() => setJoinMode('guest')}
                           className="w-full flex items-start gap-4 p-5 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group"
                         >
-                           <div className="w-12 h-12 rounded-2xl bg-[#00F5A0]/10 flex items-center justify-center text-[#00F5A0] shrink-0">
+                           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                               <Zap size={20} />
                            </div>
                            <div>
@@ -464,9 +464,9 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                             placeholder={t('yourName') || "Your Name"} 
                             value={name} 
                             onChange={e => setName(e.target.value)}
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:border-[#00F5A0] focus:ring-1 focus:ring-[#00F5A0] outline-none"
+                            className="input-dark w-full px-5 py-4"
                           />
-                          <div className="flex bg-black/40 border border-white/10 rounded-2xl overflow-hidden focus-within:border-[#00F5A0]">
+                          <div className="flex bg-black/40 border border-border rounded-2xl overflow-hidden focus-within:border-primary transition-colors">
                              <span className="px-4 py-4 text-zinc-500 font-black">+91</span>
                              <input 
                                type="tel" 
@@ -483,7 +483,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                           <button 
                             disabled={isJoining}
                             onClick={() => handleJoinQueue(true)}
-                            className="flex-1 py-4 bg-[#00F5A0] text-[#0A0A0F] font-black rounded-2xl uppercase tracking-widest text-xs disabled:opacity-50"
+                            className="btn-primary flex-1 py-4 text-xs"
                           >
                              {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : (t('join') || "Join Now")}
                           </button>
@@ -533,7 +533,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                        <button 
                          disabled={isJoining}
                          onClick={() => handleJoinQueue(false)}
-                         className="w-full py-5 bg-indigo-600 text-white font-black rounded-[2rem] uppercase tracking-widest text-sm hover:bg-indigo-500 transition-all disabled:opacity-50"
+                         className="btn-primary w-full py-5 text-sm"
                        >
                           {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : "Confirm & Join"}
                        </button>
@@ -547,7 +547,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           <div className="mt-6">
              <button 
                 onClick={() => setShowHours(!showHours)}
-                className="w-full flex items-center justify-between p-6 bg-[#111118] border border-white/5 rounded-[2rem] text-sm text-zinc-300 font-bold"
+                className="w-full flex items-center justify-between p-6 bg-surface border border-border rounded-brand text-sm text-zinc-300 font-bold"
              >
                 <div className="flex items-center gap-3">
                    <Clock size={16} className="text-emerald-500" />
@@ -564,7 +564,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                     <div className="p-6 pt-2 space-y-3 bg-[#111118]/50 rounded-b-[2rem] border-x border-b border-white/5">
+                     <div className="p-6 pt-2 space-y-3 bg-surface/50 rounded-b-brand border-x border-b border-border">
                         {[
                           "Monday",
                           "Tuesday",
@@ -628,11 +628,11 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                       key={review.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-6 rounded-[2rem] bg-[#111118] border border-white/5"
+                      className="p-6 rounded-brand bg-surface border border-border"
                     >
                        <div className="flex items-center gap-1 mb-2">
                           {[...Array(5)].map((_, i) => (
-                             <Star key={i} size={12} fill={i < review.rating ? "#f59e0b" : "transparent"} stroke={i < review.rating ? "#f59e0b" : "#4b5563"} />
+                             <Star key={i} size={12} fill={i < review.rating ? "var(--brand-primary)" : "transparent"} stroke={i < review.rating ? "var(--brand-primary)" : "#4b5563"} />
                           ))}
                        </div>
                        <p className="text-sm text-zinc-300 leading-relaxed italic mb-3">"{review.comment}"</p>
@@ -641,7 +641,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                   ))}
                </div>
              ) : (
-                <div className="p-8 text-center bg-[#111118] border border-white/5 rounded-[2rem]">
+                <div className="p-8 text-center bg-surface border border-border rounded-brand">
                    <p className="text-xs font-bold text-zinc-600 uppercase tracking-widest">No reviews yet. Be the first!</p>
                 </div>
              )}
@@ -651,21 +651,21 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           <div className="mt-8 grid grid-cols-3 gap-4">
              <button 
                 onClick={handleShareWhatsApp}
-                className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-[#111118] border border-white/5 text-emerald-500 hover:bg-[#111118]/80 transition-all"
+                className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-emerald-500 hover:opacity-80 transition-all"
              >
                 <MessageCircle size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">WhatsApp</span>
              </button>
              <button 
                 onClick={handleCopyLink}
-                className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-[#111118] border border-white/5 text-blue-400 hover:bg-[#111118]/80 transition-all"
+                className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-blue-400 hover:opacity-80 transition-all"
              >
                 <Copy size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">Copy Link</span>
              </button>
              <button 
                 onClick={() => setShowQR(true)}
-                className="flex flex-col items-center justify-center p-6 rounded-[2rem] bg-[#111118] border border-white/5 text-white hover:bg-[#111118]/80 transition-all"
+                className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-white hover:opacity-80 transition-all"
              >
                 <QrCode size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">QR Code</span>
@@ -682,7 +682,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
               exit={{ opacity: 0 }} 
               className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-end p-6"
             >
-               <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="w-full max-w-lg mx-auto bg-[#111118] border border-white/10 rounded-[3rem] p-8">
+               <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="w-full max-w-lg mx-auto bg-surface border border-border rounded-brand p-8">
                   <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6 mx-auto">
                      <AlertCircle size={32} />
                   </div>
@@ -713,7 +713,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-[#111118] border border-white/10 rounded-[3rem] p-12 flex flex-col items-center text-center"
+                  className="bg-surface border border-border rounded-brand p-12 flex flex-col items-center text-center"
                   onClick={e => e.stopPropagation()}
                >
                   <div className="p-4 bg-white rounded-3xl mb-8">

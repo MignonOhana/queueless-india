@@ -25,7 +25,7 @@ export default function TokenCard({
     <motion.div
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
-      className="relative w-full max-w-sm mx-auto bg-[#0D0D15] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl"
+      className="relative w-full max-w-sm mx-auto bg-surface border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl"
     >
       {/* Upper Part */}
       <div className="p-8 pb-4">
@@ -41,7 +41,7 @@ export default function TokenCard({
         <div className="flex items-center justify-between gap-8">
             <div className="flex-1">
                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Token Number</p>
-                <h2 className="text-7xl font-serif italic font-black text-[#00F5A0] tracking-tighter">
+                <h2 className="text-7xl font-serif italic font-black text-primary tracking-tighter">
                     {tokenNumber}
                 </h2>
             </div>
@@ -55,9 +55,9 @@ export default function TokenCard({
 
       {/* Perforation */}
       <div className="relative h-4 flex items-center mb-4">
-        <div className="absolute left-0 -translate-x-1/2 w-6 h-6 bg-[#0A0A0F] rounded-full border border-white/10" />
+        <div className="absolute left-0 -translate-x-1/2 w-6 h-6 bg-background rounded-full border border-white/10" />
         <div className="flex-1 border-t-2 border-dashed border-white/10 mx-4" />
-        <div className="absolute right-0 translate-x-1/2 w-6 h-6 bg-[#0A0A0F] rounded-full border border-white/10" />
+        <div className="absolute right-0 translate-x-1/2 w-6 h-6 bg-background rounded-full border border-white/10" />
       </div>
 
       {/* Lower Part */}

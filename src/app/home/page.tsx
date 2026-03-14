@@ -88,10 +88,10 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
     >
       <div 
         onClick={() => router.push(`/b/${lastBiz.id}`)}
-        className="bg-white border border-[#00F5A0]/20 shadow-lg shadow-[#00F5A0]/5 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:border-[#00F5A0] transition-all"
+        className="bg-white border border-primary/20 shadow-lg shadow-primary/5 rounded-2xl p-4 flex items-center justify-between cursor-pointer group hover:border-primary transition-all"
       >
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 rounded-xl bg-[#00F5A0]/10 flex items-center justify-center text-xl shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-xl shrink-0">
             {lastBiz.icon}
           </div>
           <div className="min-w-0">
@@ -107,7 +107,7 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
             e.stopPropagation();
             router.push(`/customer/dashboard`);
           }}
-          className="bg-[#0B6EFE] text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:brightness-110 shrink-0"
+          className="bg-blue-600 text-white px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:brightness-110 shrink-0"
         >
           Resume
         </button>
@@ -382,7 +382,7 @@ export default function HomePage() {
       return (
         <div 
           onClick={() => router.push(`/b/${biz.id}`)}
-          className="bg-[#111118] rounded-2xl p-4 min-w-[260px] max-w-[260px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-white/10 flex gap-4 active:scale-95 transition-transform cursor-pointer hover:shadow-lg"
+          className="bg-surface rounded-2xl p-4 min-w-[260px] max-w-[260px] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-border flex gap-4 active:scale-95 transition-transform cursor-pointer hover:shadow-lg"
         >
           <div className="w-16 h-16 rounded-xl bg-slate-50 border border-white/10 overflow-hidden shrink-0 relative">
              {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -403,7 +403,7 @@ export default function HomePage() {
     return (
       <div 
         onClick={() => router.push(`/b/${biz.id}`)}
-        className="bg-[#111118] rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-white/10 active:scale-95 transition-transform cursor-pointer hover:shadow-xl group"
+        className="bg-surface rounded-2xl p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-border active:scale-95 transition-transform cursor-pointer hover:shadow-xl group"
       >
         <div className="relative h-32 w-full rounded-xl overflow-hidden mb-4 bg-white/5">
            {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -488,7 +488,7 @@ export default function HomePage() {
                e.stopPropagation();
                router.push(`/b/${biz.id}`);
              }}
-             className="bg-[#00F5A0]/10 text-[#00F5A0] font-bold text-sm py-2 rounded-xl hover:bg-[#00F5A0] hover:text-black transition-colors"
+             className="bg-primary/10 text-primary font-bold text-sm py-2 rounded-xl hover:bg-primary hover:text-black transition-colors"
            >
              View Details
            </button>
@@ -498,7 +498,7 @@ export default function HomePage() {
                  e.stopPropagation();
                  router.push(`/b/${biz.id}`);
                }}
-               className="bg-[#0B6EFE] text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-[#0B6EFE]/30 hover:bg-[#0B6EFE]/90 transition-colors"
+               className="bg-blue-600 text-white font-bold text-sm py-2 rounded-xl shadow-lg shadow-blue-600/30 hover:bg-blue-600/90 transition-colors"
              >
                Join Now
              </button>
@@ -509,29 +509,29 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0A0A0F] pb-28 font-sans selection:bg-[#00F5A0]/30 selection:text-[#00F5A0]">
+    <div className="min-h-screen overflow-x-hidden bg-background pb-28 font-sans selection:bg-primary/30 selection:text-primary">
       
       {/* SECTION 1 - LOCATION HEADER */ }
-      <header className="sticky top-0 z-40 bg-[#0A0A0F]/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-white/10">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-2xl px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-4 border-b border-white/10">
          <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-               <Link href="/" className="w-10 h-10 shrink-0 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-[#00F5A0] transition-colors">
+               <Link href="/" className="w-10 h-10 shrink-0 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 hover:bg-white/10 hover:text-primary transition-colors">
                  <ChevronLeft size={20} />
                </Link>
                <div>
                   <div className="flex items-center gap-1 text-zinc-500 text-xs font-bold uppercase tracking-wider mb-1">
-                    <MapPin size={12} className="text-[#F59E0B]" /> Current Location
+                    <MapPin size={12} className="text-amber-500" /> Current Location
                   </div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-white font-extrabold text-lg flex items-center">{locationName}</h2>
-                    <ChevronDown size={18} className={`text-[#00F5A0] ${isLocating ? 'animate-bounce' : ''}`} />
+                    <ChevronDown size={18} className={`text-primary ${isLocating ? 'animate-bounce' : ''}`} />
                   </div>
                </div>
             </div>
             {/* User Profile Hook */}
             <Link 
                href={user ? (userRole === "business_owner" ? "/dashboard" : "/customer/profile") : "/login"}
-               className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden shadow-inner hover:ring-2 hover:ring-[#00F5A0] transition-all"
+               className="w-10 h-10 rounded-full bg-white/5 border border-white/10 overflow-hidden shadow-inner hover:ring-2 hover:ring-primary transition-all"
             >
                {/* eslint-disable-next-line @next/next/no-img-element */}
                <img src={`https://ui-avatars.com/api/?name=${user?.id || 'User'}&background=00F5A0&color=0A0A0F`} alt="User" />
@@ -546,15 +546,15 @@ export default function HomePage() {
             >
                <Link 
                   href="/customer/dashboard"
-                  className="w-full flex items-center justify-between p-3 bg-[#00F5A0]/10 border border-[#00F5A0]/20 rounded-xl group hover:bg-[#00F5A0]/20 transition-all"
+                  className="w-full flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-xl group hover:bg-primary/20 transition-all"
                >
                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 rounded-lg bg-[#00F5A0] flex items-center justify-center text-black">
+                     <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-black">
                         <Ticket size={16} />
                      </div>
-                     <span className="text-xs font-black text-[#00F5A0] uppercase tracking-widest">Active Tokens Found</span>
+                     <span className="text-xs font-black text-primary uppercase tracking-widest">Active Tokens Found</span>
                   </div>
-                  <div className="flex items-center gap-2 text-[#00F5A0] font-black text-[10px] uppercase">
+                  <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase">
                      Dashboard <ChevronRight size={14} />
                   </div>
                </Link>
@@ -566,19 +566,19 @@ export default function HomePage() {
             <div className="flex gap-3">
                <div className="relative group flex-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                     <Search className="w-5 h-5 text-zinc-500 group-focus-within:text-[#00F5A0] transition-colors" />
+                     <Search className="w-5 h-5 text-zinc-500 group-focus-within:text-primary transition-colors" />
                   </div>
                   <input 
                      type="text" 
                      placeholder="Search hospitals, banks, salons, events..." 
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
-                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.2rem] text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#00F5A0]/50 focus:border-[#00F5A0] transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.1)]"
+                     className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.2rem] text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all font-medium shadow-[0_2px_15px_rgba(0,0,0,0.1)]"
                   />
                </div>
                <button 
                   onClick={() => router.push('/customer/scanner')}
-                  className="w-14 h-14 bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center justify-center text-zinc-400 hover:text-[#00F5A0] hover:border-[#00F5A0] transition-all shadow-sm shrink-0"
+                  className="w-14 h-14 bg-white/5 border border-white/10 rounded-[1.2rem] flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary transition-all shadow-sm shrink-0"
                   title="Scan Store QR"
                >
                   <QrCode size={24} />
@@ -661,11 +661,11 @@ export default function HomePage() {
                animate={{ opacity: 1, y: 0, height: "auto" }}
                className="bg-slate-900 text-white rounded-[1.5rem] p-5 shadow-2xl relative overflow-hidden"
             >
-               <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59E0B] rounded-full blur-[80px] opacity-30" />
+               <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500 rounded-full blur-[80px] opacity-30" />
                <div className="relative z-10 flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
                      <div className="p-1.5 bg-white/20 rounded-lg"><Activity size={18} /></div>
-                     <span className="font-bold tracking-widest text-[10px] uppercase text-[#F59E0B]">Your Active Token</span>
+                     <span className="font-bold tracking-widest text-[10px] uppercase text-amber-500">Your Active Token</span>
                   </div>
                   <div className="flex items-center gap-2">
                      <span className="px-2 py-1 bg-white/10 rounded-md text-xs font-bold text-white">Active</span>
@@ -715,7 +715,7 @@ export default function HomePage() {
                         onClick={() => setActiveCategory(cat.id)}
                         className={`flex flex-col items-center gap-2 w-20 py-3 rounded-2xl transition-all shadow-sm ${
                            activeCategory === cat.id 
-                           ? "bg-[#00F5A0] text-black shadow-[#00F5A0]/30 scale-105 border-transparent" 
+                           ? "bg-primary text-black shadow-primary/30 scale-105 border-transparent" 
                            : "bg-white/5 border border-white/10 text-zinc-400 hover:border-white/20"
                         }`}
                      >
@@ -771,7 +771,7 @@ export default function HomePage() {
                </section>
 
                {/* SECTION 7 - MAP PREVIEW */}
-               <section className="bg-[#111118] rounded-3xl p-5 border border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.03)] h-80 relative overflow-hidden group cursor-pointer block">
+               <section className="bg-surface rounded-3xl p-5 border border-border shadow-[0_4px_20px_rgba(0,0,0,0.03)] h-80 relative overflow-hidden group cursor-pointer block">
                   <div className="absolute top-5 left-5 right-5 z-10 flex justify-between items-start pointer-events-none">
                      <h2 className="text-lg font-black text-white bg-[#0A0A0F]/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg">City Map View</h2>
                   </div>
@@ -780,9 +780,9 @@ export default function HomePage() {
                   {/* Fake View Map overlay */}
                   <div 
                      onClick={() => router.push('/map')}
-                     className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F]/80 to-transparent flex items-end justify-center pb-6 z-10 pointers-events-auto"
+                     className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-background via-background/80 to-transparent flex items-end justify-center pb-6 z-10 pointers-events-auto"
                   >
-                     <button className="bg-[#00F5A0] text-black px-6 py-3 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2 hover:-translate-y-1 transition-transform">
+                     <button className="bg-primary text-black px-6 py-3 rounded-xl font-bold text-sm shadow-xl flex items-center gap-2 hover:-translate-y-1 transition-transform">
                         Explore Full Map <ArrowRight size={16} />
                      </button>
                   </div>

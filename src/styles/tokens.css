@@ -1,30 +1,35 @@
 :root {
-  /* Core Colors */
+  /* Brand Tokens - Single Source of Truth */
+  --brand-primary: #00F5A0;
+  --brand-surface: #111118;
+  --brand-border: rgba(255, 255, 255, 0.1);
+  --brand-muted: #8888A8;
+  --brand-radius: 1.5rem;
+  --brand-font: 'Inter', var(--font-inter), sans-serif;
+  --brand-font-display: 'Outfit', var(--font-outfit), sans-serif;
+
+  /* Legacy / Utility Tokens */
   --color-bg-primary: #0A0A0F;
   --color-bg-secondary: #0F0F16;
-  --color-accent-green: #00F5A0;
+  --color-accent-green: var(--brand-primary);
   --color-text-white: #F1F5F9;
-  --color-text-muted: #8888A8;
+  --color-text-muted: var(--brand-muted);
 
   /* Cards */
-  --card-bg: #111118;
-  --card-border: #1E1E2E;
-  --card-radius: 12px;
+  --card-bg: var(--brand-surface);
+  --card-border: var(--brand-border);
+  --card-radius: var(--brand-radius);
 
   /* Inputs */
   --input-bg: #16161F;
-  --input-border: #1E1E2E;
+  --input-border: var(--brand-border);
   --input-text: #F1F5F9;
 
   /* Status Badges */
   --status-waiting: #F59E0B;
   --status-serving: #3B82F6;
-  --status-served: #00F5A0;
+  --status-served: var(--brand-primary);
   --status-no-show: #EF4444;
-
-  /* Fonts */
-  --font-heading: 'Outfit', var(--font-outfit), sans-serif;
-  --font-body: 'Inter', var(--font-inter), sans-serif;
 
   /* Glassmorphism Defaults */
   --glass-bg: rgba(255, 255, 255, 0.03);

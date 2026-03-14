@@ -79,9 +79,9 @@ export default function CustomerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-white/5 border-t-[#00F5A0] rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-white/5 border-t-primary rounded-full animate-spin" />
           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Loading your world...</p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function CustomerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white pb-32">
+    <div className="min-h-screen bg-background text-white pb-32">
        
        {/* HEADER */}
        <header className="px-6 pt-12 pb-8 flex items-center justify-between">
@@ -112,10 +112,10 @@ export default function CustomerDashboard() {
           {/* ACTIVE TOKENS SECTION */}
           <section>
              <div className="flex items-center justify-between mb-4 px-2">
-                <h2 className="text-[10px] font-black uppercase tracking-widest text-[#00F5A0] flex items-center gap-2">
+                <h2 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
                   <Activity size={12} /> Active Queues
                 </h2>
-                <span className="bg-[#00F5A0]/10 text-[#00F5A0] text-[10px] px-2 py-0.5 rounded-md font-black">
+                <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-md font-black">
                    {activeTokens.length} LIVE
                 </span>
              </div>
@@ -142,15 +142,15 @@ export default function CustomerDashboard() {
                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 block">
                                    {token.businesses?.category || 'Service'}
                                 </span>
-                                <h3 className="text-xl font-black tracking-tight mb-2 group-hover:text-[#00F5A0] transition-colors">
+                                <h3 className="text-xl font-black tracking-tight mb-2 group-hover:text-primary transition-colors">
                                    {token.businesses?.name}
                                 </h3>
                                 <div className="flex items-center gap-3 text-zinc-400 text-xs font-bold">
-                                   <p className="flex items-center gap-1"><Ticket size={14} className="text-[#00F5A0]" /> {token.tokenNumber}</p>
+                                   <p className="flex items-center gap-1"><Ticket size={14} className="text-primary" /> {token.tokenNumber}</p>
                                    <p className="flex items-center gap-1"><Clock size={14} /> {token.status}</p>
                                 </div>
                              </div>
-                             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:bg-[#00F5A0] group-hover:text-black transition-all">
+                             <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-black transition-all">
                                 <ChevronRight size={20} />
                              </div>
                           </div>
@@ -161,7 +161,7 @@ export default function CustomerDashboard() {
                    <GlassCard className="py-12 flex flex-col items-center text-center opacity-50 border-dashed">
                       <Ticket size={48} className="text-zinc-700 mb-4" />
                       <p className="text-sm font-bold text-zinc-500 uppercase tracking-widest">No active tokens</p>
-                      <Link href="/home" className="mt-4 text-[#00F5A0] text-[10px] font-black uppercase tracking-widest hover:underline">
+                      <Link href="/home" className="mt-4 text-primary text-[10px] font-black uppercase tracking-widest hover:underline">
                          Find a business to join &rarr;
                       </Link>
                    </GlassCard>
@@ -170,12 +170,12 @@ export default function CustomerDashboard() {
           </section>
 
           {/* QUICK DISCOVERY */}
-          <section className="bg-gradient-to-br from-[#00F5A0]/10 to-transparent p-8 rounded-[2.5rem] border border-[#00F5A0]/10">
+          <section className="bg-gradient-to-br from-primary/10 to-transparent p-8 rounded-brand border border-primary/10">
              <h3 className="text-xl font-black tracking-tighter mb-2">Need something else?</h3>
              <p className="text-zinc-500 text-sm font-medium mb-6 leading-relaxed">Join a new queue near you and save time today.</p>
              <Link 
                 href="/home"
-                className="inline-flex items-center gap-2 bg-[#00F5A0] text-black px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:brightness-110 active:scale-95 transition-all"
+                className="btn-primary"
              >
                 Discovery <Search size={14} />
              </Link>
@@ -224,11 +224,11 @@ export default function CustomerDashboard() {
                 <Search size={20} />
                 <span className="text-[8px] font-black uppercase tracking-[0.2em]">Explore</span>
              </Link>
-             <Link href="/customer/dashboard" className="flex flex-col items-center gap-1 text-[#00F5A0]">
+             <Link href="/customer/dashboard" className="flex flex-col items-center gap-1 text-primary">
                 <Ticket size={20} />
                 <span className="text-[8px] font-black uppercase tracking-[0.2em]">Tokens</span>
              </Link>
-             <Link href="/customer/scanner" className="w-12 h-12 rounded-full bg-[#00F5A0] flex items-center justify-center text-black shadow-[0_0_20px_rgba(0,245,160,0.4)] active:scale-90 transition-transform -translate-y-2">
+             <Link href="/customer/scanner" className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-black shadow-[0_0_20px_rgba(0,245,160,0.4)] active:scale-90 transition-transform -translate-y-2">
                 <QrCode size={24} />
              </Link>
              <Link href="/customer/profile" className="flex flex-col items-center gap-1 text-zinc-500 hover:text-white transition-colors">

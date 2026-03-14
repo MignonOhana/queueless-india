@@ -66,7 +66,7 @@ export default async function PublicBusinessPage({ params }: Props) {
     .limit(5);
 
   return (
-    <main className="min-h-screen bg-[#0A0A0F] relative">
+    <main className="min-h-screen bg-background relative">
        {/* Regional Language Support (UX-2) */}
        <div className="absolute top-6 right-6 z-[100]">
           <LanguageSelector variant="compact" />

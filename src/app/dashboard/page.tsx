@@ -113,9 +113,9 @@ export default function BusinessDashboard() {
   // --- Admin Login Screen ---
   if (!isAdminLoggedIn) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex flex-col font-sans transition-colors duration-300">
+      <div className="min-h-screen bg-background flex flex-col font-sans transition-colors duration-300">
         
-        <nav className="h-20 bg-[#0A0A0F]/50 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
+        <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
               Q
@@ -127,9 +127,9 @@ export default function BusinessDashboard() {
         </nav>
 
         <div className="flex-1 flex items-center justify-center p-6 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
           
-          <div className="w-full max-w-md bg-[#111118] rounded-[2.5rem] p-8 sm:p-10 shadow-2xl border border-white/5 relative z-10 text-center">
+          <div className="w-full max-w-md bg-surface rounded-brand p-8 sm:p-10 shadow-2xl border border-border relative z-10 text-center">
             <div className="text-center mb-8">
               <div className="w-20 h-20 bg-blue-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/20 text-blue-500">
                 <Lock size={40} />
@@ -159,9 +159,9 @@ export default function BusinessDashboard() {
                   }
                   setShowOTP(true);
                 }}
-                className="w-full bg-[#00F5A0] text-[#0A0A0F] font-black text-lg py-4 rounded-xl shadow-lg shadow-[#00F5A0]/20 hover:shadow-xl hover:shadow-[#00F5A0]/30 hover:-translate-y-0.5 active:translate-y-0 transition-all mb-4"
+                className="btn-primary w-full py-4 text-lg"
               >
-                Sign In to Dashboard <ArrowRight size={18} className="inline ml-2" />
+                Sign In to Dashboard <ArrowRight size={18} />
               </button>
 
               <button 
@@ -187,7 +187,7 @@ export default function BusinessDashboard() {
 
               <div className="mt-8 pt-8 border-t border-white/5">
                 <Link href="/register" className="text-slate-500 text-sm hover:text-white transition-colors">
-                  Don't have a business account? <span className="text-[#00F5A0] font-bold">Register Now</span>
+                  Don't have a business account? <span className="text-primary font-bold">Register Now</span>
                 </Link>
               </div>
             </div>
@@ -224,17 +224,17 @@ export default function BusinessDashboard() {
   // Loading gate: wait for businessData to be ready before rendering dashboard
   if (!businessData?.id) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#00F5A0]/20 border-t-[#00F5A0] rounded-full animate-spin" />
-          <p className="text-[#00F5A0] font-black uppercase tracking-widest text-xs">Loading Business...</p>
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+          <p className="text-primary font-black uppercase tracking-widest text-xs">Loading Business...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] font-sans pb-32">
+    <div className="min-h-screen bg-background font-sans pb-32">
       
       {/* 🟢 DEMO MODE BANNER */}
       {isDemoMode && (
@@ -287,7 +287,7 @@ export default function BusinessDashboard() {
                 <Link 
                    href={`/b/${businessData?.id}`}
                    target="_blank"
-                   className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-[#00F5A0] hover:brightness-110 transition-all bg-[#00F5A0]/5 px-3 py-1 rounded-full border border-[#00F5A0]/20"
+                   className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary hover:brightness-110 transition-all bg-primary/5 px-3 py-1 rounded-full border border-primary/20"
                 >
                    <Globe size={12} /> View Public Profile
                 </Link>
@@ -305,13 +305,13 @@ export default function BusinessDashboard() {
            <button 
               id="qr-header-icon"
               onClick={() => setActiveTab('QR')}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-[#00F5A0] transition-colors"
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
            >
               <QrCode size={20} />
            </button>
            <button 
               onClick={() => setActiveTab('Settings')}
-              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-[#00F5A0] transition-colors"
+              className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
            >
               <Settings size={20} />
            </button>
@@ -326,8 +326,8 @@ export default function BusinessDashboard() {
             {/* ⚡ HERO STATS ROW */}
             <div className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar -mx-4 px-4 snap-x">
                {/* 1. Currently Serving */}
-               <GlassCard className="min-w-[300px] flex-shrink-0 snap-center bg-gradient-to-br from-[#00F5A0]/10 to-transparent">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-[#00F5A0] mb-4">Currently Serving</p>
+               <GlassCard className="min-w-[300px] flex-shrink-0 snap-center bg-gradient-to-br from-primary/10 to-transparent">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-4">Currently Serving</p>
                   <div className="flex items-end justify-between">
                      <div>
                         <h2 className="text-5xl font-black text-white tracking-tighter mb-2">
@@ -346,7 +346,7 @@ export default function BusinessDashboard() {
                              await callNextToken(businessData?.id, currentlyServing.counterId);
                              toast.success(`Token ${currentlyServing.tokenNumber} marked as served`);
                            }}
-                           className="px-4 py-2 rounded-xl bg-[#00F5A0] text-black font-black text-[10px] uppercase shadow-[0_0_20px_rgba(0,245,160,0.3)]"
+                           className="px-4 py-2 rounded-xl bg-primary text-black font-black text-[10px] uppercase shadow-[0_0_20px_rgba(0,245,160,0.3)]"
                         >
                            Mark Served
                         </motion.button>
@@ -364,12 +364,12 @@ export default function BusinessDashboard() {
                         </h2>
                         <div className="flex -space-x-2">
                            {queue.slice(0, 3).map((item: any, i: number) => (
-                             <div key={i} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-[#0A0A0F] flex items-center justify-center text-[10px] font-bold text-white">
+                             <div key={i} className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-background flex items-center justify-center text-[10px] font-bold text-white">
                                {item.tokenNumber}
                              </div>
                            ))}
                            {stats.currentlyWaiting > 3 && (
-                             <div className="w-8 h-8 rounded-full bg-zinc-900 border-2 border-[#0A0A0F] flex items-center justify-center text-[10px] font-bold text-zinc-500">
+                             <div className="w-8 h-8 rounded-full bg-zinc-900 border-2 border-background flex items-center justify-center text-[10px] font-bold text-zinc-500">
                                +{stats.currentlyWaiting - 3}
                              </div>
                            )}
@@ -397,7 +397,7 @@ export default function BusinessDashboard() {
             </div>
 
             {/* 🛠️ QUEUE COMMAND CENTER */}
-            <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-6 lg:p-8 min-h-[60vh]">
+            <div className="bg-surface/50 backdrop-blur-md border border-border rounded-brand p-6 lg:p-8 min-h-[60vh]">
                <div className="flex items-center justify-between mb-8">
                   <h3 className="text-2xl font-black text-white tracking-tight">Queue Command Center</h3>
                   <select 
@@ -459,7 +459,7 @@ export default function BusinessDashboard() {
               <GlassCard>
                  <h2 className="text-xl font-black text-white mb-6">Marketplace Settings</h2>
                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-[#111118] rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between p-4 bg-background/50 rounded-2xl border border-border">
                        <div>
                           <p className="font-bold text-white flex items-center gap-2">
                              WhatsApp Notifications
@@ -487,10 +487,10 @@ export default function BusinessDashboard() {
                               setBusinessData({...businessData, whatsapp_enabled: !val});
                             }
                           }}
-                          className="w-5 h-5 accent-[#00F5A0] cursor-pointer"
+                          className="w-5 h-5 accent-primary cursor-pointer"
                        />
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-[#111118] rounded-2xl border border-white/5">
+                    <div className="flex items-center justify-between p-4 bg-background/50 rounded-2xl border border-border">
                        <div>
                           <p className="font-bold text-white">Enable Fast Pass</p>
                           <p className="text-xs text-zinc-500 mt-1">Allow customers to pay for priority</p>
@@ -520,7 +520,7 @@ export default function BusinessDashboard() {
                             min="25"
                             value={businessData?.fastPassPrice || 50}
                             onChange={(e) => setBusinessData({...businessData, fastPassPrice: parseInt(e.target.value) || 25})}
-                            className="bg-[#0A0A0F] border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none flex-1 focus:border-[#00F5A0]"
+                            className="bg-background border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none flex-1 focus:border-primary"
                           />
                           <button 
                             onClick={async () => {

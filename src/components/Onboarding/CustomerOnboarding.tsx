@@ -41,7 +41,7 @@ export default function CustomerOnboarding() {
         >
           <div className="bg-[#111118]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
             {/* Background Accent */}
-            <div className="absolute -top-12 -right-12 w-32 h-32 bg-[#00F5A0]/5 rounded-full blur-2xl" />
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
 
             <button 
               onClick={handleDismiss}
@@ -52,12 +52,12 @@ export default function CustomerOnboarding() {
 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 rounded-xl bg-[#00F5A0]/10 border border-[#00F5A0]/20 flex items-center justify-center text-[#00F5A0]">
+                 <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
                     {step === 1 && <Zap size={20} />}
                     {step === 2 && <MessageCircle size={20} />}
                     {step === 3 && <Navigation size={20} />}
                  </div>
-                 <p className="text-[10px] font-black uppercase tracking-widest text-[#00F5A0]">Quick Guide • Step {step}</p>
+                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Quick Guide • Step {step}</p>
               </div>
 
               <div className="min-h-[80px]">
@@ -91,7 +91,7 @@ export default function CustomerOnboarding() {
                 {/* Dots */}
                 <div className="flex gap-1.5">
                    {[1,2,3].map(i => (
-                     <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${step === i ? 'w-4 bg-[#00F5A0]' : 'bg-slate-700'}`} />
+                     <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${step === i ? 'w-4 bg-primary' : 'bg-slate-700'}`} />
                    ))}
                 </div>
 
@@ -104,7 +104,7 @@ export default function CustomerOnboarding() {
                   </button>
                   <button 
                     onClick={handleNext}
-                    className="bg-[#00F5A0] text-[#0A0A0F] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center gap-1"
+                    className="bg-primary text-[#0A0A0F] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center gap-1"
                   >
                     {step === 3 ? "Got it ✓" : "Next"}
                   </button>

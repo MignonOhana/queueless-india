@@ -8,11 +8,11 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
   const getStatusConfig = () => {
     switch (status) {
       case 'WAITING':
-        return { label: 'Waiting', className: 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/20' };
+        return { label: 'Waiting', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' };
       case 'SERVING':
-        return { label: 'Now Serving', className: 'bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/20 animate-pulse' };
+        return { label: 'Now Serving', className: 'bg-blue-500/10 text-blue-500 border-blue-500/20 animate-pulse' };
       case 'SERVED':
-        return { label: 'Served', className: 'bg-[#00F5A0]/10 text-[#00F5A0] border-[#00F5A0]/20' };
+        return { label: 'Served', className: 'bg-primary/10 text-primary border-primary/20' };
       case 'SKIP':
       case 'CANCELLED':
         return { label: status === 'SKIP' ? 'No Show' : 'Cancelled', className: 'bg-rose-500/10 text-rose-500 border-rose-500/20' };

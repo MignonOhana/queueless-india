@@ -7,32 +7,37 @@
 @theme {
   --color-background: var(--color-bg-primary);
   --color-foreground: var(--color-text-white);
-  --font-sans: var(--font-inter), sans-serif;
-  --font-display: var(--font-outfit), sans-serif;
+  --color-primary: var(--brand-primary);
+  --color-surface: var(--brand-surface);
+  --color-border: var(--brand-border);
+  --color-muted: var(--brand-muted);
+  --font-sans: var(--brand-font);
+  --font-display: var(--brand-font-display);
+  --radius-brand: var(--brand-radius);
 }
 
 :root {
-  --background: #0A0A0F;
-  --foreground: #F1F5F9;
+  --background: var(--color-bg-primary);
+  --foreground: var(--color-text-white);
 }
 
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-white);
-  font-family: var(--font-body);
+  font-family: var(--brand-font);
   overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: var(--brand-font-display);
   letter-spacing: -0.02em;
 }
 
 /* Reusable Glass Cards */
 .glass-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--card-radius);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
@@ -42,40 +47,54 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card-hover:hover {
-  border-color: var(--color-accent-green);
+  border-color: var(--brand-primary);
   transform: translateY(-2px);
   box-shadow: 0 12px 40px -12px rgba(0, 245, 160, 0.15);
 }
 
 /* Primary Glowing Button */
 .btn-primary {
-  background: var(--color-accent-green);
+  background: var(--brand-primary);
   color: var(--color-bg-primary);
-  font-weight: 700;
-  border-radius: 12px;
+  font-family: var(--brand-font-display);
+  font-weight: 800;
+  border-radius: 1rem;
   padding: 0.75rem 1.5rem;
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px -4px rgba(0, 245, 160, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-primary:hover {
   transform: scale(1.02);
   box-shadow: 0 6px 24px -4px rgba(0, 245, 160, 0.6);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
 /* Specialized Inputs */
 .input-dark {
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  color: var(--input-text);
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  transition: border-color 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--brand-border);
+  color: var(--color-text-white);
+  border-radius: 1rem;
+  padding: 0.875rem 1.25rem;
+  transition: all 0.2s;
+  font-family: var(--brand-font);
 }
 
 .input-dark:focus {
-  border-color: var(--color-accent-green);
+  border-color: var(--brand-primary);
+  background: rgba(255, 255, 255, 0.08);
   outline: none;
+  box-shadow: 0 0 0 1px var(--brand-primary);
 }
 
 /* Status Badges */
@@ -94,7 +113,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .text-gradient {
-  background: linear-gradient(to right, var(--color-accent-green), #00D4FF);
+  background: linear-gradient(to right, var(--brand-primary), #00D4FF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -125,3 +144,4 @@ h1, h2, h3, h4, h5, h6 {
     padding-bottom: 70px;
   }
 }
+

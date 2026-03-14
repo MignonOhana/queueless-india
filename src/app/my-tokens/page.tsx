@@ -144,8 +144,8 @@ export default function MyTokensPage() {
         className={`bg-[#111118] border border-white/5 rounded-2xl p-5 flex items-center gap-4 transition-all ${isActive ? "hover:border-[#00F5A0]/30 hover:bg-[#111118]/80 cursor-pointer active:scale-[0.98]" : ""}`}
       >
         {/* Token Icon */}
-        <div className="w-12 h-12 rounded-xl bg-[#00F5A0]/10 border border-[#00F5A0]/20 flex flex-col items-center justify-center flex-shrink-0">
-          <span className="text-[9px] font-black text-[#00F5A0] uppercase tracking-wide leading-none">{token.tokenNumber.split("-")[0]}</span>
+        <div className="w-12 h-12 rounded-xl bg-primary/10 border border-[#00F5A0]/20 flex flex-col items-center justify-center flex-shrink-0">
+          <span className="text-[9px] font-black text-primary uppercase tracking-wide leading-none">{token.tokenNumber.split("-")[0]}</span>
           <span className="text-lg font-black text-white leading-tight">{token.tokenNumber.split("-")[1] || token.tokenNumber}</span>
         </div>
 
@@ -176,7 +176,7 @@ export default function MyTokensPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white font-sans">
+    <div className="min-h-screen bg-background text-white font-sans">
       {/* Background */}
       <div className="fixed top-0 inset-x-0 h-[40vh] bg-gradient-to-b from-[#00F5A0]/10 via-transparent to-transparent pointer-events-none" />
 
@@ -198,7 +198,7 @@ export default function MyTokensPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === tab ? "bg-[#00F5A0] text-[#0A0A0F] shadow-lg shadow-[#00F5A0]/20" : "text-slate-400 hover:text-white"}`}
+              className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeTab === tab ? "bg-primary text-[#0A0A0F] shadow-lg shadow-primary/20" : "text-slate-400 hover:text-white"}`}
             >
               {tab === "active" ? `Active${activeTokens.length > 0 ? ` (${activeTokens.length})` : ""}` : "Past"}
             </button>

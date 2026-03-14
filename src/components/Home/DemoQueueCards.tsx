@@ -91,7 +91,7 @@ export function DemoQueueCards() {
     <section className="space-y-6">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-xl font-black text-white tracking-tight">
-          See It Live — <span className="text-[#00F5A0]">No Sign Up Needed</span>
+          See It Live — <span className="text-primary">No Sign Up Needed</span>
         </h2>
       </div>
 
@@ -172,7 +172,7 @@ export function DemoQueueCards() {
 
                 <button
                   onClick={() => setShowModal(true)}
-                  className="w-full bg-[#00F5A0] text-black font-black text-xs uppercase tracking-widest py-3.5 rounded-2xl shadow-[0_0_20px_rgba(0,245,160,0.1)] hover:shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-primary text-black font-black text-xs uppercase tracking-widest py-3.5 rounded-2xl shadow-[0_0_20px_rgba(0,245,160,0.1)] hover:shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                 >
                   Join This Queue <ArrowRight size={14} />
                 </button>
@@ -197,7 +197,7 @@ export function DemoQueueCards() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="w-full max-w-sm bg-[#111118] border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative z-10 text-center"
+              className="w-full max-w-sm bg-surface border border-white/10 rounded-[2.5rem] p-8 shadow-2xl relative z-10 text-center"
             >
               <button
                 onClick={() => setShowModal(false)}
@@ -206,7 +206,7 @@ export function DemoQueueCards() {
                 <X size={20} />
               </button>
 
-              <div className="w-16 h-16 bg-[#00F5A0]/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#00F5A0]/20 text-[#00F5A0]">
+              <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
                 <Activity size={32} />
               </div>
 
@@ -220,7 +220,7 @@ export function DemoQueueCards() {
               <div className="space-y-3">
                 <Link
                   href="/login"
-                  className="w-full bg-[#00F5A0] text-black font-black text-sm uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+                  className="w-full bg-primary text-black font-black text-sm uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
                 >
                   <LogIn size={18} /> Sign In Now
                 </Link>

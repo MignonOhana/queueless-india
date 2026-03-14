@@ -61,22 +61,22 @@ export default function LoginPage() {
 
   if (initialChecking) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#00F5A0] animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] flex flex-col font-sans selection:bg-[#00F5A0]/30">
+    <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-primary/30">
       {/* Navigation */}
-      <nav className="h-20 bg-[#0A0A0F]/50 backdrop-blur-md border-b border-white/10 flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
+      <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00F5A0] to-[#00D4FF] text-black flex items-center justify-center shadow-lg">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-blue-400 text-black flex items-center justify-center shadow-lg">
             <Clock size={18} strokeWidth={3} />
           </div>
           <span className="font-extrabold text-xl tracking-tight text-white">
-            QueueLess <span className="text-[#00F5A0]">{intendedRole === "business_owner" ? "Business" : ""}</span>
+            QueueLess <span className="text-primary">{intendedRole === "business_owner" ? "Business" : ""}</span>
           </span>
         </Link>
         <Link href="/register" className="text-sm font-bold text-slate-400 hover:text-white transition-colors">
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
       <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
         {/* Background Decor */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#00F5A0]/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
         
         <div className="w-full max-w-2xl relative z-10">
           {step === "role" ? (
@@ -104,14 +104,14 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("customer")}
-                className="bg-[#111118]/80 backdrop-blur-xl border border-white/10 p-10 rounded-[2.5rem] text-left group hover:border-[#00F5A0]/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 backdrop-blur-xl border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
               >
-                <div className="w-16 h-16 bg-[#00F5A0]/10 rounded-2xl flex items-center justify-center mb-6 border border-[#00F5A0]/20 text-[#00F5A0] group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
                   <span className="text-4xl">🧑</span>
                 </div>
                 <h3 className="text-2xl font-black text-white mb-2 italic">I'm a Customer</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">Join queues, track tokens, and skip the wait at your favorite places.</p>
-                <div className="mt-8 flex items-center gap-2 text-[#00F5A0] font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mt-8 flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                   Get Started <ArrowRight size={14} />
                 </div>
               </motion.button>
@@ -120,14 +120,14 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("business_owner")}
-                className="bg-[#111118]/80 backdrop-blur-xl border border-white/10 p-10 rounded-[2.5rem] text-left group hover:border-[#00F5A0]/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 backdrop-blur-xl border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
               >
-                <div className="w-16 h-16 bg-[#00F5A0]/10 rounded-2xl flex items-center justify-center mb-6 border border-[#00F5A0]/20 text-[#00F5A0] group-hover:scale-110 transition-transform">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
                   <span className="text-4xl">🏢</span>
                 </div>
                 <h3 className="text-2xl font-black text-white mb-2 italic">I'm a Business Owner</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">Manage your queue, serve customers faster, and grow your business.</p>
-                <div className="mt-8 flex items-center gap-2 text-[#00F5A0] font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="mt-8 flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
                    Manage Workspace <ArrowRight size={14} />
                 </div>
               </motion.button>
@@ -137,7 +137,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-md mx-auto bg-[#111118]/80 backdrop-blur-xl rounded-[2.5rem] p-8 sm:p-12 shadow-2xl border border-white/10 relative z-10"
+              className="w-full max-w-md mx-auto bg-surface/80 backdrop-blur-xl rounded-brand p-8 sm:p-12 shadow-2xl border border-border relative z-10"
             >
               <button 
                 onClick={() => setStep("role")}
@@ -148,7 +148,7 @@ export default function LoginPage() {
               </button>
 
               <div className="text-center mb-10">
-                <div className="w-16 h-16 bg-[#00F5A0]/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#00F5A0]/20 text-[#00F5A0]">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
                   <LogIn size={32} />
                 </div>
                 <h1 className="text-4xl font-black text-white tracking-tight mb-3">
@@ -168,7 +168,7 @@ export default function LoginPage() {
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10"></div>
                   </div>
-                  <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-zinc-500 bg-[#111118] px-4">
+                  <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-zinc-500 bg-surface px-4">
                     — or continue with email —
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder:text-slate-600 focus:outline-none focus:border-[#00F5A0] focus:ring-1 focus:ring-[#00F5A0] transition-all font-medium text-sm"
+                    className="w-full px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm"
                     required
                   />
                 </div>
@@ -195,17 +195,16 @@ export default function LoginPage() {
                     }
                     setShowOTP(true);
                   }}
-                  className="w-full group relative bg-[#00F5A0] text-black font-black text-sm uppercase tracking-widest py-5 rounded-2xl shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:shadow-[0_0_40px_rgba(0,245,160,0.3)] hover:-translate-y-1 transition-all flex items-center justify-center gap-2 overflow-hidden"
+                  className="btn-primary w-full py-5 text-sm"
                 >
-                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                  Continue <ArrowRight size={18} className="relative z-10" />
+                  Continue <ArrowRight size={18} />
                 </button>
               </div>
 
               <div className="mt-10 pt-8 border-t border-white/5 text-center">
                 <p className="text-slate-500 text-sm font-medium">
                   {intendedRole === "business_owner" ? "Need a business account?" : "Ready to join?"} {" "}
-                  <Link href="/register" className="text-[#00F5A0] font-bold hover:underline">
+                  <Link href="/register" className="text-primary font-bold hover:underline">
                     Get Started Free
                   </Link>
                 </p>
@@ -224,7 +223,7 @@ export default function LoginPage() {
       )}
       
       {/* Footer minimal */}
-      <footer className="py-8 text-center text-slate-600 text-xs font-medium border-t border-white/5 bg-[#050508]">
+      <footer className="py-8 text-center text-slate-600 text-xs font-medium border-t border-white/5 bg-background">
         © 2026 QueueLess India. Secure {intendedRole === "business_owner" ? "Business" : ""} Authentication.
       </footer>
     </div>

@@ -17,9 +17,9 @@ export default function SubscriptionSuccessPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col items-center justify-center p-6 font-sans">
+    <div className="min-h-screen bg-background text-white flex flex-col items-center justify-center p-6 font-sans">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#00F5A0]/10 rounded-full blur-[120px]" />
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]" />
       </div>
 
@@ -28,8 +28,8 @@ export default function SubscriptionSuccessPage() {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="relative z-10 w-full max-w-lg bg-white/5 border border-white/10 backdrop-blur-xl rounded-[3rem] p-12 text-center shadow-2xl"
       >
-        <div className="w-24 h-24 bg-[#00F5A0]/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-[#00F5A0]/30">
-          <ShieldCheck size={48} className="text-[#00F5A0]" />
+        <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-[#00F5A0]/30">
+          <ShieldCheck size={48} className="text-primary" />
         </div>
 
         <h1 className="text-4xl font-black mb-4 tracking-tight leading-tight">Welcome to Growth!</h1>
@@ -39,7 +39,7 @@ export default function SubscriptionSuccessPage() {
 
         <div className="grid grid-cols-2 gap-4 mb-10 text-left">
           <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-             <div className="flex items-center gap-2 text-[#00F5A0] mb-1">
+             <div className="flex items-center gap-2 text-primary mb-1">
                <Zap size={14} />
                <span className="text-[10px] font-black uppercase tracking-widest">Unlimited</span>
              </div>
@@ -56,7 +56,7 @@ export default function SubscriptionSuccessPage() {
 
         <Link 
           href="/dashboard"
-          className="group w-full bg-[#00F5A0] text-black font-black py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#00D189] transition-all shadow-xl shadow-[#00F5A0]/20 active:scale-95"
+          className="group w-full bg-primary text-black font-black py-5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#00D189] transition-all shadow-xl shadow-primary/20 active:scale-95"
         >
           Go to Dashboard <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
         </Link>

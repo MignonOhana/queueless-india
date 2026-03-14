@@ -32,19 +32,18 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-background font-sans overflow-x-hidden">
       {/* ── Navigation ── */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/10">
+      <nav className="fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg"
-              style={{ background: "linear-gradient(135deg, #00F5A0, #00D4FF)" }}
+              className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-tr from-primary to-[#00D4FF]"
             >
               <Clock className="w-5 h-5 text-black" strokeWidth={2.5} />
             </div>
             <span className="font-extrabold text-xl tracking-tight text-white">
-              QueueLess <span style={{ color: "#00F5A0" }}>India</span>
+              QueueLess <span className="text-primary">India</span>
             </span>
           </div>
 
@@ -57,7 +56,7 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/customer/dashboard"
-              className="text-sm font-bold text-[#00F5A0] hover:brightness-110 transition-colors hidden sm:block"
+              className="text-sm font-bold text-primary hover:brightness-110 transition-colors hidden sm:block"
             >
               My Tokens
             </Link>
