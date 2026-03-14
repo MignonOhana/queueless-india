@@ -344,6 +344,12 @@ export default function BusinessDashboard() {
               <Activity size={18} /> Queue Terminal
            </button>
            <button 
+              onClick={() => router.push('/dashboard/qr')}
+              className="px-4 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 hover:bg-white/10 transition-colors gap-2 font-black uppercase tracking-widest text-[10px]"
+           >
+              <QrCode size={18} /> My QR Code
+           </button>
+           <button 
               id="qr-header-icon"
               onClick={() => setActiveTab('QR')}
               className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary transition-colors"
