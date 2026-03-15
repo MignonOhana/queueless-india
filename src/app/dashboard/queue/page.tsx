@@ -12,13 +12,15 @@ import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
 import { useRouter } from "next/navigation";
 
+import { Business, Queue, Token } from "@/types/database";
+
 export default function BusinessQueueManagement() {
   const supabase = createClient();
   const router = useRouter();
-  const [business, setBusiness] = useState<any>(null);
-  const [queue, setQueue] = useState<any>(null);
-  const [waitingTokens, setWaitingTokens] = useState<any[]>([]);
-  const [servingToken, setServingToken] = useState<any>(null);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [queue, setQueue] = useState<Queue | null>(null);
+  const [waitingTokens, setWaitingTokens] = useState<Token[]>([]);
+  const [servingToken, setServingToken] = useState<Token | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -66,9 +68,9 @@ export default function BusinessQueueManagement() {
           const { data: sToken } = await supabase
             .from("tokens")
             .select("*")
-            .eq("id", qData.currently_serving_token_id)
+            .eq("id", qData.currently_serving_token_id as string)
             .single();
-          setServingToken(sToken);
+          setServingToken(sToken as Token);
         } else {
           setServingToken(null);
         }
@@ -161,9 +163,10 @@ export default function BusinessQueueManagement() {
   };
 
   const activateQueue = async () => {
+    if (!business?.id) return;
     setActionLoading(true);
     try {
-      const { data: qId, error } = await supabase.rpc("activate_queue_for_today", {
+      const { data: qId, error } = await (supabase as any).rpc("activate_queue_for_today", {
         p_org_id: business.id
       });
       if (error) throw error;

@@ -4,12 +4,12 @@ import { createClient } from '@/lib/supabase/server'
 export const revalidate = 3600 // regenerate hourly
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = createClient()
-  const { data: businesses } = await supabase
+  const supabase = await createClient()
+  const { data: businesses } = await (supabase as any)
     .from('businesses')
     .select('id, updated_at')
 
-  const businessUrls = (businesses || []).map((b) => ({
+  const businessUrls = ((businesses as any[]) || []).map((b) => ({
     url: `https://queueless-india.vercel.app/b/${b.id}`,
     lastModified: b.updated_at ? new Date(b.updated_at) : new Date(),
     changeFrequency: 'daily' as const,

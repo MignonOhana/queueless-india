@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { CURRENT_LOCATION, Business } from "@/lib/mockHomeData";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 import { useAuth } from "@/context/AuthContext";
 import { haversineDistance } from "@/lib/geolocation";
 import { DemoQueueCards } from "@/components/Home/DemoQueueCards";

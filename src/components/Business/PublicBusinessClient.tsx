@@ -7,7 +7,9 @@ import {
   Star, MapPin, Clock, Share2, ShieldCheck, 
   ChevronDown, MessageCircle, Copy, QrCode, ArrowRight, Zap, Globe 
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 import Link from 'next/link';
 const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { toast } from 'sonner';

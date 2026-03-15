@@ -2,8 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabaseClient";
-import { Role } from "@/lib/db-schema";
+import { createClient } from "@/lib/supabase/client";
+import { UserProfile } from "@/types/database";
+
+type Role = UserProfile['role'] | "CUSTOMER" | "BUSINESS_OWNER"; // Fallback for legacy casing
+
+const supabase = createClient();
 
 interface AuthContextType {
   user: User | null;

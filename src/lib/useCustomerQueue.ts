@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { TokenItem } from "./db-schema";
+import { Token } from "@/types/database";
 
 export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
   const supabase = createClient();
-  const [ticketStatus, setTicketStatus] = useState<any>(null);
+  const [ticketStatus, setTicketStatus] = useState<Token['status'] | null>(null);
   const [currentlyServing, setCurrentlyServing] = useState<string>("Wait...");
   const [peopleAhead, setPeopleAhead] = useState(0);
   const [estimatedWait, setEstimatedWait] = useState(0);
@@ -28,8 +28,8 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
         if (tokenErr) throw tokenErr;
 
         if (tokenData) {
-          setTicketStatus((tokenData as TokenItem).status);
-          setEstimatedWait((tokenData as TokenItem).estimatedWaitMins || 0);
+          setTicketStatus((tokenData as Token).status);
+          setEstimatedWait((tokenData as Token).estimatedWaitMins || 0);
         }
 
         // 2. Fetch the aggregate queue row for currently serving & people ahead calculation
@@ -102,8 +102,7 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
           filter: `tokenNumber=eq.${tokenNumber}`,
         },
         () => fetchQueueState(),
-      )
-      .subscribe();
+      );
 
     // 2. Subscribe to the queues table for movement in the line
     const queueChannel = supabase
@@ -117,10 +116,24 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
           filter: `org_id=eq.${orgId}`,
         },
         () => fetchQueueState(),
-      )
-      .subscribe();
+      );
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        tokenChannel.unsubscribe();
+        queueChannel.unsubscribe();
+      } else {
+        tokenChannel.subscribe();
+        queueChannel.subscribe();
+      }
+    };
+
+    tokenChannel.subscribe();
+    queueChannel.subscribe();
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(tokenChannel);
       supabase.removeChannel(queueChannel);
     };

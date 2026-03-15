@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { Token } from "@/types/database";
 
 /**
  * Real-time queue subscription hook.
@@ -9,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
  * for a given queueId, keeping the token list in sync without polling.
  */
 export function useQueueRealtime(queueId: string) {
-  const [tokens, setTokens] = useState<any[]>([]);
+  const [tokens, setTokens] = useState<Token[]>([]);
   const supabase = createClient();
 
   useEffect(() => {
@@ -36,19 +37,30 @@ export function useQueueRealtime(queueId: string) {
         },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setTokens((prev) => [...prev, payload.new]);
+            setTokens((prev) => [...prev, payload.new as Token]);
           } else if (payload.eventType === "UPDATE") {
             setTokens((prev) =>
-              prev.map((t) => (t.id === payload.new.id ? payload.new : t))
+              prev.map((t) => (t.id === payload.new.id ? (payload.new as Token) : t))
             );
           } else if (payload.eventType === "DELETE") {
-            setTokens((prev) => prev.filter((t) => t.id !== payload.old.id));
+            setTokens((prev) => prev.filter((t) => t.id !== (payload.old as Token).id));
           }
         },
-      )
-      .subscribe();
+      );
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        channel.unsubscribe();
+      } else {
+        channel.subscribe();
+      }
+    };
+
+    channel.subscribe();
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       supabase.removeChannel(channel);
     };
   }, [queueId]);

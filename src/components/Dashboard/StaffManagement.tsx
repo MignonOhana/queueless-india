@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, UserPlus, X, Shield, ToggleRight, ToggleLeft, Trash2, CheckCircle2, UserCheck } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import GlassCard from '@/components/ui/GlassCard';
+
+const supabase = createClient();
 import { toast } from 'sonner';
 
 interface StaffMember {

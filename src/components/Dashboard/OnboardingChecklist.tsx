@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, Zap, ArrowRight, Loader2, Play } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+
+const supabase = createClient();
 import BusinessCreationModal from './BusinessCreationModal';
 
 interface OnboardingChecklistProps {

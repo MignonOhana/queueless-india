@@ -9,8 +9,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+
+const supabase = createClient();
 import { toast } from "sonner";
 
 export default function CustomerProfilePage() {

@@ -6,8 +6,10 @@ import {
   Ticket, Clock, History, Search, ChevronRight, 
   MapPin, LogOut, User, Bell, Star, ArrowRight, Activity, QrCode, LayoutDashboard
 } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+
+const supabase = createClient();
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import GlassCard from '@/components/ui/GlassCard';
@@ -64,11 +66,22 @@ export default function CustomerDashboard() {
         filter: `userId=eq.${user.id}`
       }, () => {
         fetchData();
-      })
-      .subscribe();
+      });
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        channel.unsubscribe();
+      } else {
+        channel.subscribe();
+      }
+    };
+
+    channel.subscribe();
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      channel.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibility);
+      supabase.removeChannel(channel);
     };
   }, [user, router]);
 

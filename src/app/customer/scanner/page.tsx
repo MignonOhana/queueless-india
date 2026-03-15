@@ -15,7 +15,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
 
 type ScannerState = 'idle' | 'requesting' | 'scanning' | 'success' | 'denied' | 'error';
 

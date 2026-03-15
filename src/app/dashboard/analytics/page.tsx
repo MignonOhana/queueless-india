@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { createClient } from '@/lib/supabase/client';
 import AnalyticsDashboard from '@/components/Analytics/AnalyticsDashboard';
+
+const supabase = createClient();
 
 export default function AnalyticsPage() {
   const [adminOrg, setAdminOrg] = useState<string | null>(null);

@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+
+const supabase = createClient();
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Ticket, Clock, Building2, CheckCircle, Loader } from "lucide-react";
 

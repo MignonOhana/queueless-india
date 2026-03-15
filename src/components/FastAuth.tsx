@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, ArrowRight, ShieldCheck, UserCircle } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 interface FastAuthProps {
   onSuccess: (userId: string) => void;

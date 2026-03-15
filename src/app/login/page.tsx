@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { Clock, Loader2, ArrowRight, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+
+const supabase = createClient();
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 

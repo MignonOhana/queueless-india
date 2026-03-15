@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
-import { supabase } from "@/lib/supabaseClient";
 import { Activity, ArrowRight, Users } from "lucide-react";
 
 const DEMO_ORG_ID = "demo-city-hospital";

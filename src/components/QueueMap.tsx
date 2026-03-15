@@ -5,7 +5,9 @@ import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { MapPin, Navigation, Clock, Users, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 interface BusinessMarker {
   id: string;

@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabase/server";
 import HomeClient from "./HomeClient";
 import { Business } from "@/lib/mockHomeData";
 
@@ -25,6 +25,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 import * as Sentry from "@sentry/nextjs";
 
 export default async function HomePage() {
+  const supabase = await createClient();
+  
   // Fetch initial businesses on the server for ISR
   const { data, error } = await supabase
     .from("businesses")

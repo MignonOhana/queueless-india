@@ -2,13 +2,14 @@
 
 export type Token = {
   id: string              // uuid
-  orgId: string           // TEXT (NOT uuid — business slug)
-  userId: string | null   // TEXT (should be uuid — known tech debt)
-  queue_id: string | null // uuid (snake_case unlike other columns)
-  tokenNumber: string     // camelCase
+  orgId: string           // TEXT (matches code usage)
+  userId: string | null
+  queue_id: string | null
+  tokenNumber: string
   status: 'WAITING' | 'SERVING' | 'SERVED' | 'CANCELLED'
   isPriority: boolean
   createdAt: string
+  updatedAt?: string
   servedAt: string | null
   estimatedWaitMins: number | null
   customerName: string | null
@@ -17,37 +18,50 @@ export type Token = {
 }
 
 export type Business = {
-  id: string             // TEXT slug (not uuid)
+  id: string
   name: string
-  category: 'Hospital' | 'Bank' | 'Temple' | 'Government' | 'Railway Station' | 'Court' | 'Post Office'
+  category: string
   location: string
-  address: string | null
+  address?: string | null
   latitude: number | null
   longitude: number | null
-  avg_rating: number | null  // snake_case
+  avg_rating: number | null
   total_reviews: number
-  owner_id: string | null    // uuid, snake_case
+  owner_id: string | null
   claim_status: 'unclaimed' | 'claimed' | 'active'
-  serviceMins: number        // camelCase
+  serviceMins: number
   plan: 'free' | 'pro'
   is_verified: boolean
+  updated_at?: string
+  image?: string
+  fastPassEnabled?: boolean
+  phone?: string           // For WhatsApp
+  op_hours_json?: any      // For operating hours
+  services?: any[]        // For prefixes
+  settings?: any          // For business hours config
 }
 
 export type Queue = {
-  id: string           // uuid
-  org_id: string       // TEXT (snake_case)
-  counter_id: string
-  session_date: string
+  id: string            // uuid
+  org_id: string        // TEXT
+  counter_id?: string
+  session_date?: string
   last_issued_number: number
-  currently_serving: string | null // uuid of token
+  currently_serving?: string | null
+  currently_serving_token_id?: string | null // Added for dashboard compatibility
   total_waiting: number
   is_active: boolean
   is_accepting_tokens: boolean
   max_capacity: number
 }
 
+export type Prediction = {
+  id: string
+  bestTimeToVisit: string
+}
+
 export type UserProfile = {
-  id: string           // uuid (matches auth.users.id)
+  id: string
   full_name: string | null
   phone: string | null
   email: string | null
@@ -66,19 +80,43 @@ export type Database = {
         Update: Partial<Token>
       }
       businesses: {
-        Row: Business
-        Insert: Partial<Business>
-        Update: Partial<Business>
+        Row: any // permissive for now
+        Insert: any
+        Update: any
       }
       queues: {
-        Row: Queue
-        Insert: Partial<Queue>
-        Update: Partial<Queue>
+        Row: any // permissive for now
+        Insert: any
+        Update: any
+      }
+      predictions: {
+        Row: any
+        Insert: any
+        Update: any
+      }
+      bookings: {
+        Row: any
+        Insert: any
+        Update: any
       }
       user_profiles: {
         Row: UserProfile
         Insert: Partial<UserProfile>
         Update: Partial<UserProfile>
+      }
+    }
+    Functions: {
+      get_my_profile: {
+        Args: any
+        Returns: any
+      }
+      activate_queue_for_today: {
+        Args: any
+        Returns: any
+      }
+      get_live_pulse_data: {
+        Args: any
+        Returns: any
       }
     }
   }
