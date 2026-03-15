@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Clock, Loader2, ArrowRight, LogIn } from "lucide-react";
+import { Clock, Loader2, ArrowRight, LogIn, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -46,16 +46,42 @@ export default function LoginPage() {
     try {
       const role = intendedRole || localStorage.getItem("ql_intended_role") || "customer";
       
-      // Update profile in DB
-      await supabase.from('user_profiles').update({ role }).eq('id', user.id);
+      // 1. Fetch profile
+      const { data: profile } = await (supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle() as any);
+
+      // 2. Update role if needed
+      if (!profile || profile.role !== role) {
+        await (supabase.from('user_profiles').upsert({ 
+          id: user.id, 
+          role, 
+          email: user.email,
+          updated_at: new Date().toISOString() 
+        }, { onConflict: 'id' }) as any);
+      }
       
-      // Sync localStorage
+      // Sync localStorage for legacy hooks
       localStorage.setItem("ql_user_role", role);
       
       toast.success("Welcome back!");
-      router.push(role === "business_owner" ? "/dashboard" : "/home");
+
+      // 3. Routing Logic
+      if (role === "business_owner") {
+        router.push("/dashboard");
+      } else {
+        // Customer flow
+        if ((profile as any)?.profile_completed) {
+          router.push("/home");
+        } else {
+          router.push("/onboarding");
+        }
+      }
     } catch (err: any) {
-      toast.error("Error updating profile");
+      toast.error("Error setting up your profile");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -90,101 +116,127 @@ export default function LoginPage() {
         {/* Background Decor */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
         
-        <div className="w-full max-w-2xl relative z-10">
+        <div className="w-full max-w-4xl relative z-10">
           {step === "role" ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
             >
-              <div className="md:col-span-2 text-center mb-8">
-                <h1 className="text-4xl font-black text-white tracking-tight mb-3 italic">Welcome to QueueLess</h1>
-                <p className="text-slate-400 font-medium">Please select how you want to use the platform</p>
+              <div className="md:col-span-2 text-center mb-10">
+                <h1 className="text-5xl font-black text-white tracking-tighter mb-4 italic">Welcome to QueueLess 🇮🇳</h1>
+                <p className="text-slate-400 font-bold text-lg">Select your path to continue</p>
               </div>
 
+              {/* Customer Card */}
               <motion.button
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("customer")}
-                className="bg-surface/80 bg-opacity-95 border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 bg-opacity-95 border-2 border-border p-10 rounded-[3rem] text-left group hover:border-emerald-500/50 transition-all duration-300 shadow-2xl relative overflow-hidden h-full min-h-[220px]"
               >
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
-                  <span className="text-4xl">🧑</span>
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <span className="text-9xl">🧑</span>
                 </div>
-                <h3 className="text-2xl font-black text-white mb-2 italic">I'm a Customer</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Join queues, track tokens, and skip the wait at your favorite places.</p>
-                <div className="mt-8 flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                  Get Started <ArrowRight size={14} />
+                <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
+                   <Users size={32} />
+                </div>
+                <h3 className="text-3xl font-black text-white mb-3 italic">Customer</h3>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium">Join queues from your phone, track tokens live, and save hours of waiting time.</p>
+                <div className="mt-10 flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                  Join a Queue <ArrowRight size={14} />
                 </div>
               </motion.button>
 
+              {/* Business Card */}
               <motion.button
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("business_owner")}
-                className="bg-surface/80 bg-opacity-95 border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 bg-opacity-95 border-2 border-border p-10 rounded-[3rem] text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl relative overflow-hidden h-full min-h-[220px]"
               >
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
-                  <span className="text-4xl">🏢</span>
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <span className="text-9xl">🏢</span>
                 </div>
-                <h3 className="text-2xl font-black text-white mb-2 italic">I'm a Business Owner</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">Manage your queue, serve customers faster, and grow your business.</p>
-                <div className="mt-8 flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                   Manage Workspace <ArrowRight size={14} />
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
+                   <LogIn size={32} />
+                </div>
+                <h3 className="text-3xl font-black text-white mb-3 italic">Business</h3>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium">Manage your workspace, digitize your counter, and delight your customers with zero wait.</p>
+                <div className="mt-10 flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                  Manage Queue <ArrowRight size={14} />
                 </div>
               </motion.button>
+
+              <div className="md:col-span-2 text-center mt-8">
+                <button 
+                  onClick={() => {
+                    localStorage.setItem("ql_intended_role", "customer");
+                    setStep("auth");
+                  }}
+                  className="text-slate-500 hover:text-white transition-colors font-bold text-sm"
+                >
+                  Already have an account? <span className="text-primary hover:underline">Sign in</span>
+                </button>
+              </div>
             </motion.div>
           ) : (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-md mx-auto bg-surface/80 bg-opacity-95 rounded-brand p-8 sm:p-12 shadow-2xl border border-border relative z-10"
+              className="w-full max-w-md mx-auto bg-surface/80 bg-opacity-95 rounded-[3rem] p-10 sm:p-14 shadow-2xl border border-border relative z-10"
             >
               <button 
                 onClick={() => setStep("role")}
-                className="absolute top-8 left-8 text-slate-500 hover:text-white transition-colors"
+                className="absolute top-10 left-10 p-2 text-slate-500 hover:text-white transition-colors bg-white/5 rounded-xl border border-white/5"
                 title="Go back"
               >
                 <ArrowRight size={20} className="rotate-180" />
               </button>
 
-              <div className="text-center mb-10">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-primary/20 text-primary">
-                  <LogIn size={32} />
+              <div className="text-center mb-12">
+                <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border-2 shadow-xl ${intendedRole === 'business_owner' ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
+                   <span className="text-4xl">{intendedRole === 'business_owner' ? '🏢' : '🧑'}</span>
                 </div>
-                <h1 className="text-4xl font-black text-white tracking-tight mb-3">
-                  {intendedRole === "business_owner" ? "Admin Login" : "Sign In"}
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full mb-4">
+                  <span className={`w-1.5 h-1.5 rounded-full ${intendedRole === 'business_owner' ? 'bg-primary' : 'bg-emerald-500'} animate-pulse`} />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Signing in as {intendedRole === 'business_owner' ? 'Business Owner' : 'Customer'}
+                  </span>
+                </div>
+                <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
+                  Welcome Back
                 </h1>
-                <p className="text-slate-400 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                  {intendedRole === "business_owner" ? "Manage your virtual queue" : "Track your spot & join queues"}
+                <p className="text-slate-500 font-bold text-sm">
+                  Continue with your phone or email
                 </p>
               </div>
 
-              <div className="mb-8">
+              <div className="mb-10">
                 <GoogleSignInButton 
                   redirectTo={intendedRole === "business_owner" ? "/dashboard" : "/home"} 
                   role={intendedRole || "customer"}
                 />
-                <div className="relative mt-8 mb-4">
+                <div className="relative mt-10 mb-6">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10"></div>
                   </div>
-                  <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-zinc-500 bg-surface px-4">
-                    — or continue with email —
+                  <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest text-zinc-600 bg-surface px-6">
+                    secure OTP access
                   </div>
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-300 ml-1 uppercase tracking-widest text-[10px]">Your Email</label>
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
                   <input 
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder:text-zinc-600 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-medium text-sm"
+                    placeholder="name@company.com"
+                    className="w-full px-8 py-5 rounded-2xl border-2 border-white/5 bg-black/20 text-white placeholder:text-zinc-700 focus:outline-none focus:border-primary/50 transition-all font-bold text-base"
                     required
                   />
                 </div>
@@ -197,19 +249,10 @@ export default function LoginPage() {
                     }
                     setShowOTP(true);
                   }}
-                  className="btn-primary w-full py-5 text-sm"
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 ${intendedRole === 'business_owner' ? 'bg-primary text-black shadow-primary/20 hover:bg-indigo-400' : 'bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400'}`}
                 >
-                  Continue <ArrowRight size={18} />
+                  Send OTP <ArrowRight size={20} strokeWidth={3} />
                 </button>
-              </div>
-
-              <div className="mt-10 pt-8 border-t border-white/5 text-center">
-                <p className="text-slate-500 text-sm font-medium">
-                  {intendedRole === "business_owner" ? "Need a business account?" : "Ready to join?"} {" "}
-                  <Link href="/register" className="text-primary font-bold hover:underline">
-                    Get Started Free
-                  </Link>
-                </p>
               </div>
             </motion.div>
           )}

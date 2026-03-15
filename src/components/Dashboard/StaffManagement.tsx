@@ -30,8 +30,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('staff_members')
+    const { data, error } = await (supabase.from('staff_members') as any)
       .select('*')
       .eq('business_id', businessId)
       .order('created_at', { ascending: true });
@@ -47,8 +46,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
-    const { data, error } = await supabase
-      .from('staff_members')
+    const { data, error } = await (supabase.from('staff_members') as any)
       .insert([{ ...newStaff, business_id: businessId, is_active: true }])
       .select()
       .single();
@@ -64,8 +62,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from('staff_members')
+    const { error } = await (supabase.from('staff_members') as any)
       .update({ is_active: !currentStatus })
       .eq('id', id);
 
@@ -80,8 +77,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const deleteStaff = async (id: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
     
-    const { error } = await supabase
-      .from('staff_members')
+    const { error } = await (supabase.from('staff_members') as any)
       .delete()
       .eq('id', id);
 

@@ -1,6 +1,8 @@
-import { supabase as defaultSupabase } from "./supabaseClient";
-import { QueueStatus, TokenItem } from "./db-schema";
+import { createClient } from "./supabase/client";
+import { Token as TokenItem } from "@/types/database";
 import { SupabaseClient } from "@supabase/supabase-js";
+
+const defaultSupabase = createClient();
 
 // Average time to serve one customer (in minutes) for estimation
 const AVG_WAIT_TIME_MINS = 5;

@@ -13,11 +13,11 @@ export default function AnalyticsPage() {
     const checkSession = async () => {
        const { data: { session } } = await supabase.auth.getSession();
        if (session?.user) {
-          const { data: biz } = await supabase
+          const { data: biz } = await (supabase
             .from('businesses')
             .select('id')
             .eq('owner_id', session.user.id)
-            .maybeSingle();
+            .maybeSingle() as any);
           
           if (biz) {
              setAdminOrg(biz.id);

@@ -388,71 +388,78 @@ export default function HeroSection() {
       {/* ── Text Overlay ── */}
       <motion.div
         style={{ y: textY, opacity: textOpacity }}
-        className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center pointer-events-none z-10"
+        className="absolute inset-0 flex flex-col items-center justify-center px-6 lg:px-12 text-center lg:text-left lg:items-start z-10"
       >
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 bg-opacity-95 text-sm font-bold text-slate-300 mb-6"
-        >
-          <span>🇮🇳</span> Built for Bharat
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
-        </motion.div>
+        <div className="relative p-8 lg:p-0 rounded-[2.5rem] overflow-hidden group">
+          {/* Dark gradient scrim behind text for readability on complex 3D backgrounds */}
+          <div className="absolute inset-0 bg-black/60 lg:bg-transparent lg:bg-gradient-to-r lg:from-black/80 lg:via-black/40 lg:to-transparent -z-10 backdrop-blur-sm lg:backdrop-blur-none" />
+          
+          <div className="relative z-10 max-w-4xl">
+            {/* Badge */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-sm font-bold text-slate-200 mb-6 drop-shadow-md"
+            >
+              <span>🇮🇳</span> Built for Bharat
+              <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
+            </motion.div>
 
-        {/* H1 */}
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="text-5xl sm:text-7xl lg:text-[90px] font-black tracking-tighter text-white leading-none mb-6 max-w-4xl"
-        >
-          No Queue.{" "}
-          <span
-            className="text-transparent"
-            style={{ WebkitTextStroke: "2px #00F5A0" }}
-          >
-            Just Arrive.
-          </span>
-        </motion.h1>
+            {/* H1 */}
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="text-5xl sm:text-7xl lg:text-[100px] font-black tracking-tighter text-white leading-[0.9] mb-8 drop-shadow-2xl"
+            >
+              No Queue.{" "}
+              <span
+                className="text-transparent"
+                style={{ WebkitTextStroke: "2px #00F5A0" }}
+              >
+                Just Arrive.
+              </span>
+            </motion.h1>
 
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-lg text-slate-400 max-w-xl mb-10 leading-relaxed font-medium"
-        >
-          AI-powered virtual queues for hospitals, salons, banks &amp; government offices. Join from anywhere. Walk in when it's your turn.
-        </motion.p>
+            {/* Subtext */}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="text-lg sm:text-xl text-slate-300 max-w-2xl mb-12 leading-relaxed font-bold drop-shadow-lg"
+            >
+              AI-powered virtual queues for hospitals, salons, banks &amp; government offices. Join from anywhere. Walk in when it's your turn.
+            </motion.p>
 
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.45 }}
-          className="flex flex-col sm:flex-row gap-4 items-center pointer-events-auto"
-        >
-          <Link
-            href="/register"
-            className="group px-8 py-4 rounded-full font-black text-base text-black flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(0,245,160,0.35)]"
-            style={{ background: "linear-gradient(135deg, #00F5A0, #00D4FF)" }}
-          >
-            Start Free — No Credit Card
-            <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
+            {/* CTA Buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.45 }}
+              className="flex flex-col lg:flex-row gap-5 items-center lg:items-start pointer-events-auto"
+            >
+              <Link
+                href="/login"
+                className="group w-full sm:w-auto px-10 py-5 rounded-full font-black text-lg text-black flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(0,245,160,0.4)] bg-emerald-400"
+                style={{ background: "linear-gradient(135deg, #00F5A0, #00D4FF)" }}
+              >
+                Get Started Free
+                <ArrowRight size={22} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
 
-          <button
-            onClick={() => setShowVideoModal(true)}
-            className="px-7 py-4 rounded-full font-bold text-base text-white border border-white/20 bg-white/5 bg-opacity-95 flex items-center gap-2 hover:bg-white/10 hover:border-white/30 active:scale-95 transition-all"
-          >
-            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-              <Play size={12} fill="white" />
-            </div>
-            Watch 60-second Demo
-          </button>
-        </motion.div>
+              <button
+                onClick={() => setShowVideoModal(true)}
+                className="w-full sm:w-auto px-10 py-5 rounded-full font-bold text-lg text-white border-2 border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center gap-3 hover:bg-white/10 hover:border-white/40 active:scale-95 transition-all shadow-xl"
+              >
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                  <Play size={14} fill="white" />
+                </div>
+                See How It Works
+              </button>
+            </motion.div>
+          </div>
+        </div>
 
         {/* Scroll hint */}
         <motion.div

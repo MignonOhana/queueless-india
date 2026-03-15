@@ -62,8 +62,8 @@ export default function CustomerProfilePage() {
 
         // 2. Fetch Stats & Activity
         // Get all tokens for this user
-        const { data: tokens, error: tokensErr } = await supabase
-          .from("tokens")
+        const { data: tokens, error: tokensErr } = await (supabase
+          .from("tokens") as any)
           .select(`
             *,
             businesses:orgId (name, category)
@@ -75,8 +75,8 @@ export default function CustomerProfilePage() {
 
         if (tokens) {
           // Calculate Stats
-          const servedTokens = tokens.filter(t => t.status === "SERVED");
-          const uniqueBusinesses = new Set(tokens.map(t => t.orgId)).size;
+          const servedTokens = tokens.filter((t: any) => t.status === "SERVED");
+          const uniqueBusinesses = new Set(tokens.map((t: any) => t.orgId)).size;
           
           setStats({
             tokensCount: tokens.length,
@@ -85,10 +85,10 @@ export default function CustomerProfilePage() {
           });
 
           // Split Tokens
-          setActiveTokens(tokens.filter(t => ["WAITING", "SERVING"].includes(t.status)));
+          setActiveTokens(tokens.filter((t: any) => ["WAITING", "SERVING"].includes(t.status)));
           setRecentActivity(
             tokens
-              .filter(t => ["SERVED", "CANCELLED"].includes(t.status))
+              .filter((t: any) => ["SERVED", "CANCELLED"].includes(t.status))
               .slice(0, 5)
           );
         }
@@ -117,8 +117,8 @@ export default function CustomerProfilePage() {
     try {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from("user_profiles")
+      const { error } = await (supabase
+        .from("user_profiles") as any)
         .update({ 
           full_name: editForm.full_name,
           email: editForm.email,

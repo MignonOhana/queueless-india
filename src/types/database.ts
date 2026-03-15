@@ -69,6 +69,9 @@ export type UserProfile = {
   avatar_url: string | null
   visit_count: number
   onboarding_completed_at: string | null
+  profile_completed?: boolean
+  city?: string
+  preferred_language?: string
 }
 
 export type Database = {

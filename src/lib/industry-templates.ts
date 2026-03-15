@@ -1,4 +1,9 @@
-import { CounterInfo } from "./db-schema";
+export interface CounterInfo {
+  id: string;
+  name: string;
+  prefix: string;
+  estimatedWaitMins: number;
+}
 
 export type IndustryType = "HOSPITAL" | "BANK" | "SALON" | "RESTAURANT" | "GOVERNMENT";
 

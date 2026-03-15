@@ -146,14 +146,18 @@ export default function BusinessQueueManagement() {
     if (!confirm("Are you sure? This will cancel all remaining waiting tokens!")) return;
     try {
       // 1. Close queue
-      await supabase.from("queues").update({ is_active: false }).eq("id", queue.id);
+      if (queue?.id) {
+        await supabase.from("queues").update({ is_active: false }).eq("id", queue.id);
+      }
       
       // 2. Cancel waiting tokens
-      await supabase
-        .from("tokens")
-        .update({ status: "CANCELLED" })
-        .eq("orgId", business.id)
-        .eq("status", "WAITING");
+      if (business?.id) {
+        await supabase
+          .from("tokens")
+          .update({ status: "CANCELLED" })
+          .eq("orgId", business.id)
+          .eq("status", "WAITING");
+      }
 
       toast.success("Queue closed for today");
       fetchQueueData();

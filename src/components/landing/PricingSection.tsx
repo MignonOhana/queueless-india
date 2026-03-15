@@ -12,7 +12,7 @@ const PLANS = [
     priceY: 0,
     sub: "Perfect for small shops",
     cta: "Start Free Forever",
-    ctaHref: "/register",
+    ctaHref: "/login",
     color: "border-white/10",
     features: [
       { label: "1 counter", ok: true },
@@ -32,7 +32,7 @@ const PLANS = [
     priceY: 799,
     sub: "Best for clinics & salons",
     cta: "Start 14-day Free Trial",
-    ctaHref: "/register?plan=growth",
+    ctaHref: "/login?plan=growth",
     color: "border-[#00F5A0]/30",
     badge: "Most Popular",
     features: [

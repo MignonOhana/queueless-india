@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -40,6 +40,10 @@ export async function proxy(request: NextRequest) {
   });
 
   // 3. Route Consolidation Redirects
+  if (pathname === "/register" || pathname === "/business/register" || pathname === "/signup") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
   if (
     pathname.startsWith("/join/") ||
     pathname.startsWith("/customer/business/")
@@ -50,7 +54,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 4. Authenticated User Protection & Role-based Routing
-  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/home"];
+  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/home", "/onboarding"];
   const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/");
 
   if (!user && !isPublicRoute) {

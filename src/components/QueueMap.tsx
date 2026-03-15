@@ -101,8 +101,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
   // 2. Fetch Businesses & Live Queues
   const fetchMapData = async () => {
      // Start by getting all businesses that have coordinates
-     const { data: bData, error: bErr } = await supabase
-       .from('businesses')
+     const { data: bData, error: bErr } = await (supabase.from('businesses') as any)
        .select('id, name, category, latitude, longitude')
        .not('latitude', 'is', null);
 
@@ -110,8 +109,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
 
      // Fetch all active queues for today to attach realtime stats
      const today = new Date().toISOString().split('T')[0];
-     const { data: qData, error: qErr } = await supabase
-       .from('queues')
+     const { data: qData, error: qErr } = await (supabase.from('queues') as any)
        .select('id, org_id, counter_id, currently_serving, total_waiting, is_accepting_tokens')
        .eq('session_date', today);
        

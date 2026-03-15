@@ -53,7 +53,7 @@ export default function Navigation() {
                 Login
               </Link>
               <Link 
-                href="/register" 
+                href="/login" 
                 className="bg-primary text-black px-5 py-2.5 rounded-full font-bold text-sm hover:brightness-110 transition-all shadow-lg shadow-primary/20"
               >
                 Register Business

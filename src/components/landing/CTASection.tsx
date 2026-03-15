@@ -115,7 +115,7 @@ export default function CTASection() {
             className="mt-10"
           >
             <Link
-              href="/register"
+              href="/login"
               className="inline-flex items-center gap-2 text-white border border-white/20 px-8 py-4 rounded-full font-bold hover:bg-white/5 transition-all"
             >
               Register Your Business Now <ArrowRight size={16} />

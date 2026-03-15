@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: { businessId: strin
     .from('businesses')
     .select('name, category, location, address, avg_rating')
     .eq('id', params.businessId)
-    .single()
+    .single() as any
 
   if (!business) return { title: 'Business Not Found' }
 
@@ -52,11 +52,11 @@ export default async function PublicBusinessPage({ params }: Props) {
   const supabase = await createClient();
 
   // 1. Fetch Business Initial Data (SSR)
-  const { data: business, error: bizErr } = await supabase
+  const { data: business, error: bizErr } = await (supabase
     .from('businesses')
     .select('*')
     .eq('id', businessId)
-    .single();
+    .single() as any);
 
   if (bizErr || !business) {
     notFound();
@@ -68,7 +68,7 @@ export default async function PublicBusinessPage({ params }: Props) {
     .select('*', { count: 'exact', head: true })
     .eq('orgId', businessId)
     .eq('status', 'WAITING')
-    .gte('createdAt', new Date().toISOString().split('T')[0]);
+    .gte('createdAt', new Date().toISOString().split('T')[0]) as any;
 
   // 3. Fetch Last 5 Reviews
   const { data: reviews } = await supabase
@@ -76,7 +76,7 @@ export default async function PublicBusinessPage({ params }: Props) {
     .select('*')
     .eq('business_id', businessId)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(5) as any;
 
   const jsonLd = {
     '@context': 'https://schema.org',

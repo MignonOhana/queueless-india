@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { TokenItem } from "./db-schema";
+import { Token as TokenItem } from "@/types/database";
 
 export const useAdminQueue = (orgId: string, counterId?: string) => {
   const supabase = createClient();
@@ -24,8 +24,8 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
       }
       try {
         // 1. Fetch active queue stats
-        let queuesQuery = supabase
-          .from("queues")
+        let queuesQuery = (supabase
+          .from("queues") as any)
           .select("*")
           .eq("org_id", orgId)
           .eq("session_date", new Date().toISOString().split("T")[0]);
@@ -39,8 +39,8 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         if (qErr && qErr.code !== "PGRST116") throw qErr;
 
         // 2. Fetch the active tokens list (WAITING & SERVING)
-        let query = supabase
-          .from("tokens")
+        let query = (supabase
+          .from("tokens") as any)
           .select("*")
           .eq("orgId", orgId)
           .in("status", ["WAITING", "SERVING"])
@@ -69,7 +69,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         // Derive stats directly from the queues row to save counting
         if (queueRows && queueRows.length > 0) {
           let totalIssued = 0;
-          queueRows.forEach((row) =>
+          queueRows.forEach((row: any) =>
             totalIssued += row.last_issued_number || 0
           );
 

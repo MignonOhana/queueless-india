@@ -189,15 +189,15 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
         // Fetch Predictions
         const { data: predData } = await supabase.from('predictions').select('id, bestTimeToVisit');
         const predMap: Record<string, string> = {};
-        predData?.forEach(p => { predMap[p.id] = p.bestTimeToVisit; });
+        predData?.forEach((p: any) => { predMap[p.id] = p.bestTimeToVisit; });
 
         // Fetch Queue info
-        const { data: queueData } = await supabase.from("queues").select("org_id, last_issued_number, total_waiting, max_capacity");
+        const { data: queueData } = await supabase.from("queues").select("org_id, last_issued_number, total_waiting, max_capacity") as any;
         const qMap: Record<string, number> = {};
         const qLenMap: Record<string, number> = {};
         const qCapMap: Record<string, number> = {};
         if (queueData) {
-          queueData.forEach(q => {
+          (queueData as any[]).forEach((q: any) => {
             qMap[q.org_id] = q.last_issued_number;
             qLenMap[q.org_id] = q.total_waiting;
             qCapMap[q.org_id] = q.max_capacity;
@@ -364,7 +364,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
       .channel('public:tokens')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' }, async (payload) => {
         // Fetch new pulse data or manually prepend
-        const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single();
+        const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single() as any;
         if (biz) {
           const newItem = {
             type: 'LIVE',
@@ -418,7 +418,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
     // Increment visit_count in DB
     await supabase
       .from('user_profiles')
-      .update({ visit_count: visitCount + 1 })
+      .update({ visit_count: (visitCount || 0) + 1 } as any)
       .eq('id', user.id);
   };
 

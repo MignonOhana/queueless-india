@@ -41,21 +41,21 @@ export async function POST(request: Request) {
       onboarding_step: 2
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from('businesses')
       .insert([businessData])
       .select()
-      .single();
+      .single() as any);
 
     if (error) {
       // If slug exists, try appending random suffix once
       if (error.code === '23505') {
         const altSlug = `${slug}-${Math.floor(Math.random() * 1000)}`;
-        const { data: altData, error: altError } = await supabase
+        const { data: altData, error: altError } = await (supabase
           .from('businesses')
           .insert([{ ...businessData, id: altSlug }])
           .select()
-          .single();
+          .single() as any);
         
         if (altError) throw altError;
         return NextResponse.json(altData);
