@@ -2,40 +2,36 @@
 
 import { useEffect, useState } from "react";
 import { track } from "@/lib/analytics";
-import { useAuth } from "@/context/AuthContext";
 
 export default function PwaInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
-    // 1. Visit Count Logic
-    const visitCount = parseInt(localStorage.getItem("visit_count") || "0");
-    localStorage.setItem("visit_count", (visitCount + 1).toString());
+    // 1. High-intent Gate: Only show after they've joined a queue at least once
+    const hasJoinedQueue = localStorage.getItem("has_joined_queue") === "true";
+    const isDismissed = localStorage.getItem("pwa_install_dismissed") === "true";
+    const isInstalled = localStorage.getItem("pwa_installed") === "true";
 
-    // 2. Dismiss logic
-    const isDismissed = localStorage.getItem("pwa_dismissed") === "true";
+    if (!hasJoinedQueue || isDismissed || isInstalled) return;
 
-    // 3. Capture install prompt
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      
-      // Only show to customers with >= 2 visits who haven't dismissed it
-      if (
-        visitCount + 1 >= 2 && 
-        !isDismissed && 
-        user?.role === "customer"
-      ) {
-        setIsVisible(true);
-      }
+      setIsVisible(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
+    // Custom trigger for when join happens in the same session
+    window.addEventListener("trigger-pwa-install", () => {
+        if (deferredPrompt) setIsVisible(true);
+    });
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, [user]);
+    return () => {
+        window.removeEventListener("beforeinstallprompt", handler);
+        window.removeEventListener("trigger-pwa-install", () => {});
+    };
+  }, [deferredPrompt]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -45,13 +41,14 @@ export default function PwaInstallBanner() {
     
     if (outcome === "accepted") {
       track("pwa_installed");
+      localStorage.setItem("pwa_installed", "true");
       setIsVisible(false);
     }
     setDeferredPrompt(null);
   };
 
   const handleDismiss = () => {
-    localStorage.setItem("pwa_dismissed", "true");
+    localStorage.setItem("pwa_install_dismissed", "true");
     setIsVisible(false);
     track("pwa_install_dismissed");
   };
@@ -60,26 +57,26 @@ export default function PwaInstallBanner() {
 
   return (
     <div className="fixed bottom-24 left-4 right-4 z-[100] animate-in slide-in-from-bottom-5 fade-in duration-500">
-      <div className="bg-indigo-600/95 backdrop-blur-md border border-white/20 p-4 rounded-3xl shadow-2xl flex items-center justify-between gap-4">
+      <div className="bg-zinc-900 border border-white/10 p-4 rounded-3xl shadow-2xl flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-            🎫
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+            📱
           </div>
           <div>
-            <h3 className="text-white font-bold leading-tight">Install QueueLess</h3>
-            <p className="text-indigo-100 text-xs">Skip queues faster from your home screen</p>
+            <h3 className="text-white font-bold text-sm tracking-tight">Install QueueLess</h3>
+            <p className="text-zinc-500 text-[10px]">Get alerts even when your browser is closed</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleDismiss}
-            className="p-2 text-indigo-200 hover:text-white transition-colors"
+            className="p-2 text-zinc-500 hover:text-white transition-colors"
           >
-            Later
+            ✕
           </button>
           <button
             onClick={handleInstall}
-            className="px-4 py-2 bg-white text-indigo-600 font-bold rounded-xl shadow-lg active:scale-95 transition-all text-sm"
+            className="px-4 py-2 bg-indigo-600 text-white font-black rounded-xl shadow-lg active:scale-95 transition-all text-[10px] uppercase tracking-widest"
           >
             Install
           </button>

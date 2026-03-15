@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, Share2, X, Clock, AlertCircle, 
   MapPin, Star, Bell, BellOff, Navigation, 
-  CheckCircle2, Loader2, Volume2
+  CheckCircle2, Loader2, Volume2, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
@@ -216,22 +216,33 @@ export default function LiveTokenTracking() {
     }
   };
 
+  const shareViaWhatsApp = () => {
+    const businessName = business?.name || 'a business'
+    const tokenNum = token?.tokenNumber || 'my token'
+    const url = window.location.href
+    const text = `🎫 I got ${tokenNum} at ${businessName}!\n\nTrack my queue live 👉 ${url}\n\nNo more waiting in line — join digitally with QueueLess India 🇮🇳`
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(waUrl, '_blank')
+    // Track the share event
+    if ((window as any).umami) (window as any).umami.track('token_shared', { platform: 'whatsapp' })
+  }
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "My Queue Token",
-          text: `I am ${token?.tokenNumber} at ${business?.name}. Track my progress here!`,
+          title: `My Queue Token — ${token?.tokenNumber}`,
+          text: `I'm ${token?.tokenNumber} at ${business?.name}. Track the queue:`,
           url: window.location.href,
-        });
+        })
       } catch (err) {
-        console.log("Error sharing", err);
+        console.log("Error sharing", err)
       }
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+      navigator.clipboard.writeText(window.location.href)
+      toast.success("Link copied to clipboard!")
     }
-  };
+  }
 
   const submitReview = async () => {
     if (rating === 0) return;
@@ -361,18 +372,26 @@ export default function LiveTokenTracking() {
 
       {/* Action Bar */}
       <footer className="fixed bottom-0 inset-x-0 p-6 z-50 bg-gradient-to-t from-background via-background/90 to-transparent">
-        <div className="max-w-lg mx-auto grid grid-cols-2 gap-3">
-          <button 
-            onClick={handleShare}
-            className="flex-1 p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-colors"
-          >
-            <Share2 size={18} /> Share
-          </button>
+        <div className="max-w-lg mx-auto flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={shareViaWhatsApp}
+              className="p-5 rounded-2xl bg-green-600 border border-green-500/20 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-green-500 transition-colors shadow-lg shadow-green-900/20"
+            >
+              <MessageCircle size={18} /> WhatsApp
+            </button>
+            <button 
+              onClick={handleShare}
+              className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-colors"
+            >
+              <Share2 size={18} /> Share
+            </button>
+          </div>
           <button 
             onClick={() => setShowLeaveConfirm(true)}
-            className="flex-1 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-red-500/20 transition-colors"
+            className="w-full p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] hover:bg-red-500/20 transition-colors opacity-50"
           >
-            <X size={18} /> Leave
+            <X size={14} /> Leave Queue
           </button>
         </div>
       </footer>

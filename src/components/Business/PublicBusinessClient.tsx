@@ -212,6 +212,23 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
         orgId: business.id
       });
 
+      // Growth Logic: Set flag for PWA banner
+      localStorage.setItem('has_joined_queue', 'true');
+
+      // Tactile Feedback (Haptics)
+      if (navigator.vibrate) {
+        navigator.vibrate([100, 50, 100, 50, 200]);
+      }
+
+      // Audio Feedback
+      try {
+        const chime = new Audio('/chime.mp3');
+        chime.volume = 0.5;
+        chime.play().catch(() => {});
+      } catch (e) {
+        console.warn("Audio feedback failed");
+      }
+
       // Redirect to the live tracking page after a short delay for confetti
       setTimeout(() => {
         router.push(`/customer/queue/${business.id}/${data.id}`);
