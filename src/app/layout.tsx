@@ -8,7 +8,8 @@ import OfflineBanner from "@/components/OfflineBanner";
 import SmoothScroll from "@/components/SmoothScroll";
 import MobileNav from "@/components/MobileNav";
 import { Toaster } from "sonner";
-import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PwaInstallBanner from "@/components/PwaInstallBanner";
+import PwaRegistration from "@/components/PwaRegistration";
 import { WebVitals } from "@/components/WebVitals";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import PageTransition from "@/components/ui/PageTransition";
@@ -31,8 +32,30 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "QueueLess India",
-  description: "Join queues digitally. No more waiting in line at hospitals, banks, temples.",
+  metadataBase: new URL('https://queueless-india.vercel.app'),
+  title: {
+    default: 'QueueLess India — Skip the Queue at Hospitals, Banks & Temples',
+    template: '%s | QueueLess India',
+  },
+  description: 'Join queues digitally at hospitals, banks, temples, and government offices across India. No more waiting in line. Get your token on your phone.',
+  keywords: ['queue management india', 'skip hospital queue', 'digital token system', 'hospital OPD queue online', 'bank queue token', 'temple darshan queue'],
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: 'https://queueless-india.vercel.app',
+    siteName: 'QueueLess India',
+    title: 'QueueLess India — Skip the Queue',
+    description: 'Join queues digitally across India. No more waiting in line.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'QueueLess India' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'QueueLess India — Skip the Queue',
+    description: 'Join queues digitally. No more waiting in line.',
+    images: ['/og-image.png'],
+  },
+  robots: { index: true, follow: true },
+  alternates: { canonical: 'https://queueless-india.vercel.app' },
   applicationName: "QueueLess India",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -42,7 +65,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.png",
-    apple: "/icon-180.png",
+    apple: "/icons/icon-192.png",
   },
   formatDetection: {
     telephone: false,
@@ -101,7 +124,8 @@ export default function RootLayout({
                       </PageTransition>
                     </main>
                   </div>
-                  <PWAInstallPrompt />
+                  <PwaInstallBanner />
+                  <PwaRegistration />
                   <WebVitals />
                   <MobileNav />
                 </AuthProvider>

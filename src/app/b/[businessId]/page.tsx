@@ -6,35 +6,46 @@ import { supabase } from '@/lib/supabaseClient';
 import PublicBusinessClient from '@/components/Business/PublicBusinessClient';
 import { notFound } from 'next/navigation';
 import LanguageSelector from '@/components/LanguageSelector';
+import { createClient } from '@/lib/supabase/server'
 
 interface Props {
   params: { businessId: string };
 }
 
 // --- SERVER SIDE SEO METADATA ---
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
-  const { businessId } = params;
-  
+export async function generateMetadata({ params }: { params: { businessId: string } }): Promise<Metadata> {
+  const supabase = await createClient()
   const { data: business } = await supabase
     .from('businesses')
-    .select('name, description, avg_rating, total_reviews')
-    .eq('id', businessId)
-    .single();
+    .select('name, category, location, address, avg_rating')
+    .eq('id', params.businessId)
+    .single()
 
-  if (!business) return { title: 'Business Not Found | QueueLess India' };
+  if (!business) return { title: 'Business Not Found' }
+
+  const location = business.address || business.location || 'India'
+  const title = `${business.name} — Queue Token & Wait Time | QueueLess`
+  const description = `Join the digital queue at ${business.name} in ${location}. Get your token on your phone — no waiting in line. Current wait time and token status available.`
 
   return {
-    title: `${business.name} | Live Queue Status | QueueLess`,
-    description: business.description || `Join the digital queue for ${business.name}. Current wait time and live status available.`,
+    title,
+    description,
+    keywords: [
+      `${business.name} queue`,
+      `${business.name} token`,
+      `${business.category?.toLowerCase()} queue ${location}`,
+      `skip queue ${location}`,
+    ],
     openGraph: {
-      title: `${business.name} - Join Digital Queue`,
-      description: `⭐ ${business.avg_rating} Stars | ${business.total_reviews} reviews. Join now to save time.`,
-      images: ['/og-business-default.png'], // You can make this dynamic with a dedicated OG route
+      title,
+      description,
+      url: `https://queueless-india.vercel.app/b/${params.businessId}`,
+      type: 'website',
     },
-  };
+    alternates: {
+      canonical: `https://queueless-india.vercel.app/b/${params.businessId}`,
+    },
+  }
 }
 
 export default async function PublicBusinessPage({ params }: Props) {
@@ -67,8 +78,43 @@ export default async function PublicBusinessPage({ params }: Props) {
     .order('created_at', { ascending: false })
     .limit(5);
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    name: business.name,
+    description: `Digital queue management at ${business.name}`,
+    url: `https://queueless-india.vercel.app/b/${business.id}`,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: business.address || '',
+      addressLocality: business.location || '',
+      addressCountry: 'IN',
+    },
+    ...(business.latitude && business.longitude && {
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: business.latitude,
+        longitude: business.longitude,
+      },
+    }),
+    ...(business.avg_rating && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: business.avg_rating,
+        reviewCount: business.total_reviews || 1,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }),
+  }
+
   return (
-    <main className="min-h-screen bg-background relative">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <main className="min-h-screen bg-background relative">
        {/* Regional Language Support (UX-2) */}
        <div className="absolute top-6 right-6 z-[100]">
           <LanguageSelector variant="compact" />
@@ -80,5 +126,6 @@ export default async function PublicBusinessPage({ params }: Props) {
          initialReviews={reviews || []}
        />
     </main>
+    </>
   );
 }
