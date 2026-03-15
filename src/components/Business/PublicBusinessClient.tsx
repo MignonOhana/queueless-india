@@ -20,6 +20,7 @@ import { EmailOTPModal } from '@/components/auth/EmailOTPModal';
 import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
 import { AlertCircle, LogIn, User as UserIcon, Activity as ActivityIcon } from 'lucide-react';
+import { track } from '@/lib/analytics';
 
 interface PublicBusinessClientProps {
   business: any;
@@ -75,6 +76,9 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
       if (data) setLiveServingToken(data.tokenNumber);
     };
     fetchServing();
+    
+    // Track page view
+    track('page_view', { business_id: business.id });
   }, [business.id]);
 
   // --- REAL-TIME UPDATES ---
@@ -222,6 +226,11 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
         if (Date.now() < end) requestAnimationFrame(frame);
       };
       frame();
+      track('queue_joined', { 
+        business_id: business.id, 
+        category: business.category || 'General',
+        mode: asGuest ? 'guest' : 'account'
+      });
       toast.success("Joined successfully!");
     } catch (e: any) {
       console.error("Join Error:", e);

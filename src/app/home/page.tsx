@@ -22,6 +22,8 @@ const CATEGORY_ICONS: Record<string, string> = {
   "default": "🏢"
 };
 
+import * as Sentry from "@sentry/nextjs";
+
 export default async function HomePage() {
   // Fetch initial businesses on the server for ISR
   const { data, error } = await supabase

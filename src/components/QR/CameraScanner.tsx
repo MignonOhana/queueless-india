@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { Maximize, X } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 interface CameraScannerProps {
   onScanSuccess: (decodedText: string) => void;
@@ -34,6 +35,7 @@ export default function CameraScanner({ onScanSuccess, onClose }: CameraScannerP
         html5QrcodeScanner.clear().catch(console.error);
         
         // Pass the result to the parent queue router
+        track('qr_scanned');
         onScanSuccess(decodedText);
       },
       (errorMessage) => {

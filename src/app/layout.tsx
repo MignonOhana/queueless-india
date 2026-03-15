@@ -9,6 +9,7 @@ import SmoothScroll from "@/components/SmoothScroll";
 import MobileNav from "@/components/MobileNav";
 import { Toaster } from "sonner";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import { WebVitals } from "@/components/WebVitals";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import PageTransition from "@/components/ui/PageTransition";
 import "./globals.css";
@@ -51,6 +52,18 @@ export const metadata: Metadata = {
   }
 };
 
+const UmamiScript = () => {
+  const websiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+  if (!websiteId) return null;
+  return (
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id={websiteId}
+    />
+  );
+};
+
 export const viewport = {
   themeColor: "#00F5A0",
   width: "device-width",
@@ -67,6 +80,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <UmamiScript />
+      </head>
       <body className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased font-sans bg-[#0A0A0F] text-[#F0F0F8] transition-colors duration-300 relative`} suppressHydrationWarning>
         
         <AnimatedBackground />
@@ -86,6 +102,7 @@ export default function RootLayout({
                     </main>
                   </div>
                   <PWAInstallPrompt />
+                  <WebVitals />
                   <MobileNav />
                 </AuthProvider>
               </LanguageProvider>
