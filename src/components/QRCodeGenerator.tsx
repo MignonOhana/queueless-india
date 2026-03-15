@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { QRCodeSVG } from "qrcode.react";
+import dynamic from 'next/dynamic';
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { Copy, Printer, CheckCircle2, LayoutTemplate, MessageCircle, Globe } from "lucide-react";
 import { useReactToPrint } from "react-to-print";
 
@@ -124,7 +125,7 @@ export default function QRCodeGenerator({ business }: QRCodeGeneratorProps) {
        </div>
 
        {/* Right Preview */}
-       <div className="flex-1 bg-[#111118]/50 rounded-3xl border border-white/5 p-4 md:p-8 flex flex-col items-center justify-center overflow-auto relative z-10 backdrop-blur-sm min-h-[600px]">
+       <div className="flex-1 bg-[#111118]/50 rounded-3xl border border-white/5 p-4 md:p-8 flex flex-col items-center justify-center overflow-auto relative z-10 bg-opacity-95 min-h-[600px]">
           
           <div className="mb-4 text-slate-500 text-sm font-medium flex items-center gap-2">
             <Printer size={16} /> Live Print Preview

@@ -60,7 +60,7 @@ export default function HowItWorks() {
               className="relative"
             >
               {/* Card */}
-              <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-8 border border-slate-200/50 dark:border-slate-800/50 shadow-sm hover:shadow-xl transition-all duration-300 h-full relative z-10 backdrop-blur-sm group">
+              <div className="bg-white dark:bg-slate-900/50 rounded-3xl p-8 border border-slate-200/50 dark:border-slate-800/50 shadow-sm hover:shadow-xl transition-all duration-300 h-full relative z-10 bg-opacity-95 group">
                 
                 {/* Background Gradient Hover */}
                 <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl -z-10`} />

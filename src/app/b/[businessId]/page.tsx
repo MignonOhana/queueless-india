@@ -1,3 +1,5 @@
+export const revalidate = 60; // rebuild every 60 seconds max
+
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { supabase } from '@/lib/supabaseClient';

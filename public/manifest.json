@@ -1,20 +1,21 @@
 {
-  "name": "QueueLess India",
+  "name": "QueueLess India — Skip the Queue",
   "short_name": "QueueLess",
-  "description": "Skip the queue. Track your turn.",
-  "start_url": "/",
+  "description": "Join queues digitally. No more waiting in line at hospitals, banks, temples.",
+  "start_url": "/home",
   "display": "standalone",
-  "background_color": "#0A0A0F",
+  "background_color": "#111118",
   "theme_color": "#00F5A0",
   "orientation": "portrait",
+  "categories": ["utilities", "productivity"],
+  "lang": "hi",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" },
+    { "src": "/icon-180.png", "sizes": "180x180", "type": "image/png" }
   ],
   "shortcuts": [
-    { "name": "Find Queue Near Me", "url": "/discover", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "My Active Token", "url": "/my-tokens", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
-  ],
-  "screenshots": [],
-  "categories": ["utilities", "productivity"]
+    { "name": "Find a Queue", "url": "/home", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Scan QR Code", "url": "/customer/scanner", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
 }

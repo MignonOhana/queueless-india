@@ -22,7 +22,7 @@ export default function MapFilters({ activeFilter, onFilterChange }: Props) {
     <div className="absolute top-4 left-4 right-4 z-[1000] flex flex-col md:flex-row gap-3 pointer-events-none">
       
       {/* Background blur layer for the top bar */}
-      <div className="flex bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 p-2 rounded-2xl shadow-lg pointer-events-auto overflow-x-auto hide-scrollbar max-w-full">
+      <div className="flex bg-white/80 dark:bg-slate-900/80 bg-opacity-95 border border-slate-200/50 dark:border-slate-700/50 p-2 rounded-2xl shadow-lg pointer-events-auto overflow-x-auto hide-scrollbar max-w-full">
         <div className="flex items-center gap-2 pl-2 pr-4 border-r border-slate-200 dark:border-slate-700 shrink-0">
            <Filter size={16} className="text-slate-500" />
            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest hidden md:inline-block">Filter</span>

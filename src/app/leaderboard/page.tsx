@@ -73,7 +73,7 @@ export default function LeaderboardPage() {
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="bg-white/5 border border-white/10 p-2 md:p-4 rounded-[2rem] backdrop-blur-xl shadow-2xl"
+          className="bg-white/5 border border-white/10 p-2 md:p-4 rounded-[2rem] bg-opacity-95 shadow-2xl"
         >
            <AnimatePresence mode="popLayout">
              {filteredData.map((business, index) => (

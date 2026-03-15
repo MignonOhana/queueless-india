@@ -40,11 +40,41 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400, // cache images 24 hours
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'ui-avatars.com' },
-      { protocol: 'https', hostname: '*.supabase.co' }
+      { protocol: 'https', hostname: '**.supabase.co' },
+      { protocol: 'https', hostname: 'maps.googleapis.com' },
     ],
+  },
+  // Compression
+  compress: true,
+  // Power optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@supabase/supabase-js'],
+  },
+  // Headers for caching static assets
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+      {
+        source: '/static/(.*)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+    ]
   },
   turbopack: {},
 };

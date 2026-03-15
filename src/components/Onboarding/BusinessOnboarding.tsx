@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, QrCode, CheckCircle2, ArrowRight, Sparkles, Users, Bell, Play } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 
 interface BusinessOnboardingProps {
   businessName: string;
@@ -81,7 +82,7 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
       {/* --- MODAL FLOW --- */}
       <AnimatePresence>
         {showModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0A0A0F]/90 backdrop-blur-md">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0A0A0F]/95">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -212,7 +213,7 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
         {tooltipStep > 0 && (
           <div className="fixed inset-0 z-[110] pointer-events-none">
             {/* Background Overlay with Hole (Optional, using simpler focus ring) */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-black/95" />
             
             {/* Focus Ring */}
             <motion.div
@@ -227,7 +228,7 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
               }}
               className="absolute border-2 border-[#00F5A0] rounded-2xl shadow-[0_0_20px_rgba(0,245,160,0.5)] z-[120]"
             >
-               <div className="absolute inset-0 border-2 border-[#00F5A0] rounded-2xl animate-ping opacity-30" />
+               <div className="absolute inset-0 border-2 border-[#00F5A0] rounded-2xl animate-pulse opacity-30" />
             </motion.div>
 
             {/* Tooltip Content */}

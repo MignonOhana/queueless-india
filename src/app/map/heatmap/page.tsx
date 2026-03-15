@@ -45,7 +45,7 @@ export default function HeatmapPage() {
         
         {/* Top Floating Controls */}
         <div className="absolute top-4 right-4 z-[1000] flex gap-2 pointer-events-none md:top-6 md:right-6">
-          <div className="glass-card flex p-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-xl pointer-events-auto">
+          <div className="glass-card flex p-1 bg-white/90 dark:bg-slate-900/90 bg-opacity-95 border border-slate-200/50 dark:border-slate-700/50 rounded-2xl shadow-xl pointer-events-auto">
             <button 
               onClick={() => setMode("heatmap")}
               className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all ${

@@ -70,7 +70,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans selection:bg-primary/30">
       {/* Navigation */}
-      <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
+      <nav className="h-20 bg-background/50 bg-opacity-95 border-b border-border flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-blue-400 text-black flex items-center justify-center shadow-lg">
             <Clock size={18} strokeWidth={3} />
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("customer")}
-                className="bg-surface/80 backdrop-blur-xl border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 bg-opacity-95 border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
               >
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
                   <span className="text-4xl">🧑</span>
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 whileHover={{ scale: 1.02, y: -5 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => handleRoleSelect("business_owner")}
-                className="bg-surface/80 backdrop-blur-xl border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
+                className="bg-surface/80 bg-opacity-95 border border-border p-10 rounded-brand text-left group hover:border-primary/50 transition-all duration-300 shadow-2xl"
               >
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 border border-primary/20 text-primary group-hover:scale-110 transition-transform">
                   <span className="text-4xl">🏢</span>
@@ -137,7 +137,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="w-full max-w-md mx-auto bg-surface/80 backdrop-blur-xl rounded-brand p-8 sm:p-12 shadow-2xl border border-border relative z-10"
+              className="w-full max-w-md mx-auto bg-surface/80 bg-opacity-95 rounded-brand p-8 sm:p-12 shadow-2xl border border-border relative z-10"
             >
               <button 
                 onClick={() => setStep("role")}

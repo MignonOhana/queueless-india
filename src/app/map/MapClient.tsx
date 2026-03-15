@@ -127,7 +127,7 @@ export default function CityQueueMap() {
           <div className="flex items-center gap-3">
             <Link
               href="/customer"
-              className="flex items-center gap-2 bg-white/90 dark:bg-black/60 backdrop-blur-xl border border-white/10 px-4 py-2.5 rounded-full text-white shadow-lg hover:bg-white/10 transition shrink-0"
+              className="flex items-center gap-2 bg-white/90 dark:bg-black/60 bg-opacity-95 border border-white/10 px-4 py-2.5 rounded-full text-white shadow-lg hover:bg-white/10 transition shrink-0"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="font-bold text-sm">Live Map</span>
@@ -139,7 +139,7 @@ export default function CityQueueMap() {
                 placeholder="Search businesses..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-black/60 bg-opacity-95 border border-white/10 rounded-full text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function CityQueueMap() {
                 className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
                   activeCity.name === city.name
                     ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-black/40 backdrop-blur text-slate-400 border border-white/10 hover:text-white'
+                    : 'bg-black/40 bg-opacity-95 text-slate-400 border border-white/10 hover:text-white'
                 }`}
               >
                 {city.name}
@@ -170,7 +170,7 @@ export default function CityQueueMap() {
                 className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all ${
                   activeCategory === f
                     ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-black/40 backdrop-blur text-slate-500 border border-white/10 hover:text-white'
+                    : 'bg-black/40 bg-opacity-95 text-slate-500 border border-white/10 hover:text-white'
                 }`}
               >
                 {f}
@@ -182,7 +182,7 @@ export default function CityQueueMap() {
 
       {/* Wait Time Legend */}
       <div className="absolute top-44 md:top-36 right-4 z-[500] hidden md:block">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-4 w-44">
+        <div className="bg-black/60 bg-opacity-95 border border-white/10 rounded-2xl p-4 w-44">
           <h4 className="text-white text-[10px] font-black uppercase tracking-widest mb-3">Wait Time</h4>
           <div className="space-y-2 text-xs font-medium text-slate-300">
             <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ export default function CityQueueMap() {
           animate={{ y: 0, opacity: 1 }}
           className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 md:w-80 z-[500]"
         >
-          <div className="bg-black/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-5 shadow-2xl">
+          <div className="bg-black/80 bg-opacity-95 border border-white/10 rounded-3xl p-5 shadow-2xl">
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h3 className="text-white font-black text-lg">{selectedBusiness.name}</h3>
@@ -236,7 +236,7 @@ export default function CityQueueMap() {
 
       {/* Results Count */}
       <div className="absolute bottom-6 left-4 z-[500] md:hidden">
-        <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-4 py-2 text-xs text-slate-300 font-bold">
+        <div className="bg-black/60 bg-opacity-95 border border-white/10 rounded-full px-4 py-2 text-xs text-slate-300 font-bold">
           {filteredBusinesses.length} businesses found
         </div>
       </div>

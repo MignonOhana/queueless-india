@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import dynamic from 'next/dynamic';
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { QRCodeSVG } from "qrcode.react";
 import { 
   ChevronLeft, Download, Printer, 
   CheckCircle2, Loader2, LayoutDashboard,
@@ -120,7 +121,7 @@ export default function BusinessQRPage() {
       `}</style>
 
       {/* Header (No Print) */}
-      <header className="no-print p-6 flex items-center justify-between border-b border-white/5 bg-background/50 backdrop-blur-xl sticky top-0 z-50">
+      <header className="no-print p-6 flex items-center justify-between border-b border-white/5 bg-background/50 bg-opacity-95 sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.push("/dashboard")}

@@ -117,7 +117,7 @@ export default function BusinessDashboard() {
     return (
       <div className="min-h-screen bg-background flex flex-col font-sans transition-colors duration-300">
         
-        <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
+        <nav className="h-20 bg-background/95 border-b border-border flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
               Q
@@ -242,7 +242,7 @@ export default function BusinessDashboard() {
   if (!businessData || businessData.claim_status === 'claimed') {
     return (
       <div className="min-h-screen bg-background">
-        <nav className="h-20 bg-background/50 backdrop-blur-md border-b border-border flex items-center justify-between px-6 shrink-0 z-10">
+        <nav className="h-20 bg-background/95 border-b border-border flex items-center justify-between px-6 shrink-0 z-10">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
               Q
@@ -287,7 +287,7 @@ export default function BusinessDashboard() {
       )}
 
       {/* 🚀 DASHBOARD HEADER */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between mb-8 sticky top-0 z-40 bg-background/80 backdrop-blur-md py-4 border-b border-white/5 px-4 md:px-0">
+      <div className="max-w-7xl mx-auto flex items-center justify-between mb-8 sticky top-0 z-40 bg-background/95 py-4 border-b border-white/5 px-4 md:px-0">
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
@@ -455,7 +455,7 @@ export default function BusinessDashboard() {
             </div>
 
             {/* 🛠️ QUEUE COMMAND CENTER */}
-            <div className="bg-surface/50 backdrop-blur-md border border-border rounded-brand p-6 lg:p-8 min-h-[60vh]">
+            <div className="bg-surface/95 border border-border rounded-brand p-6 lg:p-8 min-h-[60vh]">
                <div className="flex items-center justify-between mb-8">
                   <h3 className="text-2xl font-black text-white tracking-tight">Queue Command Center</h3>
                   <select 

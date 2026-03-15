@@ -154,7 +154,7 @@ export default function MobileNav() {
             exit={{ y: 100 }}
             className="md:hidden fixed bottom-0 inset-x-0 z-[100] px-4 pb-6 pointer-events-none"
           >
-            <div className="max-w-md mx-auto h-[72px] bg-zinc-900/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] flex items-center justify-around px-2 shadow-2xl pointer-events-auto">
+            <div className="max-w-md mx-auto h-[72px] bg-zinc-900/95 border border-white/10 rounded-[2.5rem] flex items-center justify-around px-2 shadow-2xl pointer-events-auto">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const Icon = item.icon;

@@ -34,7 +34,7 @@ export default function SmartInsightsPanel({ businesses, isOpen, onClose }: Prop
            animate={{ x: 0, opacity: 1 }}
            exit={{ x: "100%", opacity: 0 }}
            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-           className="absolute top-0 right-0 h-full w-full md:w-[400px] bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl border-l border-slate-200/50 dark:border-slate-800/50 z-[1001] shadow-2xl flex flex-col pointer-events-auto"
+           className="absolute top-0 right-0 h-full w-full md:w-[400px] bg-white/95 dark:bg-slate-950/95 bg-opacity-95 border-l border-slate-200/50 dark:border-slate-800/50 z-[1001] shadow-2xl flex flex-col pointer-events-auto"
         >
           <div className="p-6 border-b border-slate-200/50 dark:border-slate-800/50 flex justify-between items-center bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-900/10">
             <div className="flex items-center gap-2">

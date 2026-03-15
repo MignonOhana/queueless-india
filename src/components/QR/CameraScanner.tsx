@@ -52,7 +52,7 @@ export default function CameraScanner({ onScanSuccess, onClose }: CameraScannerP
   }, [onScanSuccess]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex flex-col items-center justify-center animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] bg-slate-950/90 bg-opacity-95 flex flex-col items-center justify-center animate-in fade-in duration-300">
       
       {/* Top action bar */}
       <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10 text-white">

@@ -68,7 +68,7 @@ export default function LiveMap() {
       
       {/* Search and Filter Overlays (UI only) */}
       <div className="absolute top-4 left-4 right-4 md:right-auto md:w-96 z-[1000] flex flex-col gap-3">
-        <div className="glass-card p-3 flex items-center gap-3 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80">
+        <div className="glass-card p-3 flex items-center gap-3 bg-opacity-95 bg-white/80 dark:bg-slate-900/80">
            <input 
              type="text" 
              placeholder="Search hospitals, banks..." 

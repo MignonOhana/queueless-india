@@ -236,7 +236,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
       <button 
         onClick={recenter}
         disabled={!userLocation}
-        className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-md dark:bg-slate-900/90 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-white active:scale-95 transition disabled:opacity-50"
+        className="absolute top-4 right-4 w-12 h-12 bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-white active:scale-95 transition disabled:opacity-50"
       >
          <Navigation size={22} className={isLoadingLocation ? "animate-spin text-indigo-500" : (userLocation ? "text-indigo-500" : "")} />
       </button>

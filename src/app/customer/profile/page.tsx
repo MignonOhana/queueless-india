@@ -167,7 +167,7 @@ export default function CustomerProfilePage() {
     <div className="min-h-screen bg-[#0A0A0F] pb-24 text-white font-sans selection:bg-[#00F5A0]/30 selection:text-[#00F5A0]">
       
       {/* Top Navigation */}
-      <header className="sticky top-0 z-40 bg-[#0A0A0F]/80 backdrop-blur-xl px-4 py-6 border-b border-white/10">
+      <header className="sticky top-0 z-40 bg-[#0A0A0F]/80 bg-opacity-95 px-4 py-6 border-b border-white/10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Link href="/home" className="flex items-center gap-2 group text-zinc-400 hover:text-[#00F5A0] transition-colors">
             <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />

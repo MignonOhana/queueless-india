@@ -4,16 +4,19 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import confetti from 'canvas-confetti';
 
 export default function SubscriptionSuccessPage() {
   useEffect(() => {
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#00F5A0', '#38BDF8', '#FF6B35']
-    });
+    const fireConfetti = async () => {
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#00F5A0', '#38BDF8', '#FF6B35']
+      });
+    };
+    fireConfetti();
   }, []);
 
   return (
@@ -26,7 +29,7 @@ export default function SubscriptionSuccessPage() {
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="relative z-10 w-full max-w-lg bg-white/5 border border-white/10 backdrop-blur-xl rounded-[3rem] p-12 text-center shadow-2xl"
+        className="relative z-10 w-full max-w-lg bg-white/5 border border-white/10 bg-opacity-95 rounded-[3rem] p-12 text-center shadow-2xl"
       >
         <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-8 border border-[#00F5A0]/30">
           <ShieldCheck size={48} className="text-primary" />

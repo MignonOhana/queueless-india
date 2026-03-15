@@ -81,7 +81,7 @@ export default function PWAInstallPrompt() {
           exit={{ y: 100, opacity: 0 }}
           className="fixed bottom-6 left-4 right-4 z-[9999] md:left-auto md:right-6 md:w-96"
         >
-          <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden group">
+          <div className="bg-zinc-900/90 bg-opacity-95 border border-white/10 p-5 rounded-2xl shadow-2xl relative overflow-hidden group">
             {/* Glow effect */}
             <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             

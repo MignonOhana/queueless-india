@@ -291,7 +291,7 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
       </div>
 
       {/* Footer */}
-      <footer className="bg-white/[0.01] border-t border-white/5 px-8 py-4 flex items-center justify-between relative z-10 backdrop-blur-md">
+      <footer className="bg-white/5 border-t border-white/5 px-8 py-4 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2">
            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
            <span className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em]">Live Feed Active</span>

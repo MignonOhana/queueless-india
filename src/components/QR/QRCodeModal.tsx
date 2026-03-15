@@ -1,6 +1,7 @@
 "use client";
 
-import { QRCodeSVG } from "qrcode.react";
+import dynamic from "next/dynamic";
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { X } from "lucide-react";
 
 interface QRCodeModalProps {
@@ -17,7 +18,7 @@ export default function QRCodeModal({ orgId, isOpen, onClose }: QRCodeModalProps
   const joinUrl = `${host}/customer?org=${orgId}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/95">
       <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-auto shadow-2xl relative animate-in zoom-in-95 duration-200">
         <button 
           onClick={onClose}

@@ -9,7 +9,6 @@ import { useCustomerQueue } from "@/lib/useCustomerQueue";
 import { useLanguage, Language } from "@/context/LanguageContext";
 import { generateQueuePredictionStatement } from "@/lib/ai-queue-engine";
 import FloatChatWidget from "@/components/AIChat";
-import CameraScanner from "@/components/QR/CameraScanner";
 import GeoTracker from "@/components/GeoTracker";
 import PageTransition from "@/components/PageTransition";
 

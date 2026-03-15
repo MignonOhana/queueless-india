@@ -395,7 +395,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-bold text-slate-300 mb-6"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 bg-opacity-95 text-sm font-bold text-slate-300 mb-6"
         >
           <span>🇮🇳</span> Built for Bharat
           <span className="w-1.5 h-1.5 rounded-full bg-[#00F5A0] animate-pulse" />
@@ -445,7 +445,7 @@ export default function HeroSection() {
 
           <button
             onClick={() => setShowVideoModal(true)}
-            className="px-7 py-4 rounded-full font-bold text-base text-white border border-white/20 bg-white/5 backdrop-blur-md flex items-center gap-2 hover:bg-white/10 hover:border-white/30 active:scale-95 transition-all"
+            className="px-7 py-4 rounded-full font-bold text-base text-white border border-white/20 bg-white/5 bg-opacity-95 flex items-center gap-2 hover:bg-white/10 hover:border-white/30 active:scale-95 transition-all"
           >
             <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
               <Play size={12} fill="white" />
@@ -477,7 +477,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: stat.delay }}
           style={{ left: stat.x, top: stat.y }}
-          className="absolute z-20 bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl px-4 py-3 hidden sm:block pointer-events-none"
+          className="absolute z-20 bg-white/5 border border-white/10 bg-opacity-95 rounded-2xl px-4 py-3 hidden sm:block pointer-events-none"
         >
           <p className="text-white font-black text-lg leading-tight">{stat.label}</p>
           <p className="text-slate-400 text-xs font-medium">{stat.sub}</p>
@@ -493,7 +493,7 @@ export default function HeroSection() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowVideoModal(false)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+              className="absolute inset-0 bg-black/90 bg-opacity-95"
             />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}

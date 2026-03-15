@@ -40,7 +40,7 @@ export default function Hero() {
           {/* Animated Badge */}
           <motion.div 
             variants={FADE_UP_ANIMATION_VARIANTS}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium text-sm mb-8 backdrop-blur-md"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50/95 dark:bg-indigo-500/95 border border-indigo-100 dark:border-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-medium text-sm mb-8"
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
@@ -169,7 +169,7 @@ export default function Hero() {
            <motion.div 
              animate={{ y: [0, -15, 0] }}
              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-             className="absolute top-20 -left-12 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-2 pointer-events-none"
+             className="absolute top-20 -left-12 z-20 bg-white/80 dark:bg-slate-900/80 bg-opacity-95 p-4 rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-2 pointer-events-none"
            >
               <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-500/20 flex items-center justify-center text-rose-600 dark:text-rose-400">
@@ -190,7 +190,7 @@ export default function Hero() {
            <motion.div 
              animate={{ y: [0, 15, 0] }}
              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-             className="absolute bottom-32 -right-16 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-4 pointer-events-none"
+             className="absolute bottom-32 -right-16 z-20 bg-white/80 dark:bg-slate-900/80 bg-opacity-95 p-4 rounded-2xl shadow-2xl border border-slate-200/50 dark:border-slate-700/50 flex items-center gap-4 pointer-events-none"
            >
               <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>

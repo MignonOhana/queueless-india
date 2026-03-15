@@ -135,7 +135,7 @@ export default function HeroPhysics() {
             ref={(el) => {
                 if (el) elementsRef.current[index] = el;
             }}
-            className={`absolute top-0 left-0 flex items-center gap-2 px-4 py-3 rounded-2xl glass-card border shadow-xl cursor-grab active:cursor-grabbing hover:scale-105 transition-transform duration-200 will-change-transform ${item.color}`}
+            className={`absolute top-0 left-0 flex items-center gap-2 px-4 py-3 rounded-2xl glass-card border shadow-xl cursor-grab active:cursor-grabbing hover:scale-105 transition-transform duration-200 ${item.color}`}
             style={{ width: 140, height: 60 }}
           >
             <Icon size={24} strokeWidth={2.5} />

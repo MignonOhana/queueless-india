@@ -69,7 +69,7 @@ const STEPS = [
     accent: "#FB923C",
     visual: (
       <div className="w-full flex items-center justify-center py-8">
-        <div className="w-64 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+        <div className="w-64 bg-white/5 border border-white/10 rounded-2xl p-4 bg-opacity-95">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ backgroundColor: "#FB923C20" }}>
               🔔

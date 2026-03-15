@@ -16,7 +16,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-zinc-950 text-white antialiased min-h-screen flex items-center justify-center p-4`}>
-        <div className="bg-zinc-900/80 p-8 md:p-12 rounded-3xl max-w-lg w-full text-center space-y-6 border border-zinc-800 shadow-2xl backdrop-blur-xl">
+        <div className="bg-zinc-900/80 p-8 md:p-12 rounded-3xl max-w-lg w-full text-center space-y-6 border border-zinc-800 shadow-2xl bg-opacity-95">
           <div className="mx-auto w-20 h-20 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-6">
             <AlertTriangle className="w-10 h-10 text-rose-500" />
           </div>

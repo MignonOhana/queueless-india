@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
+import dynamic from 'next/dynamic';
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import StatusBadge from './StatusBadge';
 
 interface TokenCardProps {

@@ -92,7 +92,7 @@ export default function CustomerDashboard() {
     <div className="min-h-screen bg-background text-white pb-32">
        
         {/* HEADER */}
-        <header className="px-6 pt-12 pb-8 flex items-center justify-between sticky top-0 bg-background/80 backdrop-blur-md z-40 border-b border-white/5">
+        <header className="px-6 pt-12 pb-8 flex items-center justify-between sticky top-0 bg-background/80 bg-opacity-95 z-40 border-b border-white/5">
            <div>
              <h1 className="text-3xl font-black tracking-tighter">My Tokens</h1>
              <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-1">

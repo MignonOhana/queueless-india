@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import jsQR from 'jsqr';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -76,7 +75,7 @@ export default function QRScanner() {
     }, 2000);
   };
 
-  const processFrame = useCallback(() => {
+  const processFrame = useCallback(async () => {
     if (state !== 'scanning' || !videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -90,6 +89,7 @@ export default function QRScanner() {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const jsQR = (await import('jsqr')).default;
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
           inversionAttempts: "dontInvert",
         });
@@ -172,8 +172,8 @@ export default function QRScanner() {
     <div className="fixed inset-0 z-50 bg-[#0A0A0F] text-white font-sans overflow-hidden flex flex-col">
       
       {/* HEADER */}
-      <div className="absolute top-0 inset-x-0 z-[60] p-6 flex items-center justify-between bg-gradient-to-b from-[#0A0A0F]/80 to-transparent backdrop-blur-sm">
-        <Link href="/home" className="p-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
+      <div className="absolute top-0 inset-x-0 z-[60] p-6 flex items-center justify-between bg-gradient-to-b from-[#0A0A0F]/80 to-transparent bg-opacity-95">
+        <Link href="/home" className="p-3 bg-white/5 bg-opacity-95 border border-white/10 rounded-2xl hover:bg-white/10 transition-all">
           <ArrowLeft size={24} />
         </Link>
         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500">Business Scanner</span>
@@ -270,7 +270,7 @@ export default function QRScanner() {
                 </div>
 
                 <div className="mt-12 text-center">
-                  <div className="bg-[#0A0A0F]/60 backdrop-blur-md px-6 py-3 rounded-full border border-white/5 inline-flex items-center gap-2">
+                  <div className="bg-[#0A0A0F]/60 bg-opacity-95 px-6 py-3 rounded-full border border-white/5 inline-flex items-center gap-2">
                     <ScanLine size={16} className="text-[#00F5A0] animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00F5A0]">Align QR Code</span>
                   </div>

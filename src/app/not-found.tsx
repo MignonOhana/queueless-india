@@ -7,7 +7,7 @@ export default function NotFound() {
       {/* Decorative background elements */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
       
-      <div className="glass-panel p-8 md:p-12 rounded-3xl max-w-lg w-full text-center space-y-6 relative z-10 border border-white/10 shadow-2xl backdrop-blur-xl">
+      <div className="glass-panel p-8 md:p-12 rounded-3xl max-w-lg w-full text-center space-y-6 relative z-10 border border-white/10 shadow-2xl bg-opacity-95">
         <div className="mx-auto w-20 h-20 bg-rose-500/20 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.3)] mb-6">
           <SearchX className="w-10 h-10 text-rose-500" />
         </div>

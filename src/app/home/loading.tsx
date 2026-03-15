@@ -7,7 +7,7 @@ export default function HomeLoadingSkeleton() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-300 flex flex-col pt-16 h-screen overflow-hidden">
       
       {/* Skeleton Top Nav (Search Bar Area) */}
-      <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 p-4 sticky top-0 z-40 transition-colors shrink-0">
+      <div className="bg-white/80 dark:bg-slate-900/80 bg-opacity-95 border-b border-slate-200/50 dark:border-slate-800/50 p-4 sticky top-0 z-40 transition-colors shrink-0">
         <div className="max-w-7xl mx-auto flex gap-3">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600" size={20} />
@@ -57,7 +57,7 @@ export default function HomeLoadingSkeleton() {
         {/* Right Map Area Skeleton */}
         <div className="hidden md:block flex-1 bg-slate-100/50 dark:bg-slate-900/50 relative overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center">
-               <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-800 animate-ping opacity-20" />
+               <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-800 opacity-20" />
                <MapPin className="absolute text-slate-300 dark:text-slate-700 w-12 h-12 animate-pulse" />
             </div>
             {/* Fake Map Markers */}

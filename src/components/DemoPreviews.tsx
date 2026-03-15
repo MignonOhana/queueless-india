@@ -169,7 +169,7 @@ export default function DemoAndBenefits() {
                 </p>
                 <div className="grid sm:grid-cols-2 gap-6">
                    {benefits.map((benefit, idx) => (
-                     <div key={idx} className="flex items-center gap-4 bg-white/5 dark:bg-white/10 p-4 rounded-xl border border-white/10 backdrop-blur-sm">
+                     <div key={idx} className="flex items-center gap-4 bg-white/5 dark:bg-white/10 p-4 rounded-xl border border-white/10 bg-opacity-95">
                        {benefit.icon}
                        <span className="text-white font-medium">{benefit.title}</span>
                      </div>

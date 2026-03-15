@@ -2,15 +2,15 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
 import { createClient } from "@/lib/supabase/client";
 import { ChevronLeft, Maximize2, Minimize2, Bell, BellOff, MapPin, Clock, Phone, X, Star, Share2, AlertCircle, Navigation, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 import { useGuestSession } from "@/hooks/useGuestSession";
 import { requestNotificationPermission, sendTokenAlert } from "@/lib/notifications";
-import QRCode from 'react-qr-code';
+const QRCode = dynamic(() => import('react-qr-code'), { ssr: false });
 
 export default function TokenTrackingPage() {
   const supabase = createClient();
@@ -224,7 +224,8 @@ export default function TokenTrackingPage() {
 
 
   // --- Notifications & Effects ---
-  const fireTurnConfetti = () => {
+  const fireTurnConfetti = async () => {
+     const confetti = (await import('canvas-confetti')).default;
      const duration = 5000;
      const end = Date.now() + duration;
      const frame = () => {
@@ -369,7 +370,7 @@ export default function TokenTrackingPage() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-2xl p-4 flex flex-col items-center gap-1 justify-center text-xs font-bold shadow-sm backdrop-blur-md"
+                      className="bg-amber-500/95 border border-amber-500/20 text-amber-500 rounded-2xl p-4 flex flex-col items-center gap-1 justify-center text-xs font-bold shadow-sm"
                     >
                       <div className="flex items-center gap-2">
                         <AlertCircle size={14} className="animate-pulse" />
@@ -385,13 +386,13 @@ export default function TokenTrackingPage() {
                 </AnimatePresence>
 
                 <div className="flex justify-between items-center w-full">
-                  <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
+                  <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
                      <ChevronLeft size={20} className="text-white" />
                   </button>
-                  <div className="flex gap-2 text-sm font-bold opacity-80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 bg-white/5">
+                  <div className="flex gap-2 text-sm font-bold opacity-80 px-4 py-2 rounded-full border border-white/10 bg-white/5">
                      QueueLess Live
                   </div>
-                  <button onClick={() => setIsFullScreen(true)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors tooltip" aria-label="Show to staff">
+                  <button onClick={() => setIsFullScreen(true)} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors tooltip" aria-label="Show to staff">
                      <Maximize2 size={16} className="text-white" />
                   </button>
                 </div>
@@ -402,7 +403,7 @@ export default function TokenTrackingPage() {
          {/* --- MAIN TRACKING CARD --- */}
          <motion.div 
            layout
-           className={`relative border border-border backdrop-blur-xl shadow-2xl overflow-hidden transition-all duration-500 ${
+           className={`relative border border-border shadow-2xl overflow-hidden transition-all duration-500 ${
               isFullScreen ? 'w-full max-w-lg aspect-square flex flex-col items-center justify-center rounded-brand bg-surface/80' : 
               isServing ? 'rounded-brand bg-emerald-500/10 p-8 text-center' :
               isServed ? 'rounded-brand bg-indigo-500/10 p-8 text-center' :
@@ -541,7 +542,7 @@ export default function TokenTrackingPage() {
                   {/* Smart Notifications Toggle */}
                   <button 
                     onClick={toggleNotifications}
-                    className={`p-4 rounded-[1.5rem] border backdrop-blur-md flex items-center justify-between transition-all ${
+                    className={`p-4 rounded-[1.5rem] border flex items-center justify-between transition-all ${
                        notifyEnabled ? 'bg-indigo-500/10 border-indigo-500/30' : 'bg-white/5 border-white/10 hover:bg-white/10'
                     }`}
                   >
@@ -629,7 +630,7 @@ export default function TokenTrackingPage() {
       <AnimatePresence>
          {showReview && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-               <motion.div initial={{opacity:0}} animate={{opacity:1}} className="absolute inset-0 bg-black/80 backdrop-blur-xl" />
+               <motion.div initial={{opacity:0}} animate={{opacity:1}} className="absolute inset-0 bg-black/95" />
                <motion.div 
                  initial={{ scale: 0.9, y: 20, opacity: 0 }}
                  animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -681,7 +682,7 @@ export default function TokenTrackingPage() {
       <AnimatePresence>
          {showCancelConfirm && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-               <motion.div initial={{opacity:0}} animate={{opacity:1}} onClick={() => setShowCancelConfirm(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+               <motion.div initial={{opacity:0}} animate={{opacity:1}} onClick={() => setShowCancelConfirm(false)} className="absolute inset-0 bg-black/95" />
                <motion.div 
                  initial={{ scale: 0.95, opacity: 0 }}
                  animate={{ scale: 1, opacity: 1 }}

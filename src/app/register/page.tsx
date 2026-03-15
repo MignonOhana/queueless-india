@@ -83,7 +83,7 @@ export default function BusinessRegister() {
     <PageTransition className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans">
       
       {/* Header */}
-      <nav className="h-20 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
+      <nav className="h-20 bg-white/50 dark:bg-slate-900/50 bg-opacity-95 border-b border-slate-200/50 dark:border-slate-800/50 flex items-center justify-between px-6 shrink-0 absolute top-0 left-0 right-0 z-10">
         <Link href="/" className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">
             Q

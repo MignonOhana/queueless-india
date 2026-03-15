@@ -51,7 +51,7 @@ export default function Tooltip({ children, content, position = "top", delay = 0
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, ...initialOffset }}
             transition={{ duration: 0.2, delay }}
-            className={`absolute z-50 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/50 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] whitespace-nowrap pointer-events-none ${positionClasses}`}
+            className={`absolute z-50 px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-100 bg-white/90 dark:bg-slate-800/90 bg-opacity-95 border border-white/20 dark:border-slate-700/50 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)] whitespace-nowrap pointer-events-none ${positionClasses}`}
           >
             {content}
           </motion.div>

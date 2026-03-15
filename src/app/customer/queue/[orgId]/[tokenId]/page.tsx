@@ -9,7 +9,6 @@ import {
   MapPin, Star, Bell, BellOff, Navigation, 
   CheckCircle2, Loader2, Volume2
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
 
@@ -170,7 +169,8 @@ export default function LiveTokenTracking() {
     audioRef.current?.play().catch(() => {});
   };
 
-  const triggerServingCelebration = () => {
+  const triggerServingCelebration = async () => {
+    const confetti = (await import('canvas-confetti')).default;
     const end = Date.now() + 3000;
     const colors = ["#00F5A0", "#00D4FF", "#7000FF"];
 
@@ -275,7 +275,7 @@ export default function LiveTokenTracking() {
       </div>
 
       {/* Header */}
-      <header className="fixed top-0 inset-x-0 z-50 p-6 flex items-center justify-between bg-background/50 backdrop-blur-xl border-b border-white/5">
+      <header className="fixed top-0 inset-x-0 z-50 p-6 flex items-center justify-between bg-background/95 border-b border-white/5">
         <button 
           onClick={() => router.push("/customer/dashboard")}
           className="p-2 -ml-2 rounded-full hover:bg-white/5 transition-colors"
@@ -386,7 +386,7 @@ export default function LiveTokenTracking() {
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }} 
               onClick={() => setShowLeaveConfirm(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
+              className="absolute inset-0 bg-black/95" 
             />
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
@@ -419,7 +419,7 @@ export default function LiveTokenTracking() {
 
         {showReview && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/95" />
             <motion.div 
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}

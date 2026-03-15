@@ -10,7 +10,7 @@ export default function Navigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed top-0 inset-x-0 z-[60] bg-background/80 backdrop-blur-xl border-b border-white/5 h-20">
+    <nav className="fixed top-0 inset-x-0 z-[60] bg-background/95 border-b border-white/5 h-20">
       <div className="max-w-7xl mx-auto px-6 h-full flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">

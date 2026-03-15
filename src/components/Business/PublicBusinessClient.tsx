@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Star, MapPin, Clock, Share2, ShieldCheck, 
@@ -8,7 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
+const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -18,7 +19,6 @@ import { haversineDistance as getDistance } from '@/lib/geolocation';
 import { EmailOTPModal } from '@/components/auth/EmailOTPModal';
 import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
-import confetti from 'canvas-confetti';
 import { AlertCircle, LogIn, User as UserIcon, Activity as ActivityIcon } from 'lucide-react';
 
 interface PublicBusinessClientProps {
@@ -215,6 +215,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
 
       // Confetti logic
       const end = Date.now() + 3000;
+      const confetti = (await import('canvas-confetti')).default;
       const frame = () => {
         confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ["#00F5A0", "#00D4FF", "#7000FF"] });
         confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ["#00F5A0", "#00D4FF", "#7000FF"] });
@@ -291,22 +292,20 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           
-          <Link href="/" className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-colors">
+          <Link href="/" className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/95 flex items-center justify-center text-white/80 hover:text-white transition-colors">
              <ChevronDown className="rotate-90" size={20} />
           </Link>
        </div>
 
        <div className="px-6 -mt-12 relative z-10">
-          <div className="bg-surface/80 backdrop-blur-xl border border-border rounded-brand p-8 shadow-2xl">
+          <div className="bg-surface/95 border border-border rounded-brand p-8 shadow-2xl">
              <div className="flex items-center gap-2 mb-4">
                 <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
                    {business.category || "Business"}
                 </span>
-                {business.is_verified && (
                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-blue-400">
                       <ShieldCheck size={12} /> Verified
                    </span>
-                )}
              </div>
 
              <h1 className="text-3xl font-black text-white tracking-tighter mb-2">{business.name}</h1>
@@ -686,7 +685,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }} 
-              className="fixed inset-0 z-[110] bg-black/80 backdrop-blur-md flex items-end p-6"
+              className="fixed inset-0 z-[110] bg-black/95 flex items-end p-6"
             >
                <motion.div initial={{ y: 20 }} animate={{ y: 0 }} className="w-full max-w-lg mx-auto bg-surface border border-border rounded-brand p-8">
                   <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6 mx-auto">
@@ -712,7 +711,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
-               className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-xl"
+               className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95"
                onClick={() => setShowQR(false)}
             >
                <motion.div 

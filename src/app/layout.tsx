@@ -31,7 +31,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "QueueLess India",
-  description: "Join queues digitally and arrive only when your turn is near.",
+  description: "Join queues digitally. No more waiting in line at hospitals, banks, temples.",
   applicationName: "QueueLess India",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -41,11 +41,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.png",
-    apple: "/icon-192.png",
+    apple: "/icon-180.png",
   },
   formatDetection: {
     telephone: false,
   },
+  other: {
+    "mobile-web-app-capable": "yes",
+  }
 };
 
 export const viewport = {

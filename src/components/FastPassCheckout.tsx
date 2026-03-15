@@ -123,7 +123,7 @@ export default function FastPassCheckout({
       </div>
       <span className="text-[10px] uppercase tracking-tighter opacity-80 relative z-10">Jump to Front of Queue</span>
       {(loading || externalLoading) && (
-        <div className="absolute inset-0 bg-zinc-900/50 backdrop-blur-sm flex items-center justify-center z-20">
+        <div className="absolute inset-0 bg-zinc-900/50 bg-opacity-95 flex items-center justify-center z-20">
           <Loader2 size={24} className="animate-spin text-white" />
         </div>
       )}

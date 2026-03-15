@@ -39,7 +39,7 @@ export default function CustomerOnboarding() {
           exit={{ opacity: 0, y: 50, scale: 0.9 }}
           className="fixed bottom-6 left-6 right-6 z-[100] max-w-sm mx-auto pointer-events-auto"
         >
-          <div className="bg-[#111118]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+          <div className="bg-[#111118]/90 bg-opacity-95 border border-white/10 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
             {/* Background Accent */}
             <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/5 rounded-full blur-2xl" />
 
