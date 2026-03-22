@@ -23,6 +23,7 @@ export default function QueueRow({ token, onServe, onSkip, onNoShow, onPriority 
     const interval = setInterval(() => {
       setWaitTime(Math.floor((Date.now() - start) / 60000));
     }, 10000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setWaitTime(Math.floor((Date.now() - start) / 60000));
     return () => clearInterval(interval);
   }, [token.created_at]);

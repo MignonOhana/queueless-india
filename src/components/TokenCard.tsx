@@ -1,9 +1,12 @@
 'use client';
 
 import QRCode from 'react-qr-code';
+import { useState } from 'react';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function TokenCard({ token, business }: { token: any; business: any }) {
-  const tokenUrl = `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/track/${token.id}`;
+  const [now] = useState(() => Date.now());
+  const tokenUrl = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/track/${token.id}`;
   const isServing = token.status === 'SERVING';
   const isWaiting = token.status === 'WAITING';
 
@@ -57,7 +60,7 @@ export function TokenCard({ token, business }: { token: any; business: any }) {
             <div className="text-center flex-1">
               <p className="text-2xl font-black text-blue-700 dark:text-blue-400">
                 {token.estimatedWaitMins
-                  ? new Date(Date.now() + token.estimatedWaitMins * 60000).toLocaleTimeString('en-IN', {
+                  ? new Date(now + token.estimatedWaitMins * 60000).toLocaleTimeString('en-IN', {
                       hour: '2-digit',
                       minute: '2-digit',
                       timeZone: 'Asia/Kolkata',

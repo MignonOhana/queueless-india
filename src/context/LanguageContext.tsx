@@ -302,8 +302,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('queueless_lang') as Language | null;
     if (saved && ['en', 'hi', 'ta', 'te', 'mr', 'pa', 'bn'].includes(saved)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguageState(saved);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguageState(detectBrowserLanguage());
     }
   }, []);

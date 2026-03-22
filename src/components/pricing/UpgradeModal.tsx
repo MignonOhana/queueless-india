@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, Lock, Zap, Building, Crown, X, ArrowRight } from 'lucide-react';
+import { Check, Zap, Building, Crown, X, ArrowRight } from 'lucide-react';
 
 interface PricingPlan {
   id: string;
@@ -44,7 +44,7 @@ export default function UpgradeModal({ isOpen, onClose }: { isOpen: boolean; onC
   const handleUpgrade = async (planId: string) => {
     if (planId === 'free') return;
     if (planId === 'enterprise') {
-      window.location.href = 'mailto:sales@queueless.in?subject=Enterprise Plan Inquiry';
+      window.location.assign('mailto:sales@queueless.in?subject=Enterprise Plan Inquiry');
       return;
     }
     
@@ -56,7 +56,7 @@ export default function UpgradeModal({ isOpen, onClose }: { isOpen: boolean; onC
       });
       const data = await resp.json();
       if (data.short_url) {
-        window.location.href = data.short_url;
+        window.location.assign(data.short_url);
       }
     } catch (e) {
       console.error(e);

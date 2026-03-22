@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect, useMemo } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useRef, useState, useEffect } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Points, PointMaterial } from "@react-three/drei";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import * as THREE from "three";
@@ -29,7 +29,8 @@ function StickFigure({
   animate?: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const t = useRef(Math.random() * Math.PI * 2);
+  const [initialT] = useState(() => Math.random() * Math.PI * 2);
+  const t = useRef(initialT);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -210,14 +211,13 @@ function ParticleCloud() {
 
 /** Invisible plane for scroll-based camera rig */
 function CameraRig({ scrollProgress }: { scrollProgress: number }) {
-  const { camera } = useThree();
   const baseZ = 6;
-  useFrame(() => {
+  useFrame((state) => {
     const targetZ = baseZ - scrollProgress * 4.5;
-    camera.position.z += (targetZ - camera.position.z) * 0.08;
+    state.camera.position.z += (targetZ - state.camera.position.z) * 0.08;
     const targetY = scrollProgress * -0.4;
-    camera.position.y += (targetY - camera.position.y) * 0.08;
-    camera.lookAt(0, 0, 0);
+    state.camera.position.y += (targetY - state.camera.position.y) * 0.08;
+    state.camera.lookAt(0, 0, 0);
   });
   return null;
 }
@@ -277,12 +277,12 @@ function MobileFallback() {
     { x: "75%", delay: 0.6, color: "#10b981" },
   ];
 
-  const particles = useMemo(() => Array.from({ length: 30 }, () => ({
+  const [particles] = useState(() => Array.from({ length: 30 }, () => ({
     left: `${Math.random() * 100}%`,
     top: `${Math.random() * 100}%`,
     duration: 3 + Math.random() * 2,
     delay: Math.random() * 2
-  })), []);
+  })));
 
   return (
     <div className="absolute inset-0 bg-[#0A0A0F] overflow-hidden flex items-center justify-center">

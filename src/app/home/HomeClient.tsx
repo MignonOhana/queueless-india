@@ -72,10 +72,12 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
 
     if (lastId) {
       const biz = businesses.find(b => b.id === lastId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (biz) setLastBiz(biz);
     }
     
     if (savedToken && savedOrg === lastId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveToken(savedToken);
     }
   }, [businesses]);

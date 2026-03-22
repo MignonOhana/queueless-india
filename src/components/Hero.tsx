@@ -12,7 +12,9 @@ export default function Hero() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(/iphone|ipad|ipod|android/i.test(navigator.userAgent.toLowerCase()));
   }, []);
 

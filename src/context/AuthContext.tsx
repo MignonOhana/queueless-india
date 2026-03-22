@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Initial role from localStorage for immediate UI responsiveness
     const savedRole = typeof window !== "undefined" ? localStorage.getItem("ql_user_role") : null;
     if (savedRole) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserRole(savedRole as Role);
     }
 

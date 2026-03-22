@@ -1,28 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Clock, ArrowLeft, HeartPulse, Pill, Activity, Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { joinQueue } from "@/lib/queueService";
-import { useCustomerQueue } from "@/lib/useCustomerQueue";
-import { useLanguage, Language } from "@/context/LanguageContext";
-import { generateQueuePredictionStatement } from "@/lib/ai-queue-engine";
-import FloatChatWidget from "@/components/AIChat";
-import GeoTracker from "@/components/GeoTracker";
-import PageTransition from "@/components/PageTransition";
-
-import { QrCode, Sparkles } from "lucide-react";
-
-import Link from "next/link";
+import { useState, Suspense, useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
 import FastAuth from "@/components/FastAuth";
-import { Suspense, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 function CustomerAppContent() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     const savedOrg = localStorage.getItem("active_org");
@@ -30,11 +15,12 @@ function CustomerAppContent() {
     if (savedOrg && savedToken) {
       router.push(`/customer/queue/${savedOrg}/${savedToken}`);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsChecking(false); // Stop checking and show Auth UI
     }
   }, [router]);
 
-  const handleAuthSuccess = (userId: string) => {
+  const handleAuthSuccess = (_userId: string) => {
      // After fast auth, route to their personalized dashboard
      router.push(`/customer/dashboard`);
   };

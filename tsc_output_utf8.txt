@@ -1,0 +1,5 @@
+﻿src/app/customer/queue/[orgId]/[tokenId]/page.tsx(104,20): error TS2345: Argument of type '{ [key: string]: any; }' is not assignable to parameter of type 'SetStateAction<Token | null>'.
+  Type '{ [key: string]: any; }' is missing the following properties from type 'Token': id, orgId, userId, queue_id, and 9 more.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(132,20): error TS2345: Argument of type '{ [key: string]: any; }' is not assignable to parameter of type 'SetStateAction<Queue | null>'.
+  Type '{ [key: string]: any; }' is missing the following properties from type 'Queue': id, org_id, last_issued_number, total_waiting, and 3 more.
+src/app/dashboard/queue/page.tsx(176,31): error TS2571: Object is of type 'unknown'.

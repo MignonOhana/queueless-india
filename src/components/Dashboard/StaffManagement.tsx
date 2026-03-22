@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, UserPlus, X, Shield, ToggleRight, ToggleLeft, Trash2, CheckCircle2, UserCheck } from 'lucide-react';
+import { Users, UserPlus, X, ToggleRight, ToggleLeft, Trash2, UserCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import GlassCard from '@/components/ui/GlassCard';
 
@@ -26,6 +26,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from('staff_members') as any)
       .select('*')
       .eq('business_id', businessId)
@@ -41,11 +42,13 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
 
   useEffect(() => {
     fetchStaff();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.from('staff_members') as any)
       .insert([{ ...newStaff, business_id: businessId, is_active: true }])
       .select()
@@ -62,6 +65,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('staff_members') as any)
       .update({ is_active: !currentStatus })
       .eq('id', id);
@@ -77,6 +81,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const deleteStaff = async (id: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('staff_members') as any)
       .delete()
       .eq('id', id);

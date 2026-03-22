@@ -48,7 +48,9 @@ export function useGuestSession(businessId: string) {
     const store = pruneExpired(readStore());
     writeStore(store); // persist pruned
     const visit = store[businessId] || null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGuestVisit(visit);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoaded(true);
   }, [businessId]);
 

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Users, Clock, Play, Pause, XCircle, 
-  ChevronRight, Loader2, AlertCircle, RefreshCw,
-  LogOut, LayoutDashboard
+  Users, Play, Pause, XCircle, 
+  ChevronRight, Loader2, RefreshCw,
+  LayoutDashboard
 } from "lucide-react";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
@@ -107,6 +107,7 @@ export default function BusinessQueueManagement() {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleCallNext = async () => {
@@ -122,8 +123,8 @@ export default function BusinessQueueManagement() {
       if (!response.ok) throw new Error(data.error);
       
       toast.success(data.nextToken ? `Called ${data.nextToken.tokenNumber}` : "All tokens served!");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     } finally {
       setActionLoading(false);
     }
@@ -139,8 +140,8 @@ export default function BusinessQueueManagement() {
         .eq("id", queue.id);
       if (error) throw error;
       toast.success(newState ? "Queue Resumed" : "Queue Paused");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     }
   };
 
@@ -172,14 +173,15 @@ export default function BusinessQueueManagement() {
     if (!business?.id) return;
     setActionLoading(true);
     try {
-      const { data: qId, error } = await (supabase as any).rpc("activate_queue_for_today", {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc("activate_queue_for_today", {
         p_org_id: business.id
       });
       if (error) throw error;
       toast.success("Queue Activated!");
       fetchQueueData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     } finally {
       setActionLoading(false);
     }

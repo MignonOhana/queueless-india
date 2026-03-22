@@ -6,11 +6,11 @@ import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronLeft, Share2, X, Clock, AlertCircle, 
-  MapPin, Star, Bell, BellOff, Navigation, 
-  CheckCircle2, Loader2, Volume2, MessageCircle
+  Star, CheckCircle2, Loader2, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
+import { Token, Business, Queue } from "@/types/database";
 
 export default function LiveTokenTracking() {
   const supabase = createClient();
@@ -19,9 +19,9 @@ export default function LiveTokenTracking() {
   const orgId = params?.orgId as string;
   const tokenId = params?.tokenId as string;
 
-  const [token, setToken] = useState<any>(null);
-  const [business, setBusiness] = useState<any>(null);
-  const [queue, setQueue] = useState<any>(null);
+  const [token, setToken] = useState<Token | null>(null);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [queue, setQueue] = useState<Queue | null>(null);
   const [loading, setLoading] = useState(true);
   const [position, setPosition] = useState<number | null>(null);
   const [servingTokenNumber, setServingTokenNumber] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export default function LiveTokenTracking() {
         (payload) => {
           const newToken = payload.new;
           const oldStatus = token?.status;
-          setToken(newToken);
+          setToken(newToken as Token);
 
           // Position trigger logic
           if (newToken.status === "SERVING" && oldStatus !== "SERVING") {
@@ -129,7 +129,7 @@ export default function LiveTokenTracking() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "queues", filter: `org_id=eq.${orgId}` },
         (payload) => {
-          setQueue(payload.new);
+          setQueue(payload.new as Queue);
           // Update serving token number if changed
           if (payload.new.currently_serving_token_id) {
             updateServingNumber(payload.new.currently_serving_token_id);
@@ -142,6 +142,7 @@ export default function LiveTokenTracking() {
       supabase.removeChannel(tokenChannel);
       supabase.removeChannel(queueChannel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenId, orgId]);
 
   const fetchPosition = async () => {
@@ -211,7 +212,7 @@ export default function LiveTokenTracking() {
       
       toast.success("Left the queue");
       router.push("/customer/dashboard");
-    } catch (err) {
+    } catch {
       toast.error("Failed to leave queue");
     }
   };
@@ -224,6 +225,7 @@ export default function LiveTokenTracking() {
     const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`
     window.open(waUrl, '_blank')
     // Track the share event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).umami) (window as any).umami.track('token_shared', { platform: 'whatsapp' })
   }
 
