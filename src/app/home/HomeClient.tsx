@@ -77,7 +77,6 @@ const RecentlyVisitedBanner = ({ businesses, queueStates }: { businesses: Busine
     }
     
     if (savedToken && savedOrg === lastId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveToken(savedToken);
     }
   }, [businesses]);
@@ -125,6 +124,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
   const { user, userRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeTokenMap, setActiveTokenMap] = useState<any>(null); // To store active queue if joined
   const [liveBusinesses, setLiveBusinesses] = useState<Business[]>(initialBusinesses);
   const [trendingBusinesses, setTrendingBusinesses] = useState<Business[]>(initialBusinesses.slice(0, 5));
@@ -132,6 +132,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
   const [locationName, setLocationName] = useState("Detecting location...");
   const [isLocating, setIsLocating] = useState(true);
   const [queueStates, setQueueStates] = useState<Record<string, number>>({});
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [pulseItems, setPulseItems] = useState<any[]>([]);
   const [visitCount, setVisitCount] = useState<number>(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -149,6 +150,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
         
       if (profile) {
@@ -191,14 +193,17 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
         // Fetch Predictions
         const { data: predData } = await supabase.from('predictions').select('id, bestTimeToVisit');
         const predMap: Record<string, string> = {};
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         predData?.forEach((p: any) => { predMap[p.id] = p.bestTimeToVisit; });
 
         // Fetch Queue info
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: queueData } = await supabase.from("queues").select("org_id, last_issued_number, total_waiting, max_capacity") as any;
         const qMap: Record<string, number> = {};
         const qLenMap: Record<string, number> = {};
         const qCapMap: Record<string, number> = {};
         if (queueData) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (queueData as any[]).forEach((q: any) => {
             qMap[q.org_id] = q.last_issued_number;
             qLenMap[q.org_id] = q.total_waiting;
@@ -207,6 +212,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
           setQueueStates(qMap);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const mappedData: Business[] = data.map((b: any) => {
           let calcDist = 0;
           if (userLat && userLng) {
@@ -244,6 +250,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
           .limit(5);
 
         if (trendData) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const trendMapped = trendData.map((b: any) => {
             let calcDist = 0;
             if (userLat && userLng && b.latitude && b.longitude) {
@@ -324,6 +331,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
         if (data) {
           // If it's the stats object, transform into displayable pulse items
           if (!Array.isArray(data) && typeof data === 'object') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const stats = data as any;
             const transformedItems = [
               { 
@@ -366,6 +374,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
       .channel('public:tokens')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' }, async (payload) => {
         // Fetch new pulse data or manually prepend
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single() as any;
         if (biz) {
           const newItem = {
@@ -420,6 +429,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
     // Increment visit_count in DB
     await supabase
       .from('user_profiles')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ visit_count: (visitCount || 0) + 1 } as any)
       .eq('id', user.id);
   };

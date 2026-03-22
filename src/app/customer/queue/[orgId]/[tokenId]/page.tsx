@@ -238,7 +238,7 @@ export default function LiveTokenTracking() {
           url: window.location.href,
         })
       } catch (err) {
-        console.log("Error sharing", err)
+        console.error("Error sharing", err)
       }
     } else {
       navigator.clipboard.writeText(window.location.href)
@@ -260,7 +260,7 @@ export default function LiveTokenTracking() {
       if (error) throw error;
       toast.success("Thank you for your feedback!");
       router.push("/customer/dashboard");
-    } catch (err) {
+    } catch {
       toast.error("Failed to submit review");
     } finally {
       setIsSubmittingReview(false);
@@ -318,7 +318,7 @@ export default function LiveTokenTracking() {
             <div className="w-16 h-16 bg-black/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 size={32} />
             </div>
-            <h2 className="text-3xl font-black tracking-tighter mb-2">It's your turn!</h2>
+            <h2 className="text-3xl font-black tracking-tighter mb-2">It&apos;s your turn!</h2>
             <p className="text-sm font-bold opacity-70 leading-relaxed uppercase tracking-widest">Head to the counter at {business?.name} now.</p>
           </motion.div>
         )}

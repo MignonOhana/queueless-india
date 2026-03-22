@@ -1,11 +1,12 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { CheckCircle2, FastForward, UserMinus, Zap, Clock } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import StatusBadge from '../ui/StatusBadge';
 
 interface QueueRowProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   token: any;
   onServe: (id: string) => void;
   onSkip: (id: string) => void;
@@ -13,7 +14,7 @@ interface QueueRowProps {
   onPriority: (id: string) => void;
 }
 
-export default function QueueRow({ token, onServe, onSkip, onNoShow, onPriority }: QueueRowProps) {
+export default function QueueRow({ token, onServe, onSkip, onNoShow, onPriority: _onPriority }: QueueRowProps) {
   const [waitTime, setWaitTime] = useState(0);
   const [showConfirm, setShowConfirm] = useState<'skip' | 'noshow' | null>(null);
 
@@ -26,7 +27,7 @@ export default function QueueRow({ token, onServe, onSkip, onNoShow, onPriority 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setWaitTime(Math.floor((Date.now() - start) / 60000));
     return () => clearInterval(interval);
-  }, [token.created_at]);
+  }, [token.createdAt]);
 
   return (
     <motion.div

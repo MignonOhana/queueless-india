@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
-import { useLiveMap, BusinessMapData } from "@/lib/useLiveMap";
+import { useLiveMap } from "@/lib/useLiveMap";
 import { Clock, Users, ArrowRight, Layers } from "lucide-react";
 import Link from "next/link";
 import L from "leaflet";
@@ -36,8 +36,8 @@ const createCustomIcon = (waitTime: number) => {
   });
 };
 
-function MapUpdater({ lastUpdated }: { lastUpdated: Date }) {
-  const map = useMap();
+function MapUpdater({ lastUpdated: _lastUpdated }: { lastUpdated: Date }) {
+  useMap();
   // Optional: Add some subtle map interactivity when data updates
   return null;
 }

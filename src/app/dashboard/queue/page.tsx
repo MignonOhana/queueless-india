@@ -164,8 +164,8 @@ export default function BusinessQueueManagement() {
 
       toast.success("Queue closed for today");
       fetchQueueData();
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error((err as Error).message);
     }
   };
 

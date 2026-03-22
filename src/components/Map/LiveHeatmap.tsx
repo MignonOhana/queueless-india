@@ -8,9 +8,8 @@ import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet.heat";
 import { BusinessMapData } from "@/lib/useLiveMap";
-import { Clock, Users, ArrowRight, Layers } from "lucide-react";
+import { Clock, Users, Layers } from "lucide-react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 
 // Gradient config: Blue -> Green -> Yellow -> Orange -> Red
 const HEATMAP_GRADIENT = {
@@ -37,6 +36,7 @@ function HeatLayerRenderer({ businesses }: { businesses: BusinessMapData[] }) {
 
     if (!heatLayerRef.current) {
       // First render
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       heatLayerRef.current = (L as any).heatLayer(heatData, {
         radius: 40,
         blur: 35,

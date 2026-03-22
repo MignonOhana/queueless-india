@@ -305,7 +305,6 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguageState(saved);
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLanguageState(detectBrowserLanguage());
     }
   }, []);

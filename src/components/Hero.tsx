@@ -1,20 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Building2, Store, MapPin, Clock, Download } from "lucide-react";
-import HeroPhysics from "./HeroPhysics";
+import { ArrowRight, Building2, MapPin, Clock, Download } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { STAGGER_CONTAINER, FADE_UP_ANIMATION_VARIANTS, HOVER_SCALE_VARIANTS } from "../lib/utils";
+import { STAGGER_CONTAINER, FADE_UP_ANIMATION_VARIANTS } from "../lib/utils";
 
 export default function Hero() {
   const [isStandalone, setIsStandalone] = useState(true); // Default true to avoid hydration mismatch, update in effect
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect, @typescript-eslint/no-explicit-any
     setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMobile(/iphone|ipad|ipod|android/i.test(navigator.userAgent.toLowerCase()));
   }, []);
 

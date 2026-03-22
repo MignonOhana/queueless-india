@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Clock, Download } from "lucide-react";
-import Link from "next/link";
+
 import dynamic from "next/dynamic";
 import Navigation from "@/components/Navigation";
 
@@ -17,23 +15,6 @@ import SocialProofSection from "@/components/landing/SocialProofSection";
 import CTASection from "@/components/landing/CTASection";
 
 export default function LandingPage() {
-  const [isMobile, setIsMobile] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(true);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsStandalone(
-      window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as any).standalone
-    );
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsMobile(/iphone|ipad|ipod|android/i.test(navigator.userAgent.toLowerCase()));
-  }, []);
-
-  const triggerInstall = () => {
-    window.dispatchEvent(new Event("show-pwa-prompt"));
-  };
-
   return (
     <div className="min-h-screen bg-background font-sans overflow-x-hidden">
       {/* ── Navigation ── */}

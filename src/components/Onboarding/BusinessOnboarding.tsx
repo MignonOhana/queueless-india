@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 const QRCodeSVG = dynamic(() => import('qrcode.react').then(m => ({ default: m.QRCodeSVG })), { ssr: false });
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, QrCode, CheckCircle2, ArrowRight, Sparkles, Users, Bell, Play } from 'lucide-react';
+import { QrCode, CheckCircle2, ArrowRight, Sparkles } from 'lucide-react';
 
 interface BusinessOnboardingProps {
   businessName: string;
@@ -24,7 +24,6 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
     setOrigin(window.location.origin);
     const isCompleted = localStorage.getItem('queueless_onboarded_owner');
     if (!isCompleted) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowModal(true);
     }
   }, []);
@@ -118,7 +117,7 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
                       onClick={handleModalNext}
                       className="w-full py-5 bg-[#00F5A0] text-[#0A0A0F] font-black rounded-2xl shadow-xl shadow-[#00F5A0]/20 hover:scale-[1.02] active:scale-95 transition-all text-lg flex items-center justify-center gap-2"
                     >
-                      Let's set up your business <ArrowRight size={20} />
+                      Let&apos;s set up your business <ArrowRight size={20} />
                     </button>
                   </motion.div>
                 )}
@@ -169,8 +168,8 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
                        <div className="flex items-start gap-4">
                           <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white font-black shrink-0">1</div>
                           <div>
-                             <p className="text-white font-bold">Click 'Serve Next'</p>
-                             <p className="text-slate-500 text-sm">When you're ready for the next person.</p>
+                             <p className="text-white font-bold">Click &apos;Serve Next&apos;</p>
+                             <p className="text-slate-500 text-sm">When you&apos;re ready for the next person.</p>
                           </div>
                        </div>
                        <div className="flex items-start gap-4">
@@ -252,7 +251,7 @@ export default function BusinessOnboarding({ businessName, businessId }: Busines
                     <>
                       <p className="text-white font-bold text-sm mb-2">Serve Next Customer</p>
                       <p className="text-slate-400 text-xs leading-relaxed mb-4">
-                        Click here when you are ready for the next customer. They'll be notified immediately.
+                        Click here when you are ready for the next customer. They&apos;ll be notified immediately.
                       </p>
                     </>
                   )}

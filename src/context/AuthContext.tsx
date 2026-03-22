@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUser(session.user);
         
-        // Fetch role via RPC (Security Definer) - works reliably across session timing
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
         
         const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         setUser(session.user);
         
-        // Always sync role from DB on auth change via RPC
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
           
         const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
