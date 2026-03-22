@@ -4,7 +4,7 @@ export default function OfflinePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 text-center p-6 bg-[#0A0A0F] text-white">
       <div className="text-6xl animate-pulse">📡</div>
-      <h1 className="text-3xl font-black tracking-tighter">You're offline</h1>
+      <h1 className="text-3xl font-black tracking-tighter">You&apos;re offline</h1>
       <p className="text-slate-400 max-w-xs">
         Check your internet connection and try again. 
       </p>
