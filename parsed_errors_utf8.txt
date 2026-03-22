@@ -1,0 +1,24 @@
+﻿D:\QueueLess India\src\app\customer\page.tsx:33 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\app\home\HomeClient.tsx:75 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\app\page.tsx:24 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Analytics\QueueChart.tsx:39 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Dashboard\QueueRow.tsx:26 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Dashboard\StaffManagement.tsx:43 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Hero.tsx:15 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Map\LiveHeatmap.tsx:91 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Map\LiveMap.tsx:50 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\OfflineBanner.tsx:11 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\Onboarding\BusinessOnboarding.tsx:23 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\ThemeToggle.tsx:11 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\components\TokenCard.tsx:60 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\landing\HeroSection.tsx:32 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\landing\HeroSection.tsx:217 react-hooks/immutability Error: This value cannot be modified
+D:\QueueLess India\src\components\landing\HeroSection.tsx:281 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\landing\HeroSection.tsx:282 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\landing\HeroSection.tsx:283 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\landing\HeroSection.tsx:284 react-hooks/purity Error: Cannot call impure function during render
+D:\QueueLess India\src\components\pricing\UpgradeModal.tsx:47 react-hooks/immutability Error: This value cannot be modified
+D:\QueueLess India\src\components\pricing\UpgradeModal.tsx:59 react-hooks/immutability Error: This value cannot be modified
+D:\QueueLess India\src\context\AuthContext.tsx:39 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\context\LanguageContext.tsx:305 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
+D:\QueueLess India\src\hooks\useGuestSession.ts:51 react-hooks/set-state-in-effect Error: Calling setState synchronously within an effect can trigger cascading renders
