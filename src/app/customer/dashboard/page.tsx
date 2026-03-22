@@ -35,7 +35,7 @@ export default function CustomerDashboard() {
       // Fetch Active Tokens
       const { data: active } = await supabase
         .from('tokens')
-        .select('*, businesses(name, address, category)')
+        .select('*, businesses(name, address, category, serviceMins)')
         .eq('userId', user.id)
         .in('status', ['WAITING', 'SERVING'])
         .order('createdAt', { ascending: false });
@@ -150,18 +150,40 @@ export default function CustomerDashboard() {
                  <p className="text-zinc-500 text-sm font-medium mb-10 max-w-[280px] leading-relaxed">
                     Find a nearby hospital, bank, or temple and skip the wait with a digital token.
                  </p>
-                 <div className="space-y-4 w-full max-w-xs">
+                 <div className="grid grid-cols-2 gap-3 w-full max-w-[340px]">
                     <button 
                       onClick={() => router.push('/home')}
-                      className="w-full btn-primary py-5 flex items-center justify-center gap-3 text-sm"
+                      className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 text-primary hover:bg-primary/20 transition-colors"
                     >
-                       <Search size={18} /> Find a Queue Near Me
+                       <Search size={24} />
+                       <span className="text-xs font-black uppercase tracking-widest">Find Queue</span>
                     </button>
                     <button 
                       onClick={() => router.push('/customer/scanner')}
-                      className="w-full py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                      className="bg-white/5 border border-white/10 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors"
                     >
-                       <QrCode size={18} /> Scan QR Code
+                       <QrCode size={24} className="text-emerald-400" />
+                       <span className="text-xs font-black uppercase tracking-widest text-emerald-400">Scan QR</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        localStorage.setItem("ql_filter_category", "Hospital");
+                        router.push('/home');
+                      }}
+                      className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center justify-start gap-3 hover:bg-white/10 transition-colors col-span-2"
+                    >
+                       <span className="text-2xl">🏥</span>
+                       <span className="text-sm font-bold text-zinc-300">Hospitals & Clinics</span>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        localStorage.setItem("ql_filter_category", "Bank");
+                        router.push('/home');
+                      }}
+                      className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center justify-start gap-3 hover:bg-white/10 transition-colors col-span-2"
+                    >
+                       <span className="text-2xl">🏦</span>
+                       <span className="text-sm font-bold text-zinc-300">Banks & Post Offices</span>
                     </button>
                  </div>
               </motion.div>
@@ -205,7 +227,15 @@ export default function CustomerDashboard() {
                                        </h3>
                                        <div className="flex items-center gap-3 text-zinc-400 text-xs font-bold">
                                           <p className="flex items-center gap-1"><Ticket size={14} className="text-primary" /> {token.tokenNumber}</p>
-                                          <p className="flex items-center gap-1"><Clock size={14} /> {token.status}</p>
+                                          {token.status === 'WAITING' ? (
+                                             <div className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                                <Clock size={12} /> EWT: ~{token.businesses?.serviceMins || 15} mins
+                                             </div>
+                                          ) : (
+                                             <div className="flex items-center gap-1 text-primary">
+                                                <Activity size={12} /> {token.status}
+                                             </div>
+                                          )}
                                        </div>
                                     </div>
                                     <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-black transition-all">
