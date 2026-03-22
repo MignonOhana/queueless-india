@@ -472,7 +472,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                               <Zap size={20} />
                            </div>
                            <div>
-                              <p className="font-black text-white text-sm">Quick Join (Guest)</p>
+                              <p className="font-black text-white text-sm">Continue as Guest</p>
                               <p className="text-zinc-500 text-xs mt-1">Join in seconds. No account needed.</p>
                            </div>
                         </button>

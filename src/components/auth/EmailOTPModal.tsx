@@ -74,11 +74,21 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '' }: {
     setError('')
     
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token: otp,
-        type: 'email',
+      // Add a timeout to prevent infinite loading on network/Supabase errors
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 10000)
       })
+
+      const response = await Promise.race([
+        supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: 'email',
+        }),
+        timeoutPromise
+      ]) as any
+      
+      const { data, error } = response
       
       if (error) {
         setError('Invalid or expired code. Try again.')

@@ -22,6 +22,19 @@ export default function LoginPage() {
   const [intendedRole, setIntendedRole] = useState<"customer" | "business_owner" | null>(null);
 
   useEffect(() => {
+    // Parse URL for direct role selection (e.g. from Register Business link)
+    if (typeof window !== "undefined") {
+      const search = new URLSearchParams(window.location.search);
+      const roleParam = search.get("role");
+      if (roleParam === "business_owner" || roleParam === "customer") {
+        setIntendedRole(roleParam);
+        localStorage.setItem("ql_intended_role", roleParam);
+        setStep("auth");
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {

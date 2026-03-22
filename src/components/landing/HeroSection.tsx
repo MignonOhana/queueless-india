@@ -436,7 +436,7 @@ export default function HeroSection() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-lg sm:text-xl text-slate-300 max-w-2xl mb-12 leading-relaxed font-bold drop-shadow-lg"
             >
-              AI-powered virtual queues for hospitals, salons, banks &amp; government offices. Join from anywhere. Walk in when it's your turn.
+              AI-powered virtual queues for hospitals, salons, banks &amp; government offices. Join from anywhere. Walk in when it&apos;s your turn.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -455,15 +455,7 @@ export default function HeroSection() {
                 <ArrowRight size={22} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
               </Link>
 
-              <button
-                onClick={() => setShowVideoModal(true)}
-                className="w-full sm:w-auto px-10 py-5 rounded-full font-bold text-lg text-white border-2 border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center gap-3 hover:bg-white/10 hover:border-white/40 active:scale-95 transition-all shadow-xl"
-              >
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                  <Play size={14} fill="white" />
-                </div>
-                See How It Works
-              </button>
+              {/* Video button temporarily removed until video is ready */}
             </motion.div>
           </div>
         </div>
