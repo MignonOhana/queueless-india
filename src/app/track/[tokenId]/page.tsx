@@ -142,7 +142,7 @@ export default function TokenTrackingPage() {
              .from("tokens")
              .select("*", { count: "exact", head: true })
              .eq("orgId", tData.orgId)
-             .eq("counterId", tData.counterId)
+             .eq("counterId", tData.counterId || 'opd')
              .eq("status", "WAITING")
              .lt("createdAt", tData.createdAt); // Those who joined before this token
              
@@ -190,7 +190,7 @@ export default function TokenTrackingPage() {
                   .from("tokens")
                   .select("*", { count: "exact", head: true })
                   .eq("orgId", tData.orgId)
-                  .eq("counterId", tData.counterId)
+                  .eq("counterId", tData.counterId || 'opd')
                   .eq("status", "WAITING")
                   .lt("createdAt", tData.createdAt);
                   

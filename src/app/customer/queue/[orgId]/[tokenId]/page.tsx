@@ -72,7 +72,7 @@ export default function LiveTokenTracking() {
         setQueue(qData);
 
         // Get currently serving token number
-        if (qData.currently_serving_token_id) {
+        if (qData?.currently_serving_token_id) {
           const { data: sData } = await supabase
             .from("tokens")
             .select("tokenNumber")

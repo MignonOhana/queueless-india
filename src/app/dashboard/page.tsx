@@ -47,6 +47,7 @@ export default function BusinessDashboard() {
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [fastPassStats, setFastPassStats] = useState({ today: 0, month: 0, net: 0 });
+  const [onboardingLoading, setOnboardingLoading] = useState(false);
 
   const plan = businessData?.plan || 'free';
 
@@ -223,7 +224,6 @@ export default function BusinessDashboard() {
     );
   }
 
-  const [onboardingLoading, setOnboardingLoading] = useState(false);
   const triggerUpdate = async () => {
     setOnboardingLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
@@ -401,7 +401,7 @@ export default function BusinessDashboard() {
                            whileTap={{ scale: 0.9 }}
                            onClick={async () => {
                              if (!currentlyServing) return;
-                             await callNextToken(businessData?.id, currentlyServing.counterId);
+                             await callNextToken(businessData?.id, currentlyServing.counterId || undefined);
                              toast.success(`Token ${currentlyServing.tokenNumber} marked as served`);
                            }}
                            className="px-4 py-2 rounded-xl bg-primary text-black font-black text-[10px] uppercase shadow-[0_0_20px_rgba(0,245,160,0.3)]"

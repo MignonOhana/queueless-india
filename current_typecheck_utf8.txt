@@ -1,0 +1,103 @@
+﻿
+> queueless-india@0.1.0 type-check
+> tsc --noEmit
+
+src/app/api/business/create/route.ts(46,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "businesses", never, "POST">', gave the following error.
+    Argument of type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "businesses", never, "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }' is not assignable to type 'never'.
+src/app/api/business/create/route.ts(56,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "businesses", never, "POST">', gave the following error.
+    Argument of type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }[]' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "businesses", never, "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }' is not assignable to type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(54,70): error TS2345: Argument of type '{ p_token_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(66,17): error TS2339: Property 'queue_id' does not exist on type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(70,27): error TS2339: Property 'queue_id' does not exist on type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(75,13): error TS18047: 'qData' is possibly 'null'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(79,23): error TS18047: 'qData' is possibly 'null'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(81,40): error TS2339: Property 'tokenNumber' does not exist on type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(148,68): error TS2345: Argument of type '{ p_token_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(161,33): error TS2339: Property 'tokenNumber' does not exist on type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(203,17): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(251,56): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "reviews", never, "POST">', gave the following error.
+    Argument of type '{ business_id: string; user_id: any; rating: number; comment: string; token_id: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "reviews", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'business_id' does not exist in type 'never[]'.
+src/app/customer/scanner/page.tsx(68,37): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/dashboard/page.tsx(95,76): error TS2339: Property 'amount' does not exist on type 'never'.
+src/app/dashboard/page.tsx(304,83): error TS2345: Argument of type '{ is_open: boolean; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/page.tsx(404,68): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/dashboard/page.tsx(540,90): error TS2345: Argument of type '{ whatsapp_enabled: boolean; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/page.tsx(563,90): error TS2345: Argument of type '{ fastPassEnabled: boolean; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/page.tsx(586,92): error TS2345: Argument of type '{ fastPassPrice: any; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/queue/page.tsx(67,19): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/app/dashboard/queue/page.tsx(71,29): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/app/dashboard/queue/page.tsx(73,27): error TS2352: Conversion of type 'null' to type 'Token' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+src/app/dashboard/queue/page.tsx(118,39): error TS18047: 'business' is possibly 'null'.
+src/app/dashboard/queue/page.tsx(136,17): error TS2345: Argument of type '{ is_accepting_tokens: boolean; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/queue/page.tsx(137,19): error TS18047: 'queue' is possibly 'null'.
+src/app/dashboard/queue/page.tsx(150,46): error TS2345: Argument of type '{ is_active: boolean; }' is not assignable to parameter of type 'never'.
+src/app/dashboard/queue/page.tsx(157,19): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/app/home/HomeClient.tsx(421,15): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/login/page.tsx(58,47): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ ...; }, ... 5 more ..., "POST">', gave the following error.
+    Argument of type '{ id: any; role: string; email: any; updated_at: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type 'never[]'.
+src/app/my-tokens/page.tsx(107,45): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/onboarding/page.tsx(74,52): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/track/[tokenId]/page.tsx(119,27): error TS2339: Property 'orgId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(126,28): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(127,29): error TS2339: Property 'estimatedWaitMins' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(140,19): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(144,33): error TS2339: Property 'orgId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(145,37): error TS2339: Property 'counterId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(147,37): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(155,63): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(156,112): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(176,47): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(185,66): error TS2339: Property 'orgId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(186,110): error TS2339: Property 'orgId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(188,24): error TS2339: Property 'status' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(192,38): error TS2339: Property 'orgId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(193,42): error TS2339: Property 'counterId' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(195,42): error TS2339: Property 'createdAt' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(202,48): error TS2339: Property 'name' does not exist on type 'never'.
+src/app/track/[tokenId]/page.tsx(269,44): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/app/track/[tokenId]/page.tsx(280,40): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "reviews", never, "POST">', gave the following error.
+    Argument of type '{ business_id: any; user_id: string | undefined; rating: number; comment: string; token_id: any; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "reviews", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'business_id' does not exist in type 'never[]'.
+src/components/AdvanceBookingForm.tsx(154,65): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "advance_bookings", never, "POST">', gave the following error.
+    Argument of type '{ business_id: string; user_id: string | null; customer_name: string; customer_phone: string; booking_date: string; booking_time: string; status: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "advance_bookings", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'business_id' does not exist in type 'never[]'.
+src/components/Analytics/AnalyticsDashboard.tsx(57,20): error TS2339: Property 'plan' does not exist on type 'never'.
+src/components/Analytics/AnalyticsDashboard.tsx(92,80): error TS2345: Argument of type '{ org_id_param: string; date_param: string; }' is not assignable to parameter of type 'undefined'.
+src/components/Analytics/AnalyticsDashboard.tsx(100,35): error TS2339: Property 'find' does not exist on type 'never'.
+src/components/Analytics/AnalyticsDashboard.tsx(111,75): error TS2345: Argument of type '{ org_id_param: string; days_param: number; }' is not assignable to parameter of type 'undefined'.
+src/components/Analytics/AnalyticsDashboard.tsx(116,32): error TS2339: Property 'map' does not exist on type 'never'.
+src/components/Business/PublicBusinessClient.tsx(78,42): error TS2339: Property 'tokenNumber' does not exist on type 'never'.
+src/components/Dashboard/OnboardingChecklist.tsx(36,17): error TS2345: Argument of type '{ serviceMins: any; opHours: { open: string; close: string; }; onboarding_step: number; }' is not assignable to parameter of type 'never'.
+src/components/Dashboard/OnboardingChecklist.tsx(56,72): error TS2345: Argument of type '{ p_org_id: any; }' is not assignable to parameter of type 'undefined'.
+src/components/Dashboard/OnboardingChecklist.tsx(63,48): error TS2345: Argument of type '{ claim_status: string; }' is not assignable to parameter of type 'never'.
+src/components/QueueMap.tsx(119,49): error TS7006: Parameter 'biz' implicitly has an 'any' type.
+src/components/QueueMap.tsx(121,35): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/lib/useAdminQueue.ts(121,9): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useAdminQueue.ts(133,11): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useAdminQueue.ts(144,11): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useCustomerQueue.ts(36,36): error TS2339: Property 'queue_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(42,33): error TS2339: Property 'queue_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(47,27): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(51,37): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(54,64): error TS2339: Property 'tokenNumber' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(64,27): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(68,37): error TS2339: Property 'currently_serving_token_id' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(71,30): error TS2339: Property 'tokenNumber' does not exist on type 'never'.
+src/lib/useCustomerQueue.ts(77,27): error TS2339: Property 'status' does not exist on type 'never'.

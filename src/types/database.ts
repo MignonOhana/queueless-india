@@ -35,7 +35,12 @@ export type Business = {
   updated_at?: string
   image?: string
   fastPassEnabled?: boolean
+  fastPassPrice?: number
   phone?: string           // For WhatsApp
+  whatsapp_enabled?: boolean
+  is_open?: boolean
+  is_accepting_tokens?: boolean
+  onboarding_step?: number
   op_hours_json?: any      // For operating hours
   services?: any[]        // For prefixes
   settings?: any          // For business hours config
@@ -74,6 +79,52 @@ export type UserProfile = {
   preferred_language?: string
 }
 
+export type Review = {
+  id: string
+  business_id: string
+  user_id: string | null
+  rating: number
+  comment: string | null
+  token_id: string | null
+  created_at?: string
+}
+
+export type AdvanceBooking = {
+  id: string
+  business_id: string
+  user_id: string | null
+  customer_name: string
+  customer_phone: string
+  customer_email: string | null
+  booking_date: string
+  booking_time: string
+  service_type: string | null
+  notes: string | null
+  status: 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+  token_id: string | null
+  created_at?: string
+  updated_at?: string
+}
+
+export type StaffMember = {
+  id: string
+  business_id: string
+  user_id: string | null
+  role: 'owner' | 'operator' | 'viewer'
+  name: string | null
+  phone: string | null
+  is_active: boolean
+  counter_id: string | null
+  created_at?: string
+}
+
+export type FastPassLog = {
+  id: string
+  business_id: string
+  amount: number
+  created_at?: string
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -81,33 +132,64 @@ export type Database = {
         Row: Token
         Insert: Partial<Token>
         Update: Partial<Token>
+        Relationships: any[]
       }
       businesses: {
-        Row: any // permissive for now
-        Insert: any
-        Update: any
+        Row: Business
+        Insert: Partial<Business>
+        Update: Partial<Business>
+        Relationships: any[]
       }
       queues: {
-        Row: any // permissive for now
-        Insert: any
-        Update: any
+        Row: Queue
+        Insert: Partial<Queue>
+        Update: Partial<Queue>
+        Relationships: any[]
       }
       predictions: {
-        Row: any
-        Insert: any
-        Update: any
+        Row: Prediction
+        Insert: Partial<Prediction>
+        Update: Partial<Prediction>
+        Relationships: any[]
       }
       bookings: {
         Row: any
         Insert: any
         Update: any
+        Relationships: any[]
+      }
+      advance_bookings: {
+        Row: AdvanceBooking
+        Insert: Partial<AdvanceBooking>
+        Update: Partial<AdvanceBooking>
+        Relationships: any[]
+      }
+      reviews: {
+        Row: Review
+        Insert: Partial<Review>
+        Update: Partial<Review>
+        Relationships: any[]
+      }
+      staff_members: {
+        Row: StaffMember
+        Insert: Partial<StaffMember>
+        Update: Partial<StaffMember>
+        Relationships: any[]
+      }
+      fastpass_logs: {
+        Row: FastPassLog
+        Insert: Partial<FastPassLog>
+        Update: Partial<FastPassLog>
+        Relationships: any[]
       }
       user_profiles: {
         Row: UserProfile
         Insert: Partial<UserProfile>
         Update: Partial<UserProfile>
+        Relationships: any[]
       }
     }
+    Views: Record<string, any>
     Functions: {
       get_my_profile: {
         Args: any
@@ -121,6 +203,20 @@ export type Database = {
         Args: any
         Returns: any
       }
+      get_queue_position: {
+        Args: any
+        Returns: any
+      }
+      get_hourly_distribution: {
+        Args: any
+        Returns: any
+      }
+      get_wait_time_trend: {
+        Args: any
+        Returns: any
+      }
     }
+    Enums: Record<string, any>
+    CompositeTypes: Record<string, any>
   }
 }

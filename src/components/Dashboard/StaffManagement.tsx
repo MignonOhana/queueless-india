@@ -23,10 +23,6 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newStaff, setNewStaff] = useState({ name: '', role: 'Operator', counter_id: 'default' });
 
-  useEffect(() => {
-    fetchStaff();
-  }, [businessId]);
-
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
@@ -42,6 +38,10 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    fetchStaff();
+  }, [businessId]);
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();

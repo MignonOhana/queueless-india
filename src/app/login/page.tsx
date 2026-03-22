@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [initialChecking, setInitialChecking] = useState(true);
   const [step, setStep] = useState<"role" | "auth">("role");
-  const [intendedRole, setIntendedRole] = useState<string | null>(null);
+  const [intendedRole, setIntendedRole] = useState<"customer" | "business_owner" | null>(null);
 
   useEffect(() => {
     async function checkSession() {
@@ -44,7 +44,7 @@ export default function LoginPage() {
     setShowOTP(false);
     setLoading(true);
     try {
-      const role = intendedRole || localStorage.getItem("ql_intended_role") || "customer";
+      const role = (intendedRole || localStorage.getItem("ql_intended_role") || "customer") as "customer" | "business_owner";
       
       // 1. Fetch profile
       const { data: profile } = await (supabase

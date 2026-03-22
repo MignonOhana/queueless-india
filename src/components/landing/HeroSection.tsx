@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useState, useEffect } from "react";
+import { Suspense, useRef, useState, useEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Points, PointMaterial } from "@react-three/drei";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
@@ -277,16 +277,23 @@ function MobileFallback() {
     { x: "75%", delay: 0.6, color: "#10b981" },
   ];
 
+  const particles = useMemo(() => Array.from({ length: 30 }, () => ({
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    duration: 3 + Math.random() * 2,
+    delay: Math.random() * 2
+  })), []);
+
   return (
     <div className="absolute inset-0 bg-[#0A0A0F] overflow-hidden flex items-center justify-center">
       {/* Particle dots */}
-      {Array.from({ length: 30 }, (_, i) => (
+      {particles.map((p, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 rounded-full bg-[#00F5A0]/40"
-          style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+          style={{ left: p.left, top: p.top }}
           animate={{ y: [-10, 10, -10], opacity: [0.2, 0.6, 0.2] }}
-          transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
+          transition={{ duration: p.duration, repeat: Infinity, delay: p.delay }}
         />
       ))}
 

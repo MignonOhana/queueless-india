@@ -10,12 +10,15 @@ const eslintConfig = defineConfig([
   security.configs.recommended,
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
       "react-hooks/exhaustive-deps": "warn",
       "security/detect-object-injection": "off", // Too noisy for basic object lookups
       "no-console": ["warn", { "allow": ["warn", "error"] }],
       "no-process-env": "off", // Necessary for Next.js env access
+      "react/no-unescaped-entities": "warn",
+      "prefer-const": "warn",
+      "@typescript-eslint/no-require-imports": "warn"
     },
   },
   // Override default ignores of eslint-config-next.

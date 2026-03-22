@@ -34,7 +34,7 @@ export function useAIPrediction(orgId: string, stats: { currentlyWaiting: number
           .maybeSingle();
         
         if (cachedPred && !fetchErr) {
-          setPrediction(cachedPred as AIPrediction);
+          setPrediction(cachedPred as unknown as AIPrediction);
         } else {
           // 2. Call secure Edge Function if no cached version exists
           const { data: generatedData, error: edgeErr } = await supabase.functions.invoke('predict-queue', {
@@ -43,7 +43,7 @@ export function useAIPrediction(orgId: string, stats: { currentlyWaiting: number
 
           if (edgeErr) throw edgeErr;
           
-          setPrediction(generatedData);
+          setPrediction(generatedData as AIPrediction);
         }
       } catch (err) {
         console.error("Prediction error:", err);

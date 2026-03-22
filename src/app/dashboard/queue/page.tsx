@@ -112,6 +112,7 @@ export default function BusinessQueueManagement() {
   const handleCallNext = async () => {
     setActionLoading(true);
     try {
+      if (!business?.id) throw new Error("Business not found");
       const response = await fetch("/api/queue/next", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,6 +130,7 @@ export default function BusinessQueueManagement() {
   };
 
   const togglePause = async () => {
+    if (!queue?.id) return;
     const newState = !queue?.is_accepting_tokens;
     try {
       const { error } = await supabase

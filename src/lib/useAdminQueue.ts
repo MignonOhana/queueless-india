@@ -118,8 +118,12 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         customerName: "Rahul S.",
         tokenNumber: "OPD-011",
         status: "SERVING",
-        createdAt: null,
+        createdAt: new Date().toISOString(),
         estimatedWaitMins: 0,
+        queue_id: 'q1',
+        isPriority: false,
+        servedAt: null,
+        customerPhone: null
       });
       setQueue([
         {
@@ -130,8 +134,12 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
           customerName: "Anjali M.",
           tokenNumber: "OPD-012",
           status: "WAITING",
-          createdAt: null,
+          createdAt: new Date().toISOString(),
           estimatedWaitMins: 5,
+          queue_id: 'q1',
+          isPriority: false,
+          servedAt: null,
+          customerPhone: null
         },
         {
           id: "3",
@@ -141,8 +149,12 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
           customerName: "Vikram K.",
           tokenNumber: "OPD-013",
           status: "WAITING",
-          createdAt: null,
+          createdAt: new Date().toISOString(),
           estimatedWaitMins: 10,
+          queue_id: 'q1',
+          isPriority: false,
+          servedAt: null,
+          customerPhone: null
         },
       ]);
       setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });

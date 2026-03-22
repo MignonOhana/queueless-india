@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
-import { MapPin, Navigation, Clock, Users, ArrowRight, X } from "lucide-react";
+import { MapPin, Navigation, Users, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -94,14 +94,14 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
         { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-       setIsLoadingLocation(false);
+       setTimeout(() => setIsLoadingLocation(false), 0);
     }
   }, [onLocationFound]);
 
   // 2. Fetch Businesses & Live Queues
   const fetchMapData = async () => {
      // Start by getting all businesses that have coordinates
-     const { data: bData, error: bErr } = await (supabase.from('businesses') as any)
+     const { data: bData, error: bErr } = await supabase.from('businesses')
        .select('id, name, category, latitude, longitude')
        .not('latitude', 'is', null);
 
@@ -109,7 +109,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
 
      // Fetch all active queues for today to attach realtime stats
      const today = new Date().toISOString().split('T')[0];
-     const { data: qData, error: qErr } = await (supabase.from('queues') as any)
+     const { data: qData, error: qErr } = await supabase.from('queues')
        .select('id, org_id, counter_id, currently_serving, total_waiting, is_accepting_tokens')
        .eq('session_date', today);
        
@@ -141,6 +141,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
   };
 
   useEffect(() => {
+     // eslint-disable-next-line react-hooks/set-state-in-effect
      fetchMapData();
 
      // 3. Realtime Subscription to Queues table to instantly change marker colors
@@ -159,7 +160,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
     setMap(map);
   }, []);
 
-  const onUnmount = useCallback(function callback(map: google.maps.Map) {
+  const onUnmount = useCallback(function callback(_map: google.maps.Map) {
     setMap(null);
   }, []);
 
@@ -217,16 +218,16 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
                   setSelectedBusiness(biz);
                   map?.panTo({ lat: biz.latitude, lng: biz.longitude });
                   // Slightly offset the zoom so the popup doesn't cover the pin
-                  map?.panBy(0, -100); 
+                  map?.panBy(0, window.innerWidth < 768 ? -200 : -100); 
                }}
                className={`relative -top-2 flex flex-col items-center group transition-transform ${selectedBusiness?.id === biz.id ? 'scale-125 z-50' : 'hover:scale-110 z-20'}`}
              >
                 {/* The Pin Head */}
-                <div className={`w-8 h-8 rounded-full border-2 text-white flex items-center justify-center shadow-lg transition-colors ${getMarkerColor(biz.estimatedWait)}`}>
-                   <span className="text-[10px] font-black">{biz.estimatedWait}m</span>
+                <div className={`w-10 h-10 md:w-8 md:h-8 rounded-full border-2 text-white flex items-center justify-center shadow-lg transition-colors ${getMarkerColor(biz.estimatedWait)}`}>
+                   <span className="text-xs md:text-[10px] font-black">{biz.estimatedWait}m</span>
                 </div>
                 {/* The Pin Needle */}
-                <div className={`w-1 h-3 -mt-1 rounded-b-full shadow-sm transition-colors ${getMarkerColor(biz.estimatedWait).split(' ')[0]}`} />
+                <div className={`w-1.5 h-4 md:w-1 md:h-3 -mt-1 rounded-b-full shadow-sm transition-colors ${getMarkerColor(biz.estimatedWait).split(' ')[0]}`} />
              </button>
           </OverlayView>
         ))}
@@ -248,7 +249,7 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
             initial={{ y: 20, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 20, opacity: 0, scale: 0.95 }}
-            className="absolute bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-96 bg-white dark:bg-slate-900 rounded-[2rem] p-5 shadow-2xl border border-slate-200 dark:border-slate-800 pointer-events-auto"
+            className="absolute bottom-[100px] md:bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-96 bg-white dark:bg-slate-900 rounded-[2rem] p-5 shadow-2xl border border-slate-200 dark:border-slate-800 pointer-events-auto"
           >
             <button 
               onClick={() => setSelectedBusiness(null)}

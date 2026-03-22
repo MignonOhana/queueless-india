@@ -1,0 +1,48 @@
+
+> queueless-india@0.1.0 type-check
+> tsc --noEmit
+
+src/app/api/business/create/route.ts(46,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: Partial<Business>, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, { Tables: { tokens: { ...; }; ... 7 more ...; user_profiles: { ...; }; }; Views: Record<...>; Functions: { ...; }; Enums: Record<...>; CompositeTypes: Record<...>; }, ... 4 more ..., "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }[]' has no properties in common with type 'Partial<Business>'.
+  Overload 2 of 2, '(values: Partial<Business>[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, ... 5 more ..., "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }' is not assignable to type 'Partial<Business>'.
+      Types of property 'claim_status' are incompatible.
+        Type 'string' is not assignable to type '"unclaimed" | "claimed" | "active" | undefined'.
+src/app/api/business/create/route.ts(56,12): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: Partial<Business>, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, { Tables: { tokens: { ...; }; ... 7 more ...; user_profiles: { ...; }; }; Views: Record<...>; Functions: { ...; }; Enums: Record<...>; CompositeTypes: Record<...>; }, ... 4 more ..., "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }[]' has no properties in common with type 'Partial<Business>'.
+  Overload 2 of 2, '(values: Partial<Business>[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, ... 5 more ..., "POST">', gave the following error.
+    Type '{ id: string; name: any; category: any; location: any; phone: any; description: any; serviceMins: number; owner_id: string; plan: string; claim_status: string; is_open: boolean; is_accepting_tokens: boolean; onboarding_step: number; }' is not assignable to type 'Partial<Business>'.
+      Types of property 'claim_status' are incompatible.
+        Type 'string' is not assignable to type '"unclaimed" | "claimed" | "active" | undefined'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(54,48): error TS2345: Argument of type '"get_queue_position"' is not assignable to parameter of type '"get_my_profile" | "activate_queue_for_today" | "get_live_pulse_data"'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(75,13): error TS18047: 'qData' is possibly 'null'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(79,23): error TS18047: 'qData' is possibly 'null'.
+src/app/customer/queue/[orgId]/[tokenId]/page.tsx(148,46): error TS2345: Argument of type '"get_queue_position"' is not assignable to parameter of type '"get_my_profile" | "activate_queue_for_today" | "get_live_pulse_data"'.
+src/app/dashboard/page.tsx(95,76): error TS2339: Property 'amount' does not exist on type 'SelectQueryError<"Invalid Relationships cannot infer result type">'.
+src/app/dashboard/page.tsx(304,85): error TS2353: Object literal may only specify known properties, and 'is_open' does not exist in type 'Partial<Business>'.
+src/app/dashboard/page.tsx(404,68): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+src/app/dashboard/page.tsx(540,92): error TS2353: Object literal may only specify known properties, and 'whatsapp_enabled' does not exist in type 'Partial<Business>'.
+src/app/dashboard/page.tsx(586,94): error TS2353: Object literal may only specify known properties, and 'fastPassPrice' does not exist in type 'Partial<Business>'.
+src/app/dashboard/queue/page.tsx(118,39): error TS18047: 'business' is possibly 'null'.
+src/app/dashboard/queue/page.tsx(137,19): error TS18047: 'queue' is possibly 'null'.
+src/app/login/page.tsx(58,47): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: Partial<UserProfile>, options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Type 'string' is not assignable to type '"customer" | "business_owner" | undefined'.
+  Overload 2 of 2, '(values: Partial<UserProfile>[], options?: { onConflict?: string | undefined; ignoreDuplicates?: boolean | undefined; count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type 'Partial<UserProfile>[]'.
+src/app/track/[tokenId]/page.tsx(145,31): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/app/track/[tokenId]/page.tsx(193,36): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/components/Analytics/AnalyticsDashboard.tsx(92,53): error TS2345: Argument of type '"get_hourly_distribution"' is not assignable to parameter of type '"get_my_profile" | "activate_queue_for_today" | "get_live_pulse_data"'.
+src/components/Analytics/AnalyticsDashboard.tsx(111,52): error TS2345: Argument of type '"get_wait_time_trend"' is not assignable to parameter of type '"get_my_profile" | "activate_queue_for_today" | "get_live_pulse_data"'.
+src/components/QueueMap.tsx(119,49): error TS7006: Parameter 'biz' implicitly has an 'any' type.
+src/components/QueueMap.tsx(121,35): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/lib/useAdminQueue.ts(121,9): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useAdminQueue.ts(133,11): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useAdminQueue.ts(144,11): error TS2322: Type 'null' is not assignable to type 'string'.
+src/lib/useAIPrediction.ts(37,25): error TS2352: Conversion of type '{ id: string; bestTimeToVisit: string; }' to type 'AIPrediction' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: string; bestTimeToVisit: string; }' is missing the following properties from type 'AIPrediction': currentWaitTime, predictedWaitNextHour, predictedPeakHours, confidence
