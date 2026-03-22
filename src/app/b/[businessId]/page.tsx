@@ -12,12 +12,13 @@ interface Props {
 }
 
 // --- SERVER SIDE SEO METADATA ---
-export async function generateMetadata({ params }: { params: { businessId: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ businessId: string }> }): Promise<Metadata> {
+  const { businessId } = await props.params;
   const supabase = await createClient()
   const { data: business } = await supabase
     .from('businesses')
     .select('name, category, location, address, avg_rating')
-    .eq('id', params.businessId)
+    .eq('id', businessId)
     .single() as any
 
   if (!business) return { title: 'Business Not Found' }
@@ -38,17 +39,17 @@ export async function generateMetadata({ params }: { params: { businessId: strin
     openGraph: {
       title,
       description,
-      url: `https://queueless-india.vercel.app/b/${params.businessId}`,
+      url: `https://queueless-india.vercel.app/b/${businessId}`,
       type: 'website',
     },
     alternates: {
-      canonical: `https://queueless-india.vercel.app/b/${params.businessId}`,
+      canonical: `https://queueless-india.vercel.app/b/${businessId}`,
     },
   }
 }
 
-export default async function PublicBusinessPage({ params }: Props) {
-  const { businessId } = params;
+export default async function PublicBusinessPage(props: { params: Promise<{ businessId: string }> }) {
+  const { businessId } = await props.params;
   const supabase = await createClient();
 
   // 1. Fetch Business Initial Data (SSR)
@@ -59,6 +60,7 @@ export default async function PublicBusinessPage({ params }: Props) {
     .single() as any);
 
   if (bizErr || !business) {
+    console.error("DEBUG NOTFOUND bizErr:", bizErr, "business:", business, "ID lookup:", businessId);
     notFound();
   }
 

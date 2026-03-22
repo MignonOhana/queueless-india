@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useParams } from 'next/navigation';
 
-export default function DisplayBoard({ params }: { params: { businessId: string } }) {
+export default function DisplayBoard() {
+  const params = useParams();
+  const businessId = params?.businessId as string;
   const supabase = createClient();
   const [business, setBusiness] = useState<any>(null);
   const [serving, setServing] = useState<any>(null);
@@ -19,14 +22,14 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
   }, []);
 
   useEffect(() => {
-    if (!params.businessId) return;
+    if (!businessId) return;
 
     const fetchData = async () => {
       // Fetch business info
       const { data: biz } = await supabase
         .from('businesses')
         .select('*')
-        .eq('id', params.businessId)
+        .eq('id', businessId)
         .maybeSingle();
       if (biz) setBusiness(biz);
 
@@ -34,7 +37,7 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
       const { data: servingToken } = await supabase
         .from('tokens')
         .select('*')
-        .eq('orgId', params.businessId)
+        .eq('orgId', businessId)
         .eq('status', 'SERVING')
         .maybeSingle();
       setServing(servingToken);
@@ -43,7 +46,7 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
       const { data: waiting } = await supabase
         .from('tokens')
         .select('*')
-        .eq('orgId', params.businessId)
+        .eq('orgId', businessId)
         .eq('status', 'WAITING')
         .order('createdAt', { ascending: true })
         .limit(5);
@@ -56,7 +59,7 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
       const { count: servedCount } = await supabase
         .from('tokens')
         .select('*', { count: 'exact', head: true })
-        .eq('orgId', params.businessId)
+        .eq('orgId', businessId)
         .eq('status', 'SERVED')
         .gte('servedAt', todayStart.toISOString());
       setServedToday(servedCount || 0);
@@ -71,12 +74,12 @@ export default function DisplayBoard({ params }: { params: { businessId: string 
         event: '*',
         schema: 'public',
         table: 'tokens',
-        filter: `orgId=eq.${params.businessId}`,
+        filter: `orgId=eq.${businessId}`,
       }, () => fetchData())
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [params.businessId]);
+  }, [businessId]);
 
   const isBusinessOpen = () => {
     if (!business) return false;

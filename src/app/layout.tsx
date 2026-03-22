@@ -6,13 +6,9 @@ import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import OfflineBanner from "@/components/OfflineBanner";
 import SmoothScroll from "@/components/SmoothScroll";
-import MobileNav from "@/components/MobileNav";
 import { Toaster } from "sonner";
-import PwaInstallBanner from "@/components/PwaInstallBanner";
-import PwaRegistration from "@/components/PwaRegistration";
-import { WebVitals } from "@/components/WebVitals";
+import ClientLayout from "@/components/ClientLayout";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import PageTransition from "@/components/ui/PageTransition";
 import "./globals.css";
 
 const inter = Inter({
@@ -117,17 +113,9 @@ export default function RootLayout({
               <LanguageProvider>
                 <AuthProvider>
                   <Toaster position="top-center" expand={false} richColors theme="dark" />
-                  <div className="flex flex-1">
-                    <main className="flex-1 md:pl-64 transition-all duration-300">
-                      <PageTransition>
-                        {children}
-                      </PageTransition>
-                    </main>
-                  </div>
-                  <PwaInstallBanner />
-                  <PwaRegistration />
-                  <WebVitals />
-                  <MobileNav />
+                  <ClientLayout>
+                    {children}
+                  </ClientLayout>
                 </AuthProvider>
               </LanguageProvider>
             </ThemeProvider>

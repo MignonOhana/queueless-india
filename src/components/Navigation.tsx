@@ -1,13 +1,12 @@
 "use client";
 
-import { Clock, UserCircle, LogOut, LayoutDashboard, QrCode } from "lucide-react";
+import { Clock, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { usePathname } from "next/navigation";
 
 export default function Navigation() {
   const { user, userRole, signOut } = useAuth();
-  const pathname = usePathname();
 
   return (
     <nav className="fixed top-0 inset-x-0 z-[60] bg-background/95 border-b border-white/5 h-20">
@@ -51,6 +50,12 @@ export default function Navigation() {
             <>
               <Link href="/login" className="text-sm font-bold text-zinc-400 hover:text-white transition-colors">
                 Login
+              </Link>
+              <Link href="/about" className="hidden sm:block text-sm font-bold text-zinc-400 hover:text-white transition-colors">
+                About
+              </Link>
+              <Link href="/pricing" className="hidden sm:block text-sm font-bold text-zinc-400 hover:text-white transition-colors">
+                Pricing
               </Link>
               <Link 
                 href="/login" 

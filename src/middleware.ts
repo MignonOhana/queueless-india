@@ -54,8 +54,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Authenticated User Protection & Role-based Routing
-  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/home", "/onboarding"];
-  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/");
+  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/contact", "/map", "/home", "/onboarding"];
+  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/") || pathname.startsWith("/api/");
 
   if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL("/login", request.url));

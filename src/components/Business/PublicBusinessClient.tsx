@@ -72,7 +72,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
         .select("tokenNumber")
         .eq("orgId", business.id)
         .eq("status", "SERVING")
-        .order("updatedAt", { ascending: false })
+        .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (data) setLiveServingToken(data.tokenNumber);

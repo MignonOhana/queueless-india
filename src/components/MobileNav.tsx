@@ -4,7 +4,6 @@ import {
   Home, 
   ListOrdered, 
   Search, 
-  User, 
   QrCode, 
   Activity, 
   BarChart3, 
@@ -46,11 +45,6 @@ export default function MobileNav() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  // Hide on display/TV routes
-  if (pathname.startsWith('/display') || pathname.startsWith('/tv')) {
-    return null;
-  }
 
   const isBusiness = userRole === "business_owner";
 
