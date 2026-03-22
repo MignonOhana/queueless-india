@@ -6,10 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 type Step = 'email' | 'otp' | 'done'
 
-export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '' }: {
+export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultName = '' }: {
   onSuccess: (user: any) => void
   onClose: () => void
   defaultEmail?: string
+  defaultName?: string
 }) {
   const supabase = createClient()
   const [step, setStep] = useState<Step>(defaultEmail ? 'otp' : 'email')
@@ -49,6 +50,7 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '' }: {
         email,
         options: {
           shouldCreateUser: true,
+          data: { full_name: defaultName || '' }
         },
       })
       

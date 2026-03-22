@@ -55,6 +55,7 @@ export default function BusinessDashboard() {
     const checkSession = async () => {
        const { data: { session } } = await supabase.auth.getSession();
        if (session?.user) {
+          setIsAdminLoggedIn(true);
           const { data: biz } = await supabase
             .from('businesses')
             .select('*')
@@ -63,7 +64,6 @@ export default function BusinessDashboard() {
           
           if (biz) {
              setBusinessData(biz);
-             setIsAdminLoggedIn(true);
           }
        }
     };
@@ -214,8 +214,8 @@ export default function BusinessDashboard() {
                 setIsAdminLoggedIn(true);
                 toast.success("Welcome back!");
               } else {
-                toast.error("No business found for this account. Please register.");
-                await supabase.auth.signOut();
+                setIsAdminLoggedIn(true);
+                toast.success("Please create your business profile");
               }
             }}
           />

@@ -15,6 +15,8 @@ import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [isRegister, setIsRegister] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialChecking, setInitialChecking] = useState(true);
@@ -26,10 +28,14 @@ export default function LoginPage() {
     if (typeof window !== "undefined") {
       const search = new URLSearchParams(window.location.search);
       const roleParam = search.get("role");
+      const modeParam = search.get("mode");
       if (roleParam === "business_owner" || roleParam === "customer") {
         setIntendedRole(roleParam);
         localStorage.setItem("ql_intended_role", roleParam);
         setStep("auth");
+      }
+      if (modeParam === "register" || roleParam === "business_owner") {
+        setIsRegister(true);
       }
     }
   }, []);
@@ -219,7 +225,7 @@ export default function LoginPage() {
                   </span>
                 </div>
                 <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
-                  Welcome Back
+                  {isRegister ? "Create Account" : "Welcome Back"}
                 </h1>
                 <p className="text-slate-500 font-bold text-sm">
                   Continue with your phone or email
@@ -242,6 +248,19 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-6">
+                {isRegister && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Full Name</label>
+                    <input 
+                      type="text" 
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Rahul Sharma"
+                      className="w-full px-8 py-5 rounded-2xl border-2 border-white/5 bg-black/20 text-white placeholder:text-zinc-700 focus:outline-none focus:border-primary/50 transition-all font-bold text-base"
+                      required
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Email Address</label>
                   <input 
@@ -260,11 +279,24 @@ export default function LoginPage() {
                       toast.error("Please enter a valid email");
                       return;
                     }
+                    if (isRegister && !fullName.trim()) {
+                      toast.error("Please enter your full name");
+                      return;
+                    }
                     setShowOTP(true);
                   }}
                   className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 ${intendedRole === 'business_owner' ? 'bg-primary text-black shadow-primary/20 hover:bg-indigo-400' : 'bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400'}`}
                 >
                   Send OTP <ArrowRight size={20} strokeWidth={3} />
+                </button>
+              </div>
+
+              <div className="mt-8 text-center border-t border-white/5 pt-6">
+                <button 
+                  onClick={() => setIsRegister(!isRegister)}
+                  className="text-slate-500 hover:text-white transition-colors font-bold text-sm"
+                >
+                  {isRegister ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
                 </button>
               </div>
             </motion.div>
@@ -275,6 +307,7 @@ export default function LoginPage() {
       {showOTP && (
         <EmailOTPModal 
           defaultEmail={email}
+          defaultName={fullName}
           onClose={() => setShowOTP(false)}
           onSuccess={handleAuthSuccess}
         />
