@@ -39,6 +39,11 @@ function pruneExpired(store: GuestSessionStore): GuestSessionStore {
   );
 }
 
+export function getAllGuestSessions(): GuestVisit[] {
+  const store = pruneExpired(readStore());
+  return Object.values(store);
+}
+
 export function useGuestSession(businessId: string) {
   const [guestVisit, setGuestVisit] = useState<GuestVisit | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);

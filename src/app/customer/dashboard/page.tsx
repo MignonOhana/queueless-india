@@ -15,75 +15,111 @@ import { useRouter } from 'next/navigation';
 import GlassCard from '@/components/ui/GlassCard';
 import CountUp from '@/components/ui/CountUp';
 import LiveIndicator from '@/components/ui/LiveIndicator';
+import { getAllGuestSessions } from '@/hooks/useGuestSession';
 
 export default function CustomerDashboard() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTokens, setActiveTokens] = useState<any[]>([]);
   const [historyTokens, setHistoryTokens] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      router.push('/customer');
-      return;
-    }
+    if (authLoading) return;
 
     const fetchData = async () => {
       setLoading(true);
       
-      // Fetch Active Tokens
-      const { data: active } = await supabase
-        .from('tokens')
-        .select('*, businesses(name, address, category, serviceMins)')
-        .eq('userId', user.id)
-        .in('status', ['WAITING', 'SERVING'])
-        .order('createdAt', { ascending: false });
+      let active: any[] = [];
+      let history: any[] = [];
 
-      // Fetch History
-      const { data: history } = await supabase
-        .from('tokens')
-        .select('*, businesses(name, avg_rating)')
-        .eq('userId', user.id)
-        .in('status', ['SERVED', 'CANCELLED'])
-        .order('createdAt', { ascending: false })
-        .limit(10);
+      if (user) {
+        // Fetch Active Tokens for User
+        const { data: act } = await supabase
+          .from('tokens')
+          .select('*, businesses(name, address, category, serviceMins)')
+          .eq('userId', user.id)
+          .in('status', ['WAITING', 'SERVING'])
+          .order('createdAt', { ascending: false });
 
-      setActiveTokens(active || []);
-      setHistoryTokens(history || []);
+        // Fetch History for User
+        const { data: hist } = await supabase
+          .from('tokens')
+          .select('*, businesses(name, avg_rating)')
+          .eq('userId', user.id)
+          .in('status', ['SERVED', 'CANCELLED'])
+          .order('createdAt', { ascending: false })
+          .limit(10);
+          
+        active = act || [];
+        history = hist || [];
+      } else {
+        // Guest mode fetching
+        const guestSessions = getAllGuestSessions();
+        const tokenIds = guestSessions.map(s => s.activeTokenId).filter(Boolean) as string[];
+        if (tokenIds.length > 0) {
+          const { data: act } = await supabase
+            .from('tokens')
+            .select('*, businesses(name, address, category, serviceMins)')
+            .in('id', tokenIds)
+            .in('status', ['WAITING', 'SERVING'])
+            .order('createdAt', { ascending: false });
+
+          const { data: hist } = await supabase
+            .from('tokens')
+            .select('*, businesses(name, avg_rating)')
+            .in('id', tokenIds)
+            .in('status', ['SERVED', 'CANCELLED'])
+            .order('createdAt', { ascending: false });
+
+          active = act || [];
+          history = hist || [];
+        }
+      }
+
+      setActiveTokens(active);
+      setHistoryTokens(history);
       setLoading(false);
     };
 
     fetchData();
 
-    // Realtime subscription for status changes
-    const channel = supabase
-      .channel(`customer_tokens_${user.id}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tokens',
-        filter: `userId=eq.${user.id}`
-      }, () => {
+    if (user) {
+      // Realtime subscription for status changes
+      const channel = supabase
+        .channel(`customer_tokens_${user.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tokens',
+          filter: `userId=eq.${user.id}`
+        }, () => {
+          fetchData();
+        });
+
+      const handleVisibility = () => {
+        if (document.hidden) {
+          channel.unsubscribe();
+        } else {
+          channel.subscribe();
+        }
+      };
+
+      channel.subscribe();
+      document.addEventListener('visibilitychange', handleVisibility);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibility);
+        supabase.removeChannel(channel);
+      };
+    } else {
+      // Basic polling mechanism for guest realtime simulation
+      const interval = setInterval(() => {
         fetchData();
-      });
-
-    const handleVisibility = () => {
-      if (document.hidden) {
-        channel.unsubscribe();
-      } else {
-        channel.subscribe();
-      }
-    };
-
-    channel.subscribe();
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibility);
-      supabase.removeChannel(channel);
-    };
-  }, [user, router]);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [user, authLoading, router]);
 
   const handleLogout = async () => {
     await signOut();
@@ -125,17 +161,46 @@ export default function CustomerDashboard() {
                 </button>
               )}
               
-              <button 
-                onClick={handleLogout}
-                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
-                title="Sign Out"
-              >
-                <LogOut size={18} />
-              </button>
+              {!user ? (
+                 <button 
+                   onClick={() => router.push('/login')}
+                   className="px-4 py-2 rounded-xl bg-primary/20 border border-primary/30 text-primary font-bold text-xs uppercase tracking-widest hover:bg-primary/30 transition-colors flex items-center gap-2"
+                 >
+                   Sign In to Sync
+                 </button>
+              ) : (
+                <button 
+                  onClick={handleLogout}
+                  className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                  title="Sign Out"
+                >
+                  <LogOut size={18} />
+                </button>
+              )}
            </div>
         </header>
 
-         <main className="px-6 flex-1 flex flex-col py-8">
+          <main className="px-6 flex-1 flex flex-col py-8">
+            {!user && activeTokens.length === 0 && historyTokens.length === 0 && (
+               <div className="mb-6 bg-primary/5 border border-primary/20 p-4 rounded-2xl flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                     <User size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm mb-1">You are currently a Guest</h3>
+                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">
+                       Sign in to securely sync your tokens across all devices and skip the lines faster.
+                    </p>
+                    <button 
+                       onClick={() => router.push('/login')}
+                       className="text-primary text-xs font-black uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1"
+                    >
+                       Create Free Account <ArrowRight size={14} />
+                    </button>
+                  </div>
+               </div>
+            )}
+
             {activeTokens.length === 0 && historyTokens.length === 0 ? (
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}

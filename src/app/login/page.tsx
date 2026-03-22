@@ -291,13 +291,25 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <div className="mt-8 text-center border-t border-white/5 pt-6">
+              <div className="mt-8 text-center border-t border-white/5 pt-6 flex flex-col items-center gap-4">
                 <button 
                   onClick={() => setIsRegister(!isRegister)}
                   className="text-slate-500 hover:text-white transition-colors font-bold text-sm"
                 >
                   {isRegister ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
                 </button>
+
+                {intendedRole !== "business_owner" && (
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem("ql_user_role", "customer");
+                      router.push('/home');
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 p-2 bg-emerald-500/10 rounded-md transition-colors"
+                  >
+                    Skip and continue as Guest →
+                  </button>
+                )}
               </div>
             </motion.div>
           )}

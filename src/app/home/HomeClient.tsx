@@ -836,37 +836,38 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
             </motion.div>
          )}
 
-         {/* SECTION 3 - CATEGORY CHIPS */}
-         <section>
-            <div className="-mx-4 px-4 overflow-x-auto no-scrollbar scroll-smooth">
-               <div className="flex gap-3 w-max pb-4">
-                  {CATEGORIES.map(cat => (
-                     <button 
-                        key={cat.id}
-                        onClick={() => setActiveCategory(cat.id)}
-                        className={`flex flex-col items-center gap-2 w-20 py-3 rounded-2xl transition-all shadow-sm ${
-                           activeCategory === cat.id 
-                           ? "bg-primary text-black shadow-primary/30 scale-105 border-transparent" 
-                           : "bg-white/5 border border-white/10 text-zinc-400 hover:border-white/20"
-                        }`}
-                     >
-                        <span className="text-2xl drop-shadow-sm">{cat.icon}</span>
-                        <span className="text-[10px] font-bold text-center leading-tight px-1">{cat.name}</span>
-                     </button>
-                  ))}
-               </div>
-            </div>
-         </section>
+         {/* CATEGORY CHIPS REMOVED - NOW AT TOP OF FEED */}
 
          {/* Search Filter Warning if empty */}
+         {/* Search Filter Warning if empty */}
          {filteredBusinesses.length === 0 && (
-            <div className="text-center py-12">
-               <div className="mx-auto w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-zinc-600 mb-4 shadow-sm">
-                  <Search size={24} />
+            <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className="text-center py-16 bg-white/5 border border-white/10 rounded-[2rem] mx-2"
+            >
+               <div className="mx-auto w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-zinc-500 mb-6 shadow-inner border border-white/5">
+                  <Search size={28} />
                </div>
-               <h3 className="text-lg font-bold text-zinc-200 mb-1">No queues found</h3>
-               <p className="text-zinc-500 text-sm">Try widening your search or category.</p>
-            </div>
+               <h3 className="text-xl font-black text-white tracking-tight mb-2">No queues found</h3>
+               <p className="text-zinc-500 text-sm font-medium mb-8 max-w-[260px] mx-auto">
+                 {searchQuery 
+                   ? `We couldn't find any results for "${searchQuery}".` 
+                   : `There are currently no active queues in the ${CATEGORIES.find(c => c.id === activeCategory)?.name || 'selected'} category.`}
+               </p>
+               
+               {(searchQuery || activeCategory !== 'all') && (
+                 <button 
+                   onClick={() => {
+                     setSearchQuery("");
+                     setActiveCategory("all");
+                   }}
+                   className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-colors"
+                 >
+                   Clear Filters
+                 </button>
+               )}
+            </motion.div>
          )}
 
          {/* FEED CONTENT - Only show rows if not explicitly searching */}
