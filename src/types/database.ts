@@ -41,10 +41,12 @@ export type Business = {
   is_open?: boolean
   is_accepting_tokens?: boolean
   onboarding_step?: number
-  op_hours_json?: any      // For operating hours
-  services?: any[]        // For prefixes
-  settings?: any          // For business hours config
+  op_hours_json?: BusinessHours | null      // For operating hours
+  services?: { name: string; prefix: string; mins: number }[] | null        // For prefixes
+  settings?: Record<string, unknown> | null          // For business hours config
 }
+
+export type BusinessHours = Record<string, { open: string; close: string }[] | null>;
 
 export type Queue = {
   id: string            // uuid
@@ -132,102 +134,99 @@ export type Database = {
         Row: Token
         Insert: Partial<Token>
         Update: Partial<Token>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       businesses: {
         Row: Business
         Insert: Partial<Business>
         Update: Partial<Business>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       queues: {
         Row: Queue
         Insert: Partial<Queue>
         Update: Partial<Queue>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       predictions: {
         Row: Prediction
         Insert: Partial<Prediction>
         Update: Partial<Prediction>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       bookings: {
-        Row: any
-        Insert: any
-        Update: any
-        Relationships: any[]
+        Row: Record<string, unknown>
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+        Relationships: unknown[]
       }
       advance_bookings: {
         Row: AdvanceBooking
         Insert: Partial<AdvanceBooking>
         Update: Partial<AdvanceBooking>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       reviews: {
         Row: Review
         Insert: Partial<Review>
         Update: Partial<Review>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       staff_members: {
         Row: StaffMember
         Insert: Partial<StaffMember>
         Update: Partial<StaffMember>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       fastpass_logs: {
         Row: FastPassLog
         Insert: Partial<FastPassLog>
         Update: Partial<FastPassLog>
-        Relationships: any[]
+        Relationships: unknown[]
       }
       user_profiles: {
         Row: UserProfile
         Insert: Partial<UserProfile>
         Update: Partial<UserProfile>
-        Relationships: any[]
+        Relationships: unknown[]
       }
     }
-    Views: Record<string, any>
+    Views: Record<string, unknown>
     Functions: {
       get_my_profile: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       activate_queue_for_today: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       get_live_pulse_data: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       get_queue_position: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       get_hourly_distribution: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       get_wait_time_trend: {
-        Args: any
-        Returns: any
+        Args: Record<string, unknown>
+        Returns: unknown
+      }
+      increment_queue_counter: {
+        Args: Record<string, unknown>
+        Returns: unknown
       }
       create_queue_token: {
-        Args: {
-          p_org_id: string
-          p_user_id: string | null
-          p_customer_name: string
-          p_customer_phone: string
-          p_token_number: string
-          p_estimated_wait_mins: number
-        }
-        Returns: Token[]
+        Args: Record<string, unknown>
+        Returns: unknown
       }
     }
-    Enums: Record<string, any>
-    CompositeTypes: Record<string, any>
+    Enums: Record<string, unknown>
+    CompositeTypes: Record<string, unknown>
   }
 }

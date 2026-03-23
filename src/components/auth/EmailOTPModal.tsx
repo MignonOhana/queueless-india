@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Script from 'next/script'
+import { toast } from 'sonner'
 
 type Step = 'email' | 'otp' | 'done'
 
 export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultName = '' }: {
-  onSuccess: (user: any) => void
+  onSuccess: (user: import('@supabase/supabase-js').User) => void
   onClose: () => void
   defaultEmail?: string
   defaultName?: string
@@ -16,15 +18,21 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
   const [step, setStep] = useState<Step>(defaultEmail ? 'otp' : 'email')
   const [email, setEmail] = useState(defaultEmail)
   const [otp, setOtp] = useState('')
+  const [isVerifying, setIsVerifying] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [countdown, setCountdown] = useState(0)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+
+  // Use placeholder if env is missing
+  const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
 
   // Auto-send OTP if defaultEmail is provided
   useEffect(() => {
     if (defaultEmail && step === 'otp') {
       sendOTP()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultEmail])
 
   useEffect(() => {
@@ -42,6 +50,12 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
       setError('Enter a valid email address')
       return
     }
+
+    if (!captchaToken && process.env.NODE_ENV === 'production') {
+      setError('Please complete the security check')
+      return
+    }
+
     setLoading(true)
     setError('')
     
@@ -60,8 +74,8 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
         setStep('otp')
         setCountdown(60)
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP')
     } finally {
       setLoading(false)
     }
@@ -72,35 +86,30 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
       setError('Enter the 6-digit code from your email')
       return
     }
-    setLoading(true)
+    setIsVerifying(true)
     setError('')
     
     try {
-      // Add a timeout to prevent infinite loading on network/Supabase errors
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 10000)
-      })
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, token: otp, type: 'email' })
+      });
 
-      const response = await Promise.race([
-        supabase.auth.verifyOtp({
-          email,
-          token: otp,
-          type: 'email',
-        }),
-        timeoutPromise
-      ]) as any
+      const result = await response.json();
       
-      const { data, error } = response
-      
-      if (error) {
-        setError('Invalid or expired code. Try again.')
-      } else {
-        onSuccess(data.user)
+      if (!response.ok) {
+        throw new Error(result.error || 'Verification failed');
       }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed')
+      
+      onSuccess(result.user);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Verification failed';
+      setError(msg);
+      toast.error(msg);
+      setIsVerifying(false);
     } finally {
-      setLoading(false)
+      setIsVerifying(false);
     }
   }
 
@@ -160,11 +169,22 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                     {error}
                   </motion.p>
                 )}
+
+                {/* Cloudflare Turnstile Widget */}
+                <div className="flex justify-center my-4 min-h-[65px]">
+                  <div 
+                    id="turnstile-container"
+                    className="cf-turnstile" 
+                    data-sitekey={TURNSTILE_SITE_KEY}
+                    data-callback="onTurnstileSuccess"
+                    data-theme="dark"
+                  />
+                </div>
                 
                 <button
                   onClick={sendOTP}
-                  disabled={loading}
-                  className="w-full group relative bg-[#00F5A0] text-[#0A0A0F] font-black py-4 rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,160,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden"
+                  disabled={loading || (!captchaToken && process.env.NODE_ENV === 'production')}
+                  className="w-full group relative bg-[#00F5A0] text-[#0A0A0F] font-black py-4 rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,160,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden disabled:opacity-50"
                 >
                   {loading ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -172,6 +192,18 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                     <>Send Code <ArrowRight size={18} /></>
                   )}
                 </button>
+
+                <Script 
+                  src="https://challenges.cloudflare.com/turnstile/v0/api.js" 
+                  async 
+                  defer 
+                  onLoad={() => {
+                    (window as Window & { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess = (token: string) => {
+                      setCaptchaToken(token);
+                      setError('');
+                    };
+                  }}
+                />
                 
                 <p className="text-center text-[10px] uppercase font-black tracking-widest text-slate-600 mt-6">
                   No password required • Secure & Free
@@ -230,7 +262,7 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                   disabled={loading || otp.length < 6}
                   className="w-full bg-[#00F5A0] text-[#0A0A0F] font-black py-4 rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,160,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {loading ? (
+                  {isVerifying ? (
                     <Loader2 size={20} className="animate-spin" />
                   ) : (
                     'Verify Code ✓'

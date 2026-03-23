@@ -400,6 +400,6 @@ entrypoint = "./functions/book-slot/index.ts"
 
 [functions.send-whatsapp]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/send-whatsapp/deno.json"
 entrypoint = "./functions/send-whatsapp/index.ts"

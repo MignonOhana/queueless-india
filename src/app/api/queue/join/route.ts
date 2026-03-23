@@ -41,22 +41,29 @@ export async function POST(req: NextRequest) {
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // 2. Custom Token Generation (No RPC)
-    // First, find today's max token number for this org
-    const { data: tokens } = await supabase
-      .from('tokens')
-      .select('tokenNumber')
-      .eq('orgId', orgId)
-      .gte('createdAt', todayDate)
-      .order('createdAt', { ascending: false })
-      .limit(1);
+    // Fetch the active queue for this org
+    const { data: queueData, error: queueErr } = await supabase
+      .from('queues')
+      .select('id')
+      .eq('org_id', orgId)
+      .single();
 
-    let nextNumber = 1;
-    if (tokens && tokens.length > 0 && tokens[0].tokenNumber) {
-       const match = tokens[0].tokenNumber.match(/\d+/);
-       if (match) {
-         nextNumber = parseInt(match[0], 10) + 1;
-       }
+    if (queueErr || !queueData) {
+      return NextResponse.json({ error: "No active queue found for this business" }, { status: 404 });
+    }
+
+    const adminSupabase = createServiceRoleClient();
+
+    // 2. Atomic Token Generation via RPC
+    // This uses `FOR UPDATE` in the DB, guaranteeing no duplicates under concurrent load
+    const { data: nextNumber, error: incrementErr } = await adminSupabase
+      .rpc('increment_queue_counter', {
+        p_queue_id: (queueData as { id: string }).id
+      } as any);
+
+    if (incrementErr || !nextNumber) {
+      console.error("Increment error:", incrementErr);
+      return NextResponse.json({ error: "Queue is full or cannot accept tokens right now." }, { status: 400 });
     }
 
     const paddedNumber = String(nextNumber).padStart(3, '0');
@@ -75,7 +82,6 @@ export async function POST(req: NextRequest) {
     // 3. Insert the token document via SECURITY DEFINER RPC to bypass RLS.
     // The `create_queue_token` function runs with elevated privileges and allows
     // both authenticated and guest (userId=NULL) inserts safely from the server.
-    const adminSupabase = createServiceRoleClient();
     const { data: tokenRows, error: insertErr } = await adminSupabase
       .rpc('create_queue_token', {
         p_org_id: orgId,
@@ -84,22 +90,51 @@ export async function POST(req: NextRequest) {
         p_customer_phone: customerPhone || '',
         p_token_number: tokenStr,
         p_estimated_wait_mins: estimatedWaitMins,
-      });
+      } as any);
 
-    if (insertErr || !tokenRows || tokenRows.length === 0) {
+    if (insertErr || !tokenRows || (tokenRows as any[]).length === 0) {
        console.error("Insert error:", JSON.stringify(insertErr, null, 2));
        return NextResponse.json({ error: "Failed to create token" }, { status: 500 });
     }
 
-    const tokenDoc = tokenRows[0];
+    const tokenDoc = (tokenRows as Record<string, any>[])[0];
+
+    // 4. WhatsApp Fallback (Async trigger, don't await blocking response if not critical)
+    const business = bizData as { name: string, whatsapp_enabled: boolean } | null;
+    if (business?.whatsapp_enabled && customerPhone) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (baseUrl && serviceKey) {
+          // Trigger the send-whatsapp edge function
+          fetch(`${baseUrl}/functions/v1/send-whatsapp`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({
+              phone: customerPhone,
+              template: 'generic_token_confirmation',
+              params: [customerName, tokenStr, business.name],
+              businessId: orgId
+            })
+          }).catch(err => console.error("WhatsApp trigger background error:", err));
+        }
+      } catch (waErr) {
+        console.error("WhatsApp trigger initialization error:", waErr);
+      }
+    }
 
     return NextResponse.json({
       ...tokenDoc,
       id: tokenDoc.id,
       orgId: tokenDoc.orgId
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal Server Error";
     console.error("Queue join API error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

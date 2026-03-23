@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Clock, Loader2, ArrowRight, LogIn, Users } from "lucide-react";
 import Link from "next/link";
@@ -20,10 +20,10 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [initialChecking, setInitialChecking] = useState(true);
   const [step, setStep] = useState<"role" | "auth">("role");
   const [intendedRole, setIntendedRole] = useState<"customer" | "business_owner" | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     // Parse URL for direct role selection (e.g. from Register Business link)
@@ -63,7 +63,7 @@ export default function LoginPage() {
 
   const handleAuthSuccess = async (user: any) => {
     setShowOTP(false);
-    setLoading(true);
+    setIsVerifying(true);
     try {
       const role = (intendedRole || localStorage.getItem("ql_intended_role") || "customer") as "customer" | "business_owner";
       
@@ -81,7 +81,7 @@ export default function LoginPage() {
           role, 
           email: user.email,
           updated_at: new Date().toISOString() 
-        }, { onConflict: 'id' }) as any);
+        } as any, { onConflict: 'id' }) as any);
       }
       
       // Sync localStorage for legacy hooks
@@ -94,17 +94,18 @@ export default function LoginPage() {
         router.push("/dashboard");
       } else {
         // Customer flow
-        if ((profile as any)?.profile_completed) {
+        if ((profile as { profile_completed?: boolean })?.profile_completed) {
           router.push("/home");
         } else {
           router.push("/onboarding");
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Error setting up your profile");
       console.error(err);
+      setIsVerifying(false);
     } finally {
-      setLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -287,9 +288,14 @@ export default function LoginPage() {
                     }
                     setShowOTP(true);
                   }}
-                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 ${intendedRole === 'business_owner' ? 'bg-primary text-black shadow-primary/20 hover:bg-indigo-400' : 'bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400'}`}
+                  className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-sm transition-all shadow-xl active:scale-95 ${intendedRole === 'business_owner' ? 'bg-primary text-black shadow-primary/20 hover:bg-indigo-400' : 'bg-emerald-500 text-black shadow-emerald-500/20 hover:bg-emerald-400'} disabled:opacity-50`}
+                  disabled={isVerifying}
                 >
-                  Send OTP <ArrowRight size={20} strokeWidth={3} />
+                  {isVerifying ? (
+                    <Loader2 size={24} className="animate-spin" />
+                  ) : (
+                    <>Send OTP <ArrowRight size={20} strokeWidth={3} /></>
+                  )}
                 </button>
               </div>
 

@@ -12,7 +12,7 @@ export default function AnimatedBackground() {
       </div>
 
       {/* Tiny Particles / Noise */}
-      <div className="absolute inset-0 opacity-[0.03] contrast-150 brightness-100" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }} />
+      <div className="absolute inset-0 opacity-[0.03] contrast-150 brightness-100" style={{ backgroundImage: 'url("/noise.svg")' }} />
       
       {/* Grid Lines Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
