@@ -215,6 +215,17 @@ export type Database = {
         Args: any
         Returns: any
       }
+      create_queue_token: {
+        Args: {
+          p_org_id: string
+          p_user_id: string | null
+          p_customer_name: string
+          p_customer_phone: string
+          p_token_number: string
+          p_estimated_wait_mins: number
+        }
+        Returns: Token[]
+      }
     }
     Enums: Record<string, any>
     CompositeTypes: Record<string, any>

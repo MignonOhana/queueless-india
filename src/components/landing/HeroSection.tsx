@@ -455,7 +455,13 @@ export default function HeroSection() {
                 <ArrowRight size={22} strokeWidth={3} className="group-hover:translate-x-1 transition-transform" />
               </Link>
 
-              {/* Video button temporarily removed until video is ready */}
+              <button
+                onClick={() => setShowVideoModal(true)}
+                className="group w-full sm:w-auto px-10 py-5 rounded-full font-black text-lg text-white border-2 border-white/20 hover:border-white/50 bg-white/5 backdrop-blur-md flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95"
+              >
+                <Play fill="currentColor" size={20} className="text-[#00F5A0]" />
+                See How It Works
+              </button>
             </motion.div>
           </div>
         </div>
@@ -507,14 +513,26 @@ export default function HeroSection() {
               exit={{ scale: 0.9, opacity: 0 }}
               className="relative z-10 w-full max-w-3xl bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
             >
-              {/* Mock video placeholder */}
-              <div className="aspect-video bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-[#00F5A0]/20 border border-[#00F5A0]/30 flex items-center justify-center">
-                  <Play size={32} className="text-[#00F5A0]" fill="currentColor" />
+              {/* Video placeholder */}
+              <div className="aspect-video bg-black flex flex-col items-center justify-center relative overflow-hidden">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  src="https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-with-green-screen-40713-large.mp4"
+                  className="absolute inset-0 w-full h-full object-cover opacity-80"
+                />
+                {/* Overlay text over the video */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent flex items-end">
+                   <div className="p-6">
+                      <span className="bg-[#00F5A0]/20 text-[#00F5A0] px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-[#00F5A0]/30 backdrop-blur-md">
+                        Digital Queue Demo
+                      </span>
+                   </div>
                 </div>
-                <p className="text-slate-400 font-medium">Demo video coming soon</p>
               </div>
-              <div className="p-6 flex justify-between items-center">
+              <div className="p-6 flex justify-between items-center bg-slate-900 border-t border-white/5">
                 <p className="text-white font-bold">QueueLess India — 60 Second Overview</p>
                 <button onClick={() => setShowVideoModal(false)} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-bold text-slate-300 hover:bg-white/10">
                   Close
