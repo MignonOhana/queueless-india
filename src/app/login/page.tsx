@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
 import { Clock, Loader2, ArrowRight, LogIn, Users } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +14,8 @@ import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnTo = searchParams.get('return_to') || '/home';
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [isRegister, setIsRegister] = useState(false);
@@ -303,7 +305,7 @@ export default function LoginPage() {
                   <button 
                     onClick={() => {
                       localStorage.setItem("ql_user_role", "customer");
-                      router.push('/home');
+                      router.push(returnTo);
                     }}
                     className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 p-2 bg-emerald-500/10 rounded-md transition-colors"
                   >

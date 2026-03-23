@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Ticket, Activity, ArrowRight, X, LogIn } from "lucide-react";
+import { Clock, Activity, ArrowRight, X, LogIn, User } from "lucide-react";
 import Link from "next/link";
 
 interface DemoCard {
@@ -53,6 +53,13 @@ const DEMO_DATA: DemoCard[] = [
   },
 ];
 
+// Map demo cards to real DB business IDs (exact IDs from businesses table)
+const DEMO_TO_REAL_ID: Record<string, string> = {
+  "demo-hosp": "aiims-delhi",
+  "demo-bank": "sbi-main-branch-delhi",
+  "demo-temple": "siddhivinayak-temple-mumbai",
+};
+
 export function DemoQueueCards() {
   const [counts, setCounts] = useState(
     DEMO_DATA.map((d) => ({
@@ -62,6 +69,7 @@ export function DemoQueueCards() {
     }))
   );
   const [showModal, setShowModal] = useState(false);
+  const [selectedDemoId, setSelectedDemoId] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -171,7 +179,10 @@ export function DemoQueueCards() {
                 </div>
 
                 <button
-                  onClick={() => setShowModal(true)}
+                  onClick={() => {
+                    setSelectedDemoId(demo.id);
+                    setShowModal(true);
+                  }}
                   className="w-full bg-primary text-black font-black text-xs uppercase tracking-widest py-3.5 rounded-2xl shadow-[0_0_20px_rgba(0,245,160,0.1)] hover:shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                 >
                   Join This Queue <ArrowRight size={14} />
@@ -218,11 +229,25 @@ export function DemoQueueCards() {
               </p>
 
               <div className="space-y-3">
+                {selectedDemoId && DEMO_TO_REAL_ID[selectedDemoId] ? (
+                  // Guest path: link to real business page directly
+                  <Link
+                    href={`/b/${DEMO_TO_REAL_ID[selectedDemoId]}`}
+                    onClick={() => setShowModal(false)}
+                    className="w-full bg-primary text-black font-black text-sm uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    <User size={18} /> Continue as Guest
+                  </Link>
+                ) : null}
                 <Link
                   href="/login"
-                  className="w-full bg-primary text-black font-black text-sm uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all"
+                  className={`w-full font-black text-sm uppercase tracking-widest py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                    selectedDemoId && DEMO_TO_REAL_ID[selectedDemoId]
+                      ? 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-white/10'
+                      : 'bg-primary text-black hover:brightness-110'
+                  }`}
                 >
-                  <LogIn size={18} /> Sign In Now
+                  <LogIn size={18} /> Sign In for Full Access
                 </Link>
                 <button
                   onClick={() => setShowModal(false)}
