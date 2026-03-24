@@ -273,10 +273,10 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
         {/* SNAPSHOTS */}
         <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
            {[
-             { label: "Customers Served", value: `${summaryStats.totalServed}`, delta: "7d", color: "#00F5A0", icon: Users },
-             { label: "Avg Wait Time", value: `${summaryStats.avgWait}m`, delta: "avg", color: "#38BDF8", icon: Clock },
-             { label: "No-Show Rate", value: `${summaryStats.noShowRate}%`, delta: "7d", color: "#FBBF24", icon: Zap },
-             { label: "Completion", value: `${summaryStats.completionRate}%`, delta: "7d", color: "#A78BFA", icon: TrendingUp }
+             { label: "Customers Served", value: `${summaryStats.totalServed}`, delta: "7d", color: "emerald", icon: Users },
+             { label: "Avg Wait Time", value: `${summaryStats.avgWait}m`, delta: "avg", color: "blue", icon: Clock },
+             { label: "No-Show Rate", value: `${summaryStats.noShowRate}%`, delta: "7d", color: "amber", icon: Zap },
+             { label: "Completion", value: `${summaryStats.completionRate}%`, delta: "7d", color: "purple", icon: TrendingUp }
            ].map((stat, i) => (
              <OverviewCard key={i} {...stat} />
            ))}
@@ -444,10 +444,24 @@ interface OverviewCardProps {
 
 function OverviewCard({ label, value, delta, color, icon: Icon }: OverviewCardProps) {
   const isPositive = delta.startsWith('+');
+  
+  const colorMap: Record<string, string> = {
+    emerald: 'border-emerald-500/10 bg-emerald-500/5',
+    blue: 'border-blue-500/10 bg-blue-500/5',
+    amber: 'border-amber-500/10 bg-amber-500/5',
+    purple: 'border-purple-500/10 bg-purple-500/5'
+  };
+
+  const iconColorMap: Record<string, string> = {
+    emerald: 'text-emerald-500',
+    blue: 'text-blue-500',
+    amber: 'text-amber-500',
+    purple: 'text-purple-500'
+  };
+
   return (
     <GlassCard 
-      className="relative overflow-hidden group"
-      style={{ '--card-color': color } as React.CSSProperties}
+      className={`relative overflow-hidden group border ${colorMap[color] || 'border-white/10'}`}
     >
       <div className="flex items-start justify-between">
         <div className="relative z-10">
@@ -459,11 +473,16 @@ function OverviewCard({ label, value, delta, color, icon: Icon }: OverviewCardPr
              </span>
           </div>
         </div>
-        <div className="p-3 rounded-2xl bg-white/5 text-zinc-400 group-hover:text-white transition-colors" style={{ color: 'var(--card-color)' }}>
+        <div className={`p-3 rounded-xl bg-white/5 ${iconColorMap[color] || 'text-zinc-400'}`}>
           <Icon size={20} />
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-1 opacity-20" style={{ backgroundColor: 'var(--card-color)' }} />
+      <div className={`absolute bottom-0 left-0 right-0 h-1 opacity-20 ${
+        color === 'emerald' ? 'bg-emerald-500' :
+        color === 'blue' ? 'bg-blue-500' :
+        color === 'amber' ? 'bg-amber-500' :
+        color === 'purple' ? 'bg-purple-500' : 'bg-white/10'
+      }`} />
     </GlassCard>
   );
 }

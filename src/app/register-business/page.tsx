@@ -123,7 +123,10 @@ export default function RegisterBusinessPage() {
       const resp = await fetch("/api/business/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          businessName: formData.name // Mapping for API consistency
+        }),
       });
 
       const result = await resp.json();
@@ -131,9 +134,10 @@ export default function RegisterBusinessPage() {
 
       setGeneratedId(result.businessId);
       toast.success("Business registered successfully!");
-    } catch (err: any) {
-      console.error("Submission error:", err);
-      toast.error(err.message || "Failed to register business");
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error("Submission error:", error);
+      toast.error(error.message || "Failed to register business");
     } finally {
       setIsSubmitting(false);
     }
@@ -146,8 +150,8 @@ export default function RegisterBusinessPage() {
 
   if (generatedId) {
     return (
-      <div className="min-h-screen bg-[#0A0A0F] text-white flex items-center justify-center p-6">
-        <GlassCard className="max-w-md w-full text-center p-10">
+      <div className="min-h-screen bg-[#0A0A0F] text-white flex items-center justify-center p-6 font-sans">
+        <GlassCard className="max-w-md w-full text-center p-10 rounded-[3rem]">
           <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
             <Check size={40} />
           </div>
@@ -178,7 +182,7 @@ export default function RegisterBusinessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white selection:bg-primary/30 selection:text-primary">
+    <div className="min-h-screen bg-[#0A0A0F] text-white selection:bg-primary/30 selection:text-primary font-sans">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-[#0A0A0F]/80 backdrop-blur-xl px-4 py-6 border-b border-white/10">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -259,25 +263,31 @@ export default function RegisterBusinessPage() {
                   className="hidden" 
                   accept="image/*" 
                   onChange={handleImageUpload} 
+                  title="Upload Business Cover Image"
                 />
               </div>
 
-              <div className="grid gap-6">
+              <div className="space-y-6">
+                <Field label="Business/Entity Name" id="biz_name" icon={<Building2 size={14} />}>
+                  <input 
+                    id="biz_name"
+                    type="text" 
+                    value={formData.name} 
+                    onChange={e => updateFields({ name: e.target.value })} 
+                    className="form-input" 
+                    placeholder="E.g. Max Hospital" 
+                    title="Business Name"
+                  />
+                </Field>
+
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Business Name" icon={<Store size={14} />}>
-                    <input 
-                      type="text" 
-                      value={formData.name}
-                      onChange={(e) => updateFields({ name: e.target.value })}
-                      className="form-input" 
-                      placeholder="E.g. Apollo Apollo Clinic"
-                    />
-                  </Field>
-                  <Field label="Category" icon={<Building2 size={14} />}>
+                  <Field label="Category" id="biz_cat" icon={<Store size={14} />}>
                     <select 
+                      id="biz_cat"
                       value={formData.category}
                       onChange={(e) => updateFields({ category: e.target.value })}
                       className="form-input appearance-none"
+                      title="Select Business Category"
                     >
                       <option value="">Select Category</option>
                       {BUSINESS_CATEGORIES.map((cat) => (
@@ -285,63 +295,74 @@ export default function RegisterBusinessPage() {
                       ))}
                     </select>
                   </Field>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="City / Location" icon={<MapPin size={14} />}>
+                  <Field label="City / Location" id="biz_loc" icon={<MapPin size={14} />}>
                     <input 
+                      id="biz_loc"
                       type="text" 
                       value={formData.location}
                       onChange={(e) => updateFields({ location: e.target.value })}
                       className="form-input" 
                       placeholder="E.g. Delhi NCR"
+                      title="City / Location"
                     />
                   </Field>
-                  <Field label="Phone Number" icon={<Phone size={14} />}>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field label="Phone Number" id="biz_phone" icon={<Phone size={14} />}>
                     <input 
+                      id="biz_phone"
                       type="text" 
                       value={formData.phone}
                       onChange={(e) => updateFields({ phone: e.target.value })}
                       className="form-input" 
                       placeholder="+91 XXXXX XXXXX"
+                      title="Business Phone Number"
                     />
                   </Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Opens" id="open_time" icon={<Clock size={14} />}>
+                      <input 
+                        id="open_time"
+                        type="time" 
+                        value={formData.openHours}
+                        onChange={(e) => updateFields({ openHours: e.target.value })}
+                        className="form-input px-2" 
+                        title="Opening Time"
+                      />
+                    </Field>
+                    <Field label="Closes" id="close_time" icon={<Clock size={14} />}>
+                      <input 
+                        id="close_time"
+                        type="time" 
+                        value={formData.closeHours}
+                        onChange={(e) => updateFields({ closeHours: e.target.value })}
+                        className="form-input px-2" 
+                        title="Closing Time"
+                      />
+                    </Field>
+                  </div>
                 </div>
 
-                <Field label="Complete Address" icon={<MapPin size={14} />}>
+                <Field label="Complete Address" id="biz_addr" icon={<MapPin size={14} />}>
                   <textarea 
+                    id="biz_addr"
                     value={formData.address}
                     onChange={(e) => updateFields({ address: e.target.value })}
                     className="form-input resize-none h-24" 
                     placeholder="Enter full address..."
+                    title="Complete Address"
                   />
                 </Field>
 
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <Field label="Opening Time" icon={<Clock size={14} />}>
-                    <input 
-                      type="time" 
-                      value={formData.openHours}
-                      onChange={(e) => updateFields({ openHours: e.target.value })}
-                      className="form-input" 
-                    />
-                  </Field>
-                  <Field label="Closing Time" icon={<Clock size={14} />}>
-                    <input 
-                      type="time" 
-                      value={formData.closeHours}
-                      onChange={(e) => updateFields({ closeHours: e.target.value })}
-                      className="form-input" 
-                    />
-                  </Field>
-                </div>
-
-                <Field label="Description" icon={<FileText size={14} />}>
+                <Field label="Description" id="biz_desc" icon={<FileText size={14} />}>
                   <textarea 
+                    id="biz_desc"
                     value={formData.description}
                     onChange={(e) => updateFields({ description: e.target.value })}
                     className="form-input resize-none h-32" 
                     placeholder="Briefly describe your services..."
+                    title="Business Description"
                   />
                 </Field>
               </div>
@@ -369,23 +390,27 @@ export default function RegisterBusinessPage() {
               </div>
 
               <div className="grid gap-6">
-                <Field label="Owner Full Name" icon={<User size={14} />}>
+                <Field label="Owner Full Name" id="owner_name" icon={<User size={14} />}>
                   <input 
+                    id="owner_name"
                     type="text" 
                     value={formData.ownerName}
                     onChange={(e) => updateFields({ ownerName: e.target.value })}
                     className="form-input" 
                     placeholder="John Doe"
+                    title="Owner Full Name"
                   />
                 </Field>
 
-                <Field label="Owner Phone Number" icon={<Phone size={14} />}>
+                <Field label="Owner Phone Number" id="owner_phone" icon={<Phone size={14} />}>
                   <input 
+                    id="owner_phone"
                     type="text" 
                     value={formData.ownerPhone}
                     onChange={(e) => updateFields({ ownerPhone: e.target.value })}
                     className="form-input" 
                     placeholder="+91 XXXXX XXXXX"
+                    title="Owner Phone Number"
                   />
                 </Field>
 
@@ -465,12 +490,12 @@ export default function RegisterBusinessPage() {
   );
 }
 
-function Field({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Field({ label, icon, id, children }: { label: string; icon: React.ReactNode; id?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-1">
         <span className="text-zinc-500">{icon}</span>
-        <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{label}</label>
+        <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{label}</label>
       </div>
       {children}
     </div>

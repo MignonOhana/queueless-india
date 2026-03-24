@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const supabaseAdmin = createServiceRoleClient();
 
     // 2. Generate Business ID via RPC
-    const { data: businessId, error: genError } = await supabaseAdmin.rpc('generate_business_id', {
+    const { data: businessId, error: genError } = await (supabaseAdmin as any).rpc('generate_business_id', {
       p_location: location
     });
 

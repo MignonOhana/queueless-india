@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
-  Plus, Search, MoreVertical, Edit2, 
-  Trash2, Power, Users, Shield, 
-  ChevronRight, LayoutDashboard, 
-  Loader2, Check, X, Copy, 
-  Key, RefreshCw, Smartphone, 
-  Building2, User
+  Plus, MoreVertical, Shield, 
+  Users, Smartphone, Building2,
+  Loader2, User, Key,
+  RefreshCw, Copy
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -29,9 +27,6 @@ interface StaffMember {
   is_active: boolean;
   last_login_at: string | null;
   created_at: string;
-  departments?: {
-    name: string;
-  };
 }
 
 interface Department {
@@ -62,49 +57,65 @@ export default function StaffManagementPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchInitialData();
-  }, [user]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
+    if (!user?.id) return;
     try {
-      const { data: profile } = await supabase
-        .from("user_profiles")
+      // 1. Get Business ID
+      const { data: profile, error: pError } = await (supabase
+        .from("user_profiles") as any)
         .select("primary_business_id")
-        .eq("id", user?.id)
+        .eq("id", user.id)
         .single();
 
-      if (!profile?.primary_business_id) {
-        toast.error("Business not found");
+      if (pError || !profile?.primary_business_id) {
+        toast.error("Please register your business first");
+        router.push("/register-business");
         return;
       }
+
       setBusinessId(profile.primary_business_id);
 
-      // Fetch Departments
+      // 2. Fetch Departments
       const { data: depts } = await supabase
         .from("departments")
         .select("id, name")
         .eq("business_id", profile.primary_business_id);
-      setDepartments(depts || []);
+      
+      if (depts) setDepartments(depts);
 
-      // Fetch Staff
-      const { data: staffMembers } = await supabase
-        .from("staff_members")
-        .select(`
-          *,
-          departments:department_id (name)
-        `)
+      // 3. Fetch Staff
+      const { data: staffData, error: sError } = await (supabase
+        .from("staff_members") as any)
+        .select("*")
         .eq("business_id", profile.primary_business_id)
         .order("created_at", { ascending: false });
-      
-      setStaff(staffMembers as any || []);
-    } catch (err) {
-      toast.error("Failed to load staff data");
+
+      if (sError) throw sError;
+
+      const mappedStaff = (staffData || []).map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        role: s.role,
+        department_id: s.department_id,
+        phone: s.phone,
+        access_code: s.access_code,
+        is_active: s.is_active,
+        last_login_at: s.last_login_at,
+        created_at: s.created_at
+      }));
+
+      setStaff(mappedStaff);
+    } catch (error: any) {
+      console.error("Fetch error:", error);
+      toast.error("Failed to load staff management data");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, router]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const handleAddStaff = async () => {
     if (!businessId || !form.name || !form.departmentId) {
@@ -113,7 +124,7 @@ export default function StaffManagementPage() {
     }
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc("add_staff_member", {
+      const { data, error } = await (supabase as any).rpc("add_staff_member", {
         p_business_id: businessId,
         p_department_id: form.departmentId,
         p_name: form.name,
@@ -123,13 +134,16 @@ export default function StaffManagementPage() {
 
       if (error) throw error;
 
-      const newStaff = data[0];
-      setShowCodeModal({ name: form.name, code: newStaff.access_code });
+      if (data && data.length > 0) {
+        const newStaff = data[0];
+        setShowCodeModal({ name: form.name, code: newStaff.access_code });
+      }
+      
       setIsAddModalOpen(false);
       setForm({ name: "", phone: "", departmentId: "", role: "operator" });
       fetchInitialData();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add staff member");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add staff member");
     } finally {
       setIsSubmitting(false);
     }
@@ -137,8 +151,8 @@ export default function StaffManagementPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await supabase
-        .from("staff_members")
+      const { error } = await (supabase
+        .from("staff_members") as any)
         .update({ is_active: !current })
         .eq("id", id);
       if (error) throw error;
@@ -152,13 +166,11 @@ export default function StaffManagementPage() {
   const regenerateCode = async (id: string, name: string) => {
     if (!confirm(`Regenerate access code for ${name}? The old code will stop working.`)) return;
     try {
-      // 1. Generate new code
-      const { data: newCode, error: genErr } = await supabase.rpc("generate_staff_access_code");
+      const { data: newCode, error: genErr } = await (supabase as any).rpc("generate_staff_access_code");
       if (genErr) throw genErr;
 
-      // 2. Update staff member
-      const { error: upErr } = await supabase
-        .from("staff_members")
+      const { error: upErr } = await (supabase
+        .from("staff_members") as any)
         .update({ access_code: newCode })
         .eq("id", id);
       if (upErr) throw upErr;
@@ -173,8 +185,8 @@ export default function StaffManagementPage() {
 
   const changeDepartment = async (staffId: string, deptId: string) => {
     try {
-      const { error } = await supabase
-        .from("staff_members")
+      const { error } = await (supabase
+        .from("staff_members") as any)
         .update({ department_id: deptId })
         .eq("id", staffId);
       if (error) throw error;
@@ -209,7 +221,11 @@ export default function StaffManagementPage() {
               <Link href="/dashboard/staff" className="text-primary text-xs font-black uppercase tracking-widest">Staff</Link>
             </div>
           </div>
-          <button onClick={() => router.push("/profile")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all">
+          <button 
+            onClick={() => router.push("/profile")} 
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"
+            title="My Profile"
+          >
             <User size={18} className="text-primary" />
           </button>
         </div>
@@ -276,12 +292,12 @@ export default function StaffManagementPage() {
                         <span className="font-mono text-xs text-zinc-500 tracking-wider">
                           {s.access_code ? `${s.access_code.substring(0, 2)}****` : "N/A"}
                         </span>
-                        <button 
+                        <button
                           onClick={() => regenerateCode(s.id, s.name)}
-                          className="p-1.5 hover:bg-white/5 rounded-lg text-zinc-600 hover:text-primary transition-all"
-                          title="Regenerate"
+                          className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all"
+                          title="Regenerate Access Code"
                         >
-                          <RefreshCw size={14} />
+                          <RefreshCw size={16} />
                         </button>
                       </div>
                     </td>
@@ -301,7 +317,10 @@ export default function StaffManagementPage() {
                       </button>
                     </td>
                     <td className="px-6 py-5">
-                      <button className="p-2 bg-white/5 rounded-xl text-zinc-500 hover:text-white transition-all">
+                      <button 
+                        className="p-2 bg-white/5 rounded-xl text-zinc-500 hover:text-white transition-all"
+                        title="More Actions"
+                      >
                         <MoreVertical size={16} />
                       </button>
                     </td>
@@ -313,7 +332,7 @@ export default function StaffManagementPage() {
           {staff.length === 0 && (
             <div className="py-20 text-center text-zinc-500">
               <Users size={32} className="mx-auto mb-4 opacity-20" />
-              <p className="text-sm font-bold uppercase tracking-widest op-50">No staff members found</p>
+              <p className="text-sm font-bold uppercase tracking-widest opacity-50">No staff members found</p>
             </div>
           )}
         </GlassCard>
@@ -331,34 +350,62 @@ export default function StaffManagementPage() {
               </div>
 
               <div className="space-y-6">
-                <Field label="Staff Member Name">
+                <Field label="Staff Member Name" id="staff_name">
                   <div className="relative">
                     <User className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                    <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="form-input pl-12" placeholder="Full Name" />
+                    <input 
+                      id="staff_name"
+                      type="text" 
+                      value={form.name} 
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
+                      className="form-input pl-12" 
+                      placeholder="Full Name" 
+                      title="Staff Member Name"
+                    />
                   </div>
                 </Field>
 
-                <Field label="Phone Number (Optional)">
+                <Field label="Phone Number (Optional)" id="staff_phone">
                   <div className="relative">
                     <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                    <input type="text" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="form-input pl-12" placeholder="+91 XXXXX XXXXX" />
+                    <input 
+                      id="staff_phone"
+                      type="text" 
+                      value={form.phone} 
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} 
+                      className="form-input pl-12" 
+                      placeholder="+91 XXXXX XXXXX" 
+                      title="Phone Number"
+                    />
                   </div>
                 </Field>
 
-                <Field label="Department">
+                <Field label="Department" id="staff_dept">
                   <div className="relative">
                     <Building2 className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                    <select value={form.departmentId} onChange={e => setForm(f => ({ ...f, departmentId: e.target.value }))} className="form-input pl-12 appearance-none">
+                    <select 
+                      id="staff_dept"
+                      value={form.departmentId} 
+                      onChange={e => setForm(f => ({ ...f, departmentId: e.target.value }))} 
+                      className="form-input pl-12 appearance-none"
+                      title="Select Department"
+                    >
                       <option value="">Select Department</option>
                       {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                 </Field>
 
-                <Field label="Role">
-                  <div className="relative">
+                <Field label="Role" id="staff_role">
+                   <div className="relative">
                     <Shield className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
-                    <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="form-input pl-12 appearance-none">
+                    <select 
+                      id="staff_role" 
+                      value={form.role} 
+                      onChange={e => setForm(f => ({ ...f, role: e.target.value }))} 
+                      className="form-input pl-12 appearance-none" 
+                      title="Select Role"
+                    >
                       <option value="operator">Operator (Queue Management)</option>
                       <option value="supervisor">Supervisor (All Depts)</option>
                       <option value="admin">Admin (Full Control)</option>
@@ -391,7 +438,7 @@ export default function StaffManagementPage() {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mx-auto mb-6">
                 <Key size={32} />
               </div>
-              <h2 className="text-2xl font-black mb-2">{showCodeModal.name}'s Access Code</h2>
+              <h2 className="text-2xl font-black mb-2">{showCodeModal.name}&apos;s Access Code</h2>
               <p className="text-zinc-500 text-sm mb-8 leading-relaxed">Share this code with your staff member. It will only be shown once for security.</p>
               
               <div className="bg-black/40 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col items-center">
@@ -399,7 +446,7 @@ export default function StaffManagementPage() {
                 <p className="text-3xl font-mono font-black text-white tracking-[0.4em]">{showCodeModal.code}</p>
                 <button 
                   onClick={() => {
-                    navigator.clipboard.writeText(showCodeModal.code);
+                    navigator.clipboard.writeText(showCodeModal.code || "");
                     toast.success("Code copied!");
                   }}
                   className="mt-4 flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-all"
@@ -417,7 +464,7 @@ export default function StaffManagementPage() {
                 onClick={() => setShowCodeModal(null)}
                 className="w-full py-4 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:brightness-110 transition-all"
               >
-                I've Saved It
+                I&apos;ve Saved It
               </button>
             </motion.div>
           </div>
@@ -427,10 +474,10 @@ export default function StaffManagementPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">{label}</label>
+      <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">{label}</label>
       {children}
     </div>
   );

@@ -88,6 +88,7 @@ export interface Database {
           search_vector: unknown | null
           claim_status: string
           onboarding_step: number | null
+          is_accepting_tokens: boolean | null
         }
         Insert: {
           id: string
@@ -118,6 +119,7 @@ export interface Database {
           updated_at?: string | null
           claim_status?: string
           onboarding_step?: number | null
+          is_accepting_tokens?: boolean | null
         }
         Update: {
           id?: string
@@ -148,6 +150,7 @@ export interface Database {
           updated_at?: string | null
           claim_status?: string
           onboarding_step?: number | null
+          is_accepting_tokens?: boolean | null
         }
         Relationships: []
       }

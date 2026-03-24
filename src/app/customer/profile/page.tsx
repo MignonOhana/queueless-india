@@ -476,6 +476,7 @@ export default function CustomerProfilePage() {
                 accept="image/*"
                 onChange={handleAvatarUpload}
                 className="hidden"
+                title="Select Profile Photo"
               />
             </div>
 
@@ -499,11 +500,15 @@ export default function CustomerProfilePage() {
         {/* ==== STATS ROW ==== */}
         <section className="grid grid-cols-3 gap-3">
           {[
-            { icon: Ticket, value: stats.tokensCount, label: "Tokens", color: "#0B6EFE" },
+            { icon: Ticket, value: stats.tokensCount, label: "Tokens", color: "var(--brand-primary)" },
             { icon: Building2, value: stats.businessesCount, label: "Visited", color: "#7000FF" },
           ].map(({ icon: Icon, value, label, color }) => (
             <div key={label} className="bg-[#111118] border border-white/5 p-5 rounded-[2rem] text-center shadow-lg group hover:border-primary/30 transition-all">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform" style={{ background: `${color}15`, color }}>
+              <div 
+                className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform bg-white/[0.05] ${
+                  label === 'Tokens' ? 'text-primary' : 'text-[#7000FF]'
+                }`}
+              >
                 <Icon size={20} />
               </div>
               <p className="text-2xl font-black text-white">{value}</p>
@@ -541,23 +546,23 @@ export default function CustomerProfilePage() {
           {isEditing ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               {/* Full Name */}
-              <Field label="Full Name">
-                <input type="text" value={form.full_name}
+              <Field label="Full Name" id="full_name">
+                <input id="full_name" type="text" value={form.full_name}
                   onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
-                  className="form-input" placeholder="Your Name" />
+                  className="form-input" placeholder="Your Name" title="Your Full Name" />
               </Field>
 
               {/* DOB + Gender */}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Date of Birth">
-                  <input type="date" value={form.date_of_birth}
+                <Field label="Date of Birth" id="dob">
+                  <input id="dob" type="date" value={form.date_of_birth}
                     onChange={e => setForm(f => ({ ...f, date_of_birth: e.target.value }))}
-                    className="form-input" />
+                    className="form-input" title="Date of Birth" />
                 </Field>
-                <Field label="Gender">
-                  <select value={form.gender}
+                <Field label="Gender" id="gender">
+                  <select id="gender" value={form.gender}
                     onChange={e => setForm(f => ({ ...f, gender: e.target.value }))}
-                    className="form-input">
+                    className="form-input" title="Select Gender">
                     <option value="">Select</option>
                     {GENDER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
@@ -566,15 +571,15 @@ export default function CustomerProfilePage() {
 
               {/* City + State */}
               <div className="grid grid-cols-2 gap-3">
-                <Field label="City">
-                  <input type="text" value={form.city}
+                <Field label="City" id="city">
+                  <input id="city" type="text" value={form.city}
                     onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
-                    className="form-input" placeholder="Mumbai" />
+                    className="form-input" placeholder="Mumbai" title="City" />
                 </Field>
-                <Field label="State">
-                  <select value={form.state}
+                <Field label="State" id="state">
+                  <select id="state" value={form.state}
                     onChange={e => setForm(f => ({ ...f, state: e.target.value }))}
-                    className="form-input">
+                    className="form-input" title="Select State">
                     <option value="">Select</option>
                     {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -582,10 +587,10 @@ export default function CustomerProfilePage() {
               </div>
 
               {/* Pincode */}
-              <Field label="Pincode">
-                <input type="text" inputMode="numeric" maxLength={6} value={form.pincode}
+              <Field label="Pincode" id="pincode">
+                <input id="pincode" type="text" inputMode="numeric" maxLength={6} value={form.pincode}
                   onChange={e => setForm(f => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
-                  className="form-input" placeholder="400001" />
+                  className="form-input" placeholder="400001" title="Pincode" />
               </Field>
 
               {/* Bio */}
@@ -795,10 +800,10 @@ export default function CustomerProfilePage() {
 }
 
 // ==== HELPER COMPONENTS ====================================================
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block px-1">{label}</label>
+      <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 block px-1">{label}</label>
       {children}
     </div>
   );

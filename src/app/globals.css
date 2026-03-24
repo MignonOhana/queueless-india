@@ -38,6 +38,7 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--brand-surface);
   border: 1px solid var(--brand-border);
   border-radius: var(--brand-radius);
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
@@ -157,8 +158,9 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s ease;
-  appearance: none;
   -webkit-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .form-input:focus {

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { 
   ChevronLeft, Download, Printer, 
   CheckCircle2, Loader2, LayoutDashboard,
-  Globe, Info
+  Globe, Info, Copy
 } from "lucide-react";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
@@ -24,26 +24,31 @@ export default function BusinessQRPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const adminOrgId = localStorage.getItem("admin_org");
-      if (!adminOrgId) {
-        router.push("/dashboard");
-        return;
-      }
+      try {
+        const adminOrgId = localStorage.getItem("admin_org");
+        if (!adminOrgId) {
+          router.push("/dashboard");
+          return;
+        }
 
-      const { data, error } = await (supabase
-        .from("businesses") as any)
-        .select("*")
-        .eq("id", adminOrgId)
-        .single();
-      
-      if (error || !data) {
-        toast.error("Business not found");
-        router.push("/dashboard");
-        return;
-      }
+        const { data, error } = await (supabase
+          .from("businesses") as any)
+          .select("*")
+          .eq("id", adminOrgId)
+          .single();
+        
+        if (error || !data) {
+          toast.error("Business not found");
+          router.push("/dashboard");
+          return;
+        }
 
-      setBusiness(data);
-      setLoading(false);
+        setBusiness(data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -77,6 +82,11 @@ export default function BusinessQRPage() {
     window.print();
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("URL copied to clipboard!");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -86,7 +96,7 @@ export default function BusinessQRPage() {
     );
   }
 
-  const publicUrl = `${baseUrl}/b/${business.id}`;
+  const publicUrl = business ? `${baseUrl}/b/${business.id}` : "";
 
   return (
     <div className="min-h-screen bg-background text-white flex flex-col font-sans selection:bg-primary/30">
@@ -161,13 +171,15 @@ export default function BusinessQRPage() {
           <div className="flex flex-col gap-3">
             <button 
               onClick={downloadQR}
-              className="w-full py-5 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 active:scale-95"
+              className="w-full py-4 bg-primary text-black rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
+              title="Download QR Code image"
             >
-              <Download size={18} /> Download High-Res PNG
+              <Download size={16} /> Download QR Code
             </button>
             <button 
               onClick={handlePrint}
               className="w-full py-5 bg-zinc-800 text-white rounded-2xl font-black uppercase tracking-widest text-xs border border-white/10 flex items-center justify-center gap-3 hover:bg-zinc-700 transition-all active:scale-95"
+              title="Print Service Poster"
             >
               <Printer size={18} /> Print Service Poster
             </button>
@@ -200,19 +212,21 @@ export default function BusinessQRPage() {
                 {/* Poster Content */}
                 <div className="text-center mb-10 w-full">
                     <h3 className="text-sm font-black uppercase tracking-[0.4em] text-zinc-400 mb-2">Welcome to</h3>
-                    <h2 className="text-4xl font-black tracking-tight border-b-4 border-emerald-500 pb-2 inline-block max-w-full truncate px-4">{business.name}</h2>
+                    <h2 className="text-4xl font-black tracking-tight border-b-4 border-emerald-500 pb-2 inline-block max-w-full truncate px-4">{business?.name || "Our Business"}</h2>
                 </div>
 
                 <div 
                   ref={qrRef}
                   className="bg-zinc-50 p-6 rounded-[2.5rem] border-2 border-zinc-100 mb-10 shadow-inner"
                 >
-                    <QRCodeSVG 
-                      value={publicUrl}
-                      size={280}
-                      level="H"
-                      includeMargin={false}
-                    />
+                    {publicUrl && (
+                      <QRCodeSVG 
+                        value={publicUrl}
+                        size={280}
+                        level="H"
+                        includeMargin={false}
+                      />
+                    )}
                 </div>
 
                 <div className="text-center space-y-4">
@@ -226,6 +240,23 @@ export default function BusinessQRPage() {
                            <CheckCircle2 size={12} className="text-emerald-500" /> No App Required
                         </div>
                         <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-3">Powered by QueueLess India</p>
+                    </div>
+                    
+                    <div className="flex gap-4 no-print mt-6">
+                      <button 
+                        onClick={() => window.print()} 
+                        className="flex-1 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 text-zinc-400"
+                        title="Print QR Code"
+                      >
+                        <Printer size={16} /> Print
+                      </button>
+                      <button 
+                        onClick={() => copyToClipboard(publicUrl)} 
+                        className="flex-1 py-4 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2 text-zinc-400"
+                        title="Copy QR URL"
+                      >
+                        <Copy size={16} /> Copy URL
+                      </button>
                     </div>
                 </div>
             </div>

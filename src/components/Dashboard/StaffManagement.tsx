@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, UserPlus, X, ToggleRight, ToggleLeft, Trash2, UserCheck } from 'lucide-react';
-import { Database, StaffMember } from '@/types/database';
-import { type Tables } from '@/types/supabase';
+import { Database, StaffMember, Department } from '@/types/database';
 import GlassCard from '@/components/ui/GlassCard';
 import { createClient } from '@/lib/supabase/client';
 const supabase = createClient();
@@ -19,7 +18,8 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
-    const { data, error } = await (supabase as any).from('staff_members')
+    const { data, error } = await supabase
+      .from('staff_members')
       .select('*')
       .eq('business_id', businessId)
       .order('created_at', { ascending: true });
@@ -40,12 +40,12 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
-    const { data, error } = await (supabase as any).from('staff_members')
+    const { data, error } = await supabase.from('staff_members')
       .insert([{ 
-        ...newStaff, 
+        name: newStaff.name,
+        role: newStaff.role,
         business_id: businessId, 
         is_active: true,
-        role: (newStaff.role.toLowerCase() as any)
       }])
       .select()
       .single();
@@ -61,7 +61,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    const { error } = await (supabase as any).from('staff_members')
+    const { error } = await supabase.from('staff_members')
       .update({ is_active: !currentStatus })
       .eq('id', id);
 
@@ -76,7 +76,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const deleteStaff = async (id: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
     
-    const { error } = await (supabase as any).from('staff_members')
+    const { error } = await supabase.from('staff_members')
       .delete()
       .eq('id', id);
 

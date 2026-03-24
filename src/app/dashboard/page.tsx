@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Clock, CheckCircle2, Lock, LogOut, ChevronRight, ArrowRight, Activity, Loader2, UserCircle } from "lucide-react";
+import { Lock, LogOut, ChevronRight, ArrowRight, Activity, Loader2, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -9,10 +9,10 @@ import { toast } from "sonner";
 import { useAdminQueue } from "@/lib/useAdminQueue";
 import { callNextToken, skipToken } from "@/lib/queueService";
 import { createClient } from "@/lib/supabase/client";
+import { Business, Token, Department } from "@/types/database";
 import QRCodeModal from "@/components/QR/QRCodeModal";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
-import dynamic from "next/dynamic";
 import PlanBadge from "@/components/Dashboard/PlanBadge";
 import UpgradeModal from "@/components/pricing/UpgradeModal";
 import QueueRow from "@/components/Dashboard/QueueRow";
@@ -24,40 +24,36 @@ import BusinessOnboarding from "@/components/Onboarding/BusinessOnboarding";
 import AnalyticsDashboard from "@/components/Analytics/AnalyticsDashboard";
 import OnboardingChecklist from "@/components/Dashboard/OnboardingChecklist";
 
-const QueueChart = dynamic(() => import("@/components/Analytics/QueueChart"), { 
-  ssr: false, 
-  loading: () => <div className="w-full h-[400px] bg-slate-100 dark:bg-slate-800 rounded-[2rem] animate-pulse"></div> 
-});
+// dynamic imports...
 
 export default function BusinessDashboard() {
   const supabase = createClient();
   const router = useRouter();
-  const [isCalling, setIsCalling] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [activeTab, setActiveTab] = useState<"Overview" | "Bookings" | "Analytics" | "Settings" | "QR">("Overview");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [businessData, setBusinessData] = useState<any>(null);
+  const [businessData, setBusinessData] = useState<Business | null>(null);
   const [selectedCounter, setSelectedCounter] = useState<string>("all");
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [showOTP, setShowOTP] = useState(false);
   const [fastPassStats, setFastPassStats] = useState({ today: 0, month: 0, net: 0 });
   const [onboardingLoading, setOnboardingLoading] = useState(false);
+  const [dbDepartments, setDbDepartments] = useState<Department[]>([]);
 
-  const plan = businessData?.plan || 'free';
+  const plan = (businessData?.plan as "free" | "growth" | "enterprise") || 'free';
 
   useEffect(() => {
     const checkSession = async () => {
        const { data: { session } } = await supabase.auth.getSession();
        if (session?.user) {
           setIsAdminLoggedIn(true);
-          const { data: biz } = await (supabase
+          const { data: biz } = await supabase
             .from('businesses')
             .select('*')
             .eq('owner_id', session.user.id)
-            .maybeSingle() as any);
+            .maybeSingle();
           
           if (biz) {
              setBusinessData(biz);
@@ -65,32 +61,28 @@ export default function BusinessDashboard() {
        }
     };
     checkSession();
-  }, []);
+  }, [supabase]);
   
   const { queue, currentlyServing, stats } = useAdminQueue(
-    isAdminLoggedIn ? businessData?.id : "",
-    selectedCounter === "all" ? undefined : selectedCounter
+    isAdminLoggedIn ? (businessData?.id || "") : "",
+    selectedCounter
   );
-  
-  // Custom manual fetching state to ensure skeleton shows before real empty state
-  const [initialLoading, setInitialLoading] = useState(true);
   
   useEffect(() => {
     if (isAdminLoggedIn && businessData?.id) {
-       const timer = setTimeout(() => setInitialLoading(false), 2000);
+       const timer = setTimeout(() => {}, 2000);
        
        // Fetch Fast Pass Stats
        (async () => {
-         const today = new Date().toISOString().split('T')[0];
          const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
          
-         const { data: logs } = await (supabase.from('fastpass_logs')
+         const { data: logs } = await supabase.from('fastpass_logs')
            .select('amount')
            .eq('business_id', businessData?.id)
-           .gte('created_at', firstDay) as any);
+           .gte('created_at', firstDay);
            
           if (logs) {
-            const totalMonth = (logs as any).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
+            const totalMonth = logs.reduce((acc: number, curr: { amount: number }) => acc + Number(curr.amount), 0);
            // Mock today for now or filter strictly
            setFastPassStats({
              today: Math.floor(totalMonth * 0.2), // Mock
@@ -100,15 +92,18 @@ export default function BusinessDashboard() {
          }
        })();
 
-       return () => clearTimeout(timer);
-    }
-  }, [isAdminLoggedIn, businessData?.id]);
+        // Fetch Departments
+        (async () => {
+          const { data: depts } = await supabase
+            .from('departments')
+            .select('*')
+            .eq('business_id', businessData?.id);
+          if (depts) setDbDepartments(depts);
+        })();
 
-  const statCards = [
-    { label: "Total Tokens Today", value: stats.totalToday, icon: Users, color: "bg-blue-100 text-blue-600" },
-    { label: "Currently Waiting", value: stats.currentlyWaiting, icon: Clock, color: "bg-orange-100 text-orange-600" },
-    { label: "Tokens Served", value: stats.served, icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
-  ];
+        return () => clearTimeout(timer);
+    }
+  }, [isAdminLoggedIn, businessData?.id, supabase]);
 
   // --- Admin Login Screen ---
   if (!isAdminLoggedIn) {
@@ -186,8 +181,8 @@ export default function BusinessDashboard() {
               </button>
 
               <div className="mt-8 pt-8 border-t border-white/5">
-                <Link href="/register" className="text-slate-500 text-sm hover:text-white transition-colors">
-                  Don't have a business account? <span className="text-primary font-bold">Register Now</span>
+                <Link href="/register" className="text-zinc-500 text-sm hover:text-white transition-colors">
+                  Don&apos;t have a business account? <span className="text-primary font-bold">Register Now</span>
                 </Link>
               </div>
             </div>
@@ -200,19 +195,23 @@ export default function BusinessDashboard() {
             onClose={() => setShowOTP(false)}
             onSuccess={async (user) => {
               setShowOTP(false);
-              const { data: biz } = await (supabase
-                .from('businesses')
-                .select('*')
-                .eq('owner_id', user.id)
-                .maybeSingle() as any);
-              
-              if (biz) {
-                setBusinessData(biz);
-                setIsAdminLoggedIn(true);
-                toast.success("Welcome back!");
-              } else {
-                setIsAdminLoggedIn(true);
-                toast.success("Please create your business profile");
+              if (user) {
+                const { data: biz, error } = await supabase
+                  .from('businesses')
+                  .select('*')
+                  .eq('owner_id', user.id)
+                  .maybeSingle();
+                
+                if (error) {
+                  toast.error('Error fetching business data');
+                } else if (biz) {
+                  setBusinessData(biz as any as Business);
+                  setIsAdminLoggedIn(true);
+                  toast.success("Welcome back!");
+                } else {
+                  setIsAdminLoggedIn(true);
+                  toast.success("Please create your business profile");
+                }
               }
             }}
           />
@@ -221,16 +220,40 @@ export default function BusinessDashboard() {
     );
   }
 
-  const triggerUpdate = async () => {
+  const fetchBusinessData = async () => {
     setOnboardingLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const { data: biz } = await (supabase
+      const { data: biz } = await supabase
         .from('businesses')
         .select('*')
         .eq('owner_id', session.user.id)
-        .maybeSingle() as any);
-      setBusinessData(biz);
+        .maybeSingle();
+      if (biz) {
+        setBusinessData(biz as any as Business);
+      }
+    }
+    setOnboardingLoading(false);
+  };
+
+  const handleOnboarding = async (onboardingData: any) => {
+    setOnboardingLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const user = session.user;
+      const { data: biz, error } = await supabase.from('businesses').insert([{
+        ...onboardingData,
+        owner_id: user?.id,
+        is_accepting_tokens: true
+      } as any]).select().single();
+
+      if (error) {
+        toast.error(`Error creating business profile: ${error.message}`);
+      } else if (biz) {
+        setBusinessData(biz as any as Business);
+        setIsAdminLoggedIn(true);
+        toast.success("Business profile created!");
+      }
     }
     setOnboardingLoading(false);
   };
@@ -252,7 +275,6 @@ export default function BusinessDashboard() {
             onClick={() => supabase.auth.signOut().then(() => window.location.reload())} 
             className="text-zinc-500 hover:text-white transition-colors"
             title="Log Out"
-            aria-label="Log Out"
           >
             <LogOut size={20} />
           </button>
@@ -263,7 +285,7 @@ export default function BusinessDashboard() {
             <Loader2 className="animate-spin text-primary" size={40} />
           </div>
         ) : (
-          <OnboardingChecklist business={businessData} onUpdate={triggerUpdate} />
+          <OnboardingChecklist business={businessData} onUpdate={fetchBusinessData} />
         )}
       </div>
     );
@@ -302,8 +324,8 @@ export default function BusinessDashboard() {
                    onClick={async () => {
                       try {
                         const newVal = !businessData?.is_accepting_tokens;
-                        setBusinessData({...businessData, is_accepting_tokens: newVal});
-                        const { error } = await (supabase.from('businesses') as any).update({ is_accepting_tokens: newVal }).eq('id', businessData?.id);
+                        setBusinessData({...businessData, is_accepting_tokens: newVal} as Business);
+                        const { error } = await supabase.from('businesses').update({ is_accepting_tokens: newVal }).eq('id', businessData?.id);
                         if (error) throw error;
                         toast.success(`Business status updated: ${newVal ? 'Accepting Tokens' : 'Stopped'}`);
                       } catch (err: any) {
@@ -469,8 +491,11 @@ export default function BusinessDashboard() {
                     aria-label="Select Department to view"
                   >
                     <option value="all">All Departments</option>
-                    <option value="opd" className="text-zinc-300">OPD (General)</option>
-                    <option value="spl" className="text-zinc-300">Specialist</option>
+                    {dbDepartments.map(dept => (
+                      <option key={dept.id} value={dept.id} className="text-zinc-300">
+                        {dept.name}
+                      </option>
+                    ))}
                   </select>
                </div>
 

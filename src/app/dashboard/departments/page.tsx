@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
-  Plus, Search, MoreVertical, Edit2, 
+  Plus, Search, Edit2, 
   Trash2, Power, Users, Clock, 
-  ChevronRight, Building2, Store,
+  ChevronRight, Store,
   LayoutDashboard, LogOut, Loader2,
-  Check, X, Info
+  Check, X, Info, User
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -57,18 +57,14 @@ export default function DepartmentsPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchInitialData();
-  }, [user]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
+    if (!user?.id) return;
     try {
       // 1. Get Business ID
-      const { data: profile, error: pError } = await supabase
-        .from("user_profiles")
+      const { data: profile, error: pError } = await (supabase
+        .from("user_profiles") as any)
         .select("primary_business_id")
-        .eq("id", user?.id)
+        .eq("id", user.id)
         .single();
 
       if (pError || !profile?.primary_business_id) {
@@ -80,8 +76,8 @@ export default function DepartmentsPage() {
       setBusinessId(profile.primary_business_id);
 
       // 2. Fetch Departments
-      const { data: depts, error: dError } = await supabase
-        .from("departments")
+      const { data: depts, error: dError } = await (supabase
+        .from("departments") as any)
         .select(`
           *,
           queues (
@@ -95,33 +91,37 @@ export default function DepartmentsPage() {
       if (dError) throw dError;
 
       // 3. Fetch Staff counts 
-      const { data: staffCounts } = await supabase
-        .from("staff_members")
+      const { data: staffCounts } = await (supabase
+        .from("staff_members") as any)
         .select("department_id")
         .eq("business_id", profile.primary_business_id);
 
-      const mappedDepts = depts.map((d: any) => ({
+      const mappedDepts = (depts || []).map((d: any) => ({
         ...d,
         queue_stats: {
           waiting: d.queues?.[0]?.total_waiting || 0,
-          staffCount: staffCounts?.filter(s => s.department_id === d.id).length || 0
+          staffCount: staffCounts?.filter((s: any) => s.department_id === d.id).length || 0
         }
       }));
 
       setDepartments(mappedDepts);
-    } catch (err) {
-      console.error("Fetch error:", err);
+    } catch (error) {
+      console.error("Fetch error:", error);
       toast.error("Failed to load departments");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, router]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const handleCreate = async () => {
     if (!businessId || !form.name) return;
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase.rpc("create_department", {
+      const { error } = await (supabase as any).rpc("create_department", {
         p_business_id: businessId,
         p_name: form.name,
         p_description: form.description,
@@ -147,15 +147,15 @@ export default function DepartmentsPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await supabase
-        .from("departments")
+      const { error } = await (supabase
+        .from("departments") as any)
         .update({ is_active: !current })
         .eq("id", id);
 
       if (error) throw error;
       setDepartments(prev => prev.map(d => d.id === id ? { ...d, is_active: !current } : d));
       toast.success(`Department ${!current ? 'activated' : 'deactivated'}`);
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to update status");
     }
   };
@@ -171,7 +171,7 @@ export default function DepartmentsPage() {
       if (error) throw error;
       setDepartments(prev => prev.filter(d => d.id !== id));
       toast.success("Department deleted");
-    } catch (err) {
+    } catch (error) {
       toast.error("Failed to delete department");
     }
   };
@@ -200,7 +200,11 @@ export default function DepartmentsPage() {
               <Link href="/dashboard/staff" className="text-zinc-400 hover:text-white transition-colors text-xs font-black uppercase tracking-widest">Staff</Link>
             </div>
           </div>
-          <button onClick={() => router.push("/profile")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all">
+          <button 
+            onClick={() => router.push("/profile")} 
+            className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-all"
+            title="My Profile"
+          >
             <User size={18} className="text-primary" />
           </button>
         </div>
@@ -271,7 +275,11 @@ export default function DepartmentsPage() {
                   <h3 className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">New Setup</h3>
                   <h2 className="text-2xl font-black">Create Department</h2>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-all">
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-all"
+                  title="Close Modal"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -279,25 +287,29 @@ export default function DepartmentsPage() {
               <div className="p-10 space-y-8">
                 <div className="grid md:grid-cols-2 gap-8">
                   <div className="space-y-6">
-                    <Field label="Department Name">
+                    <Field label="Department Name" id="dept_name">
                       <input 
+                        id="dept_name"
                         type="text" 
                         value={form.name}
                         onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                         className="form-input" 
                         placeholder="E.g. Cardiology OPD"
+                        title="Department Name"
                       />
                     </Field>
 
                     <Field label="Choose Icon">
-                      <div className="grid grid-cols-5 gap-3">
+                      <div className="grid grid-cols-5 gap-3" role="group" aria-label="Icon selection">
                         {EMOJIS.map(emoji => (
                           <button
                             key={emoji}
+                            type="button"
                             onClick={() => setForm(f => ({ ...f, icon: emoji }))}
                             className={`w-12 h-12 flex items-center justify-center text-xl rounded-xl transition-all ${
                               form.icon === emoji ? "bg-primary text-black transform scale-110" : "bg-white/5 hover:bg-white/10"
                             }`}
+                            title={`Select ${emoji} icon`}
                           >
                             {emoji}
                           </button>
@@ -307,54 +319,64 @@ export default function DepartmentsPage() {
                   </div>
 
                   <div className="space-y-6">
-                    <Field label="Average Service Time (Mins)">
+                    <Field label="Average Service Time (Mins)" id="service_mins">
                       <div className="relative">
                         <Clock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                         <input 
+                          id="service_mins"
                           type="number" 
                           value={form.serviceMins}
                           onChange={e => setForm(f => ({ ...f, serviceMins: parseInt(e.target.value) }))}
                           className="form-input pl-12" 
+                          title="Service Time"
                         />
                       </div>
                     </Field>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <Field label="Open Time">
+                      <Field label="Open Time" id="open_time">
                         <input 
+                          id="open_time"
                           type="time" 
                           value={form.openTime}
                           onChange={e => setForm(f => ({ ...f, openTime: e.target.value }))}
                           className="form-input" 
+                          title="Opening Time"
                         />
                       </Field>
-                      <Field label="Close Time">
+                      <Field label="Close Time" id="close_time">
                         <input 
+                          id="close_time"
                           type="time" 
                           value={form.closeTime}
                           onChange={e => setForm(f => ({ ...f, closeTime: e.target.value }))}
                           className="form-input" 
+                          title="Closing Time"
                         />
                       </Field>
                     </div>
 
-                    <Field label="Max Instant Capacity">
+                    <Field label="Max Instant Capacity" id="max_capacity">
                       <input 
+                        id="max_capacity"
                         type="number" 
                         value={form.maxCapacity}
                         onChange={e => setForm(f => ({ ...f, maxCapacity: parseInt(e.target.value) }))}
                         className="form-input" 
+                        title="Maximum Capacity"
                       />
                     </Field>
                   </div>
                 </div>
 
-                <Field label="Description (Optional)">
+                <Field label="Description (Optional)" id="dept_desc">
                   <textarea 
+                    id="dept_desc"
                     value={form.description}
                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                     className="form-input resize-none h-24" 
                     placeholder="Briefly describe what this department does..."
+                    title="Department Description"
                   />
                 </Field>
 
@@ -453,10 +475,10 @@ function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department; onTogg
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">{label}</label>
+      <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">{label}</label>
       {children}
     </div>
   );

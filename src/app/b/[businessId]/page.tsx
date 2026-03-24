@@ -1,19 +1,26 @@
 export const revalidate = 60; // rebuild every 60 seconds max
 
 import React from 'react';
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata } from 'next';
 import PublicBusinessClient from '@/components/Business/PublicBusinessClient';
 import { notFound } from 'next/navigation';
 import LanguageSelector from '@/components/LanguageSelector';
 import { createClient } from '@/lib/supabase/server'
 
-interface Props {
-  params: { businessId: string };
+interface PageProps {
+  params: Promise<{ businessId: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+interface BusinessWithDepts {
+  business: any;
+  departments: any[];
 }
 
 // --- SERVER SIDE SEO METADATA ---
-export async function generateMetadata(props: { params: Promise<{ businessId: string }> }): Promise<Metadata> {
-  const { businessId } = await props.params;
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
+  const businessId = params.businessId;
   const supabase = await createClient()
   const { data: business } = await supabase
     .from('businesses')
@@ -48,22 +55,24 @@ export async function generateMetadata(props: { params: Promise<{ businessId: st
   }
 }
 
-export default async function PublicBusinessPage(props: { params: Promise<{ businessId: string }> }) {
-  const { businessId } = await props.params;
+export default async function PublicBusinessPage(props: PageProps) {
+  const params = await props.params;
+  const businessId = params.businessId;
   const supabase = await createClient();
 
   // 1. Fetch Business & Departments Data (SSR) via RPC
-  const { data: businessData, error: bizErr } = await supabase.rpc('get_business_with_departments', {
+  const { data: businessData, error: bizErr } = await (supabase as any).rpc('get_business_with_departments', {
     p_business_id: businessId
-  }) as any;
+  });
 
   if (bizErr || !businessData) {
     console.error("DEBUG NOTFOUND bizErr:", bizErr, "businessData:", businessData, "ID lookup:", businessId);
     notFound();
   }
 
-  const business = businessData.business;
-  const departments = businessData.departments || [];
+  const typedData = businessData as BusinessWithDepts;
+  const business = typedData.business;
+  const departments = typedData.departments || [];
 
   // 2. Fetch Initial Tokens for stats
   const { count: waitingCount } = await supabase
@@ -71,7 +80,7 @@ export default async function PublicBusinessPage(props: { params: Promise<{ busi
     .select('*', { count: 'exact', head: true })
     .eq('orgId', businessId)
     .eq('status', 'WAITING')
-    .gte('createdAt', new Date().toISOString().split('T')[0]) as any;
+    .gte('createdAt', new Date().toISOString().split('T')[0]);
 
   // 3. Fetch Last 5 Reviews
   const { data: reviews } = await supabase
@@ -79,7 +88,7 @@ export default async function PublicBusinessPage(props: { params: Promise<{ busi
     .select('*')
     .eq('business_id', businessId)
     .order('created_at', { ascending: false })
-    .limit(5) as any;
+    .limit(5);
 
   const jsonLd = {
     '@context': 'https://schema.org',

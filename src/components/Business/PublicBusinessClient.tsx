@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Star, MapPin, Clock, Share2, ShieldCheck, 
-  ChevronDown, MessageCircle, Copy, QrCode, ArrowRight, Zap, Globe, 
+  Star, MapPin, Clock, ShieldCheck, 
+  ChevronDown, MessageCircle, QrCode, ArrowRight, Zap, Globe, 
   Building2, Users
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
@@ -22,26 +23,29 @@ import { haversineDistance as getDistance } from '@/lib/geolocation';
 import { EmailOTPModal } from '@/components/auth/EmailOTPModal';
 import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
-import { AlertCircle, LogIn, User as UserIcon, Activity as ActivityIcon } from 'lucide-react';
+import { AlertCircle, LogIn, Activity as ActivityIcon } from 'lucide-react';
 import { track } from '@/lib/analytics';
+import { Database, Business, Token, Department, Review } from '@/types/database';
+
+// Removed local interfaces in favor of global types from @/types/database
 
 interface PublicBusinessClientProps {
-  business: any;
-  departments: any[];
+  business: Business;
+  departments: Department[];
   initialWaitingCount: number;
-  initialReviews: any[];
+  initialReviews: Review[];
 }
 
 export default function PublicBusinessClient({ business, departments, initialWaitingCount, initialReviews }: PublicBusinessClientProps) {
   const router = useRouter();
   const { user, isAuthenticated, userRole } = useAuth();
   const { t } = useLanguage();
-  const { guestVisit, isLoaded, isReturningGuest, guestName, guestPhone, saveGuestSession } = useGuestSession(business.id);
+  const { isLoaded, isReturningGuest, guestName, guestPhone, saveGuestSession } = useGuestSession(business.id);
 
   const [waitingCount, setWaitingCount] = useState(initialWaitingCount);
   const [showHours, setShowHours] = useState(false);
   const [showQR, setShowQR] = useState(false);
-  const [selectedDept, setSelectedDept] = useState<any>(null);
+  const [selectedDept, setSelectedDept] = useState<Department | null>(null);
   
   // Join Flow States
   const [isJoining, setIsJoining] = useState(false);
@@ -49,11 +53,11 @@ export default function PublicBusinessClient({ business, departments, initialWai
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const [notifyWhatsApp, setNotifyWhatsApp] = useState(true);
-  const [joinedToken, setJoinedToken] = useState<any>(null);
+  const [notifyWhatsApp] = useState(true);
+  const [joinedToken, setJoinedToken] = useState<Partial<Token> | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
-  const [liveServingToken, setLiveServingToken] = useState<string | null>(null);
+  const [, setLiveServingToken] = useState<string | null>(null);
 
   // Prefill from auth or guest session
   useEffect(() => {
@@ -118,11 +122,13 @@ export default function PublicBusinessClient({ business, departments, initialWai
   // Handle Geolocation for Fast Pass
   useEffect(() => {
     if (business?.latitude && business?.longitude) {
+      const bLat = business.latitude as number;
+      const bLng = business.longitude as number;
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const dist = getDistance(
             pos.coords.latitude, pos.coords.longitude,
-            business.latitude, business.longitude
+            bLat, bLng
           );
           setDistance(dist);
         },
@@ -231,7 +237,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
         const chime = new Audio('/chime.mp3');
         chime.volume = 0.5;
         chime.play().catch(() => {});
-      } catch (e) {
+      } catch {
         console.warn("Audio feedback failed");
       }
 
@@ -316,7 +322,13 @@ export default function PublicBusinessClient({ business, departments, initialWai
        {/* HERO SECTION */}
        <div className="relative h-64 overflow-hidden rounded-b-[3rem]">
           {business.cover_image_url ? (
-            <img src={business.cover_image_url} alt={business.name} className="w-full h-full object-cover" />
+            <Image 
+              src={business.cover_image_url} 
+              alt={business.name} 
+              fill
+              className="object-cover"
+              priority
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-background to-surface flex items-center justify-center">
               <Globe size={48} className="text-white/10" />
@@ -324,7 +336,12 @@ export default function PublicBusinessClient({ business, departments, initialWai
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           
-          <Link href="/" className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/95 flex items-center justify-center text-white/80 hover:text-white transition-colors">
+          <Link 
+            href="/" 
+            className="absolute top-6 left-6 w-10 h-10 rounded-full bg-black/95 flex items-center justify-center text-white/80 hover:text-white transition-colors"
+            title="Go Back"
+            aria-label="Go Back to Home"
+          >
              <ChevronDown className="rotate-90" size={20} />
           </Link>
        </div>
@@ -400,6 +417,8 @@ export default function PublicBusinessClient({ business, departments, initialWai
                               setJoinMode(isAuthenticated ? 'account' : 'choose');
                            }}
                            className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-primary/30 transition-all group text-left"
+                           title={`Join ${dept.name} Queue`}
+                           aria-label={`Join ${dept.name} Queue`}
                         >
                            <div className="flex items-center gap-4">
                               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
@@ -462,6 +481,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                           <button 
                              onClick={() => window.dispatchEvent(new Event('trigger-pwa-install'))}
                              className="px-4 py-2 bg-emerald-500 text-black font-black text-[10px] uppercase rounded-xl hover:bg-emerald-400 transition-colors"
+                             title="Install App"
                           >
                              Add Now
                           </button>
@@ -494,6 +514,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                              disabled={!isOpen}
                              onClick={() => setJoinMode(isAuthenticated ? 'account' : 'choose')}
                              className="btn-primary w-full py-5 text-sm"
+                             title={isOpen ? "Join Queue" : "Business is currently closed"}
                            >
                               {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
                            </button>
@@ -511,6 +532,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                         <button 
                           onClick={() => setJoinMode('guest')}
                           className="w-full flex items-start gap-4 p-5 rounded-3xl bg-white/5 border border-white/10 text-left hover:bg-white/10 transition-all group"
+                          title="Continue as Guest"
                         >
                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
                               <Zap size={20} />
@@ -523,6 +545,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                         <button 
                           onClick={() => setIsAuthOpen(true)}
                           className="w-full flex items-start gap-4 p-5 rounded-3xl bg-indigo-500/5 border border-indigo-500/10 text-left hover:bg-indigo-500/10 transition-all"
+                          title="Join with Account"
                         >
                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0">
                               <LogIn size={20} />
@@ -625,6 +648,8 @@ export default function PublicBusinessClient({ business, departments, initialWai
              <button 
                 onClick={() => setShowHours(!showHours)}
                 className="w-full flex items-center justify-between p-6 bg-surface border border-border rounded-brand text-sm text-zinc-300 font-bold"
+                aria-expanded={showHours ? "true" : "false"}
+                title={showHours ? "Hide Operating Hours" : "Show Operating Hours"}
              >
                 <div className="flex items-center gap-3">
                    <Clock size={16} className="text-emerald-500" />
@@ -712,7 +737,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                              <Star key={i} size={12} fill={i < review.rating ? "var(--brand-primary)" : "transparent"} stroke={i < review.rating ? "var(--brand-primary)" : "#4b5563"} />
                           ))}
                        </div>
-                       <p className="text-sm text-zinc-300 leading-relaxed italic mb-3">"{review.comment}"</p>
+                       <p className="text-sm text-zinc-300 leading-relaxed italic mb-3">&quot;{review.comment}&quot;</p>
                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Verified Visit • 2 hours ago</p>
                     </motion.div>
                   ))}
@@ -729,6 +754,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
              <button 
                 onClick={handleShareWhatsApp}
                 className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-emerald-500 hover:opacity-80 transition-all"
+                title="Share via WhatsApp"
              >
                 <MessageCircle size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">WhatsApp</span>
@@ -736,13 +762,15 @@ export default function PublicBusinessClient({ business, departments, initialWai
              <button 
                 onClick={handleCopyLink}
                 className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-blue-400 hover:opacity-80 transition-all"
+                title="Copy Page Link"
              >
-                <Copy size={24} />
+                <ArrowRight size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">Copy Link</span>
              </button>
              <button 
                 onClick={() => setShowQR(true)}
                 className="flex flex-col items-center justify-center p-6 rounded-brand bg-surface border border-border text-white hover:opacity-80 transition-all"
+                title="Show QR Code"
              >
                 <QrCode size={24} />
                 <span className="text-[10px] font-black uppercase tracking-widest mt-2">QR Code</span>
