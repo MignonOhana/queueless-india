@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useAdminQueue } from "@/lib/useAdminQueue";
 import { callNextToken, skipToken } from "@/lib/queueService";
 import { createClient } from "@/lib/supabase/client";
-import { Business, Token, Department } from "@/types/database";
+import { Business, Department } from "@/types/database";
 import QRCodeModal from "@/components/QR/QRCodeModal";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
@@ -236,28 +236,6 @@ export default function BusinessDashboard() {
     setOnboardingLoading(false);
   };
 
-  const handleOnboarding = async (onboardingData: any) => {
-    setOnboardingLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      const user = session.user;
-      const { data: biz, error } = await supabase.from('businesses').insert([{
-        ...onboardingData,
-        owner_id: user?.id,
-        is_accepting_tokens: true
-      } as any]).select().single();
-
-      if (error) {
-        toast.error(`Error creating business profile: ${error.message}`);
-      } else if (biz) {
-        setBusinessData(biz as any as Business);
-        setIsAdminLoggedIn(true);
-        toast.success("Business profile created!");
-      }
-    }
-    setOnboardingLoading(false);
-  };
-
   // Onboarding View
   if (!businessData || businessData.claim_status === 'claimed') {
     return (
@@ -275,6 +253,7 @@ export default function BusinessDashboard() {
             onClick={() => supabase.auth.signOut().then(() => window.location.reload())} 
             className="text-zinc-500 hover:text-white transition-colors"
             title="Log Out"
+            aria-label="Log Out"
           >
             <LogOut size={20} />
           </button>

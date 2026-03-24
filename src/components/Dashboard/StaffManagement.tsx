@@ -18,8 +18,8 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from('staff_members')
+    const { data, error } = await (supabase
+      .from('staff_members') as any)
       .select('*')
       .eq('business_id', businessId)
       .order('created_at', { ascending: true });
@@ -40,7 +40,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
-    const { data, error } = await supabase.from('staff_members')
+    const { data, error } = await (supabase.from('staff_members') as any)
       .insert([{ 
         name: newStaff.name,
         role: newStaff.role,
@@ -61,7 +61,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('staff_members')
+    const { error } = await (supabase.from('staff_members') as any)
       .update({ is_active: !currentStatus })
       .eq('id', id);
 

@@ -988,3 +988,4 @@ export type StaffMember = Database['public']['Tables']['staff_members']['Row'];
 export type DailyStats = Database['public']['Tables']['daily_stats']['Row'];
 export type AdvanceBooking = Database['public']['Tables']['advance_bookings']['Row'];
 export type Department = Database['public']['Tables']['departments']['Row'];
+export type Review = Database['public']['Tables']['reviews']['Row'];

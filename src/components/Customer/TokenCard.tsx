@@ -13,6 +13,9 @@ type Token = Database['public']['Tables']['tokens']['Row'] & {
     serviceMins: number | null;
     avg_rating?: number | null;
   } | null;
+  departments?: {
+    name: string;
+  } | null;
 };
 
 interface TokenCardProps {
@@ -23,6 +26,7 @@ interface TokenCardProps {
 
 const statusConfig: Record<string, { 
   label: string; 
+  hindi: string;
   icon: any; 
   color: string; 
   bg: string; 
@@ -30,6 +34,7 @@ const statusConfig: Record<string, {
 }> = {
   'WAITING': {
     label: 'In Queue',
+    hindi: 'कतार में',
     icon: Clock,
     color: 'text-primary',
     bg: 'bg-primary/10',
@@ -37,6 +42,7 @@ const statusConfig: Record<string, {
   },
   'SERVING': {
     label: 'Now Serving',
+    hindi: 'अभी सेवा में',
     icon: Activity,
     color: 'text-emerald-400',
     bg: 'bg-emerald-500/10',
@@ -44,6 +50,7 @@ const statusConfig: Record<string, {
   },
   'SERVED': {
     label: 'Visited',
+    hindi: 'पूरा हुआ',
     icon: Ticket,
     color: 'text-zinc-500',
     bg: 'bg-white/5',
@@ -51,6 +58,7 @@ const statusConfig: Record<string, {
   },
   'CANCELLED': {
     label: 'Cancelled',
+    hindi: 'निरस्त',
     icon: AlertCircle,
     color: 'text-rose-500',
     bg: 'bg-rose-500/10',
@@ -107,8 +115,8 @@ export default function TokenCard({ token, onClick, isHistory = false }: TokenCa
         <div className={`absolute top-0 right-0 w-32 h-32 ${config.bg} blur-3xl rounded-full translate-x-1/2 -translate-y-1/2 opacity-50 group-hover:opacity-80 transition-opacity`} />
         
         {token.status === 'SERVING' && (
-          <div className="absolute top-0 right-0 px-4 py-1.5 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest rounded-bl-2xl shadow-lg animate-pulse z-10">
-            Current
+          <div className="absolute top-0 right-0 px-4 py-2 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest rounded-bl-2xl shadow-[0_0_20px_rgba(16,185,129,0.4)] animate-pulse z-20 flex items-center gap-2">
+            <Activity size={12} /> Your Turn
           </div>
         )}
 
@@ -130,7 +138,7 @@ export default function TokenCard({ token, onClick, isHistory = false }: TokenCa
               </h3>
               <div className="flex items-center gap-1.5 text-zinc-500 text-[10px] font-bold">
                 <MapPin size={12} className="text-zinc-600" />
-                <span className="line-clamp-1">Live Queue Tracking</span>
+                <span className="line-clamp-1">{token.departments?.name || 'Main Counter'}</span>
               </div>
             </div>
             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-black group-hover:border-primary transition-all duration-500 shadow-inner">
@@ -154,19 +162,31 @@ export default function TokenCard({ token, onClick, isHistory = false }: TokenCa
                 <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Status</span>
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl ${config.bg} border border-white/5`}>
                   <StatusIcon size={14} className={config.color} />
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${config.color}`}>
-                    {config.label}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${config.color}`}>
+                      {config.label}
+                    </span>
+                    <span className="text-[7px] font-bold uppercase tracking-[0.2em] text-zinc-500 -mt-0.5">
+                      {config.hindi}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {token.status === 'WAITING' && (
+            {token.status === 'WAITING' ? (
               <div className="flex flex-col items-end">
                 <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 mb-0.5">Est. Wait</span>
                 <div className="flex items-center gap-1.5 text-emerald-400 font-black">
                   <Clock size={16} />
                   <span className="text-lg tracking-tight">~{token.estimatedWaitMins || token.businesses?.serviceMins || 15}m</span>
+                </div>
+              </div>
+            ) : token.status === 'SERVING' && (
+              <div className="flex flex-col items-end">
+                <span className="text-[8px] font-black uppercase tracking-widest text-[#00F5A0] mb-0.5 animate-bounce">Please Proceed</span>
+                <div className="flex items-center gap-1.5 text-emerald-400 font-black">
+                  <span className="text-lg tracking-tighter uppercase">Counter {token.counterId || 'A'}</span>
                 </div>
               </div>
             )}

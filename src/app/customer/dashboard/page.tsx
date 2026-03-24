@@ -19,6 +19,9 @@ type Token = Database['public']['Tables']['tokens']['Row'] & {
     serviceMins: number | null;
     avg_rating?: number | null;
   } | null;
+  departments?: {
+    name: string;
+  } | null;
 };
 
 export default function CustomerDashboard() {
@@ -38,14 +41,14 @@ export default function CustomerDashboard() {
     if (user) {
       const { data: act } = await supabase
         .from('tokens')
-        .select('*, businesses(name, address, category, serviceMins)')
+        .select('*, businesses(name, address, category, serviceMins), departments(name)')
         .eq('userId', user.id)
         .in('status', ['WAITING', 'SERVING'])
         .order('createdAt', { ascending: false });
 
       const { data: hist } = await supabase
         .from('tokens')
-        .select('*, businesses(name, avg_rating)')
+        .select('*, businesses(name, avg_rating), departments(name)')
         .eq('userId', user.id)
         .in('status', ['SERVED', 'CANCELLED'])
         .order('createdAt', { ascending: false })
@@ -59,14 +62,14 @@ export default function CustomerDashboard() {
       if (tokenIds.length > 0) {
         const { data: act } = await supabase
           .from('tokens')
-          .select('*, businesses(name, address, category, serviceMins)')
+          .select('*, businesses(name, address, category, serviceMins), departments(name)')
           .in('id', tokenIds)
           .in('status', ['WAITING', 'SERVING'])
           .order('createdAt', { ascending: false });
 
         const { data: hist } = await supabase
           .from('tokens')
-          .select('*, businesses(name, avg_rating)')
+          .select('*, businesses(name, avg_rating), departments(name)')
           .in('id', tokenIds)
           .in('status', ['SERVED', 'CANCELLED'])
           .order('createdAt', { ascending: false });
@@ -83,6 +86,8 @@ export default function CustomerDashboard() {
 
   useEffect(() => {
     if (authLoading) return;
+    
+    // Initial fetch
     fetchData();
 
     let channel: any;
@@ -133,7 +138,9 @@ export default function CustomerDashboard() {
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [user, authLoading, fetchData]);
+    // fetchData is memoized with useCallback, and authLoading handles the loading state
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
 
   const handleLogout = async () => {
     await signOut();
