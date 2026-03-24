@@ -1,6 +1,0 @@
-﻿src/app/dashboard/queue/page.tsx(281,52): error TS18047: 'queue.total_waiting' is possibly 'null'.
-src/components/Dashboard/StaffManagement.tsx(177,117): error TS2339: Property 'counter_id' does not exist on type '{ accepted_at: string | null; business_id: string | null; created_at: string | null; id: string; invited_at: string | null; is_active: boolean | null; name: string; phone: string | null; role: string; user_id: string | null; }'.
-src/components/Dashboard/StaffManagement.tsx(182,58): error TS2345: Argument of type 'boolean | null' is not assignable to parameter of type 'boolean'.
-  Type 'null' is not assignable to type 'boolean'.
-src/context/AuthContext.tsx(6,10): error TS2305: Module '"@/types/database"' has no exported member 'UserProfile'.
-src/lib/supabase/client.ts(3,26): error TS2307: Cannot find module '@/types/database.types' or its corresponding type declarations.
