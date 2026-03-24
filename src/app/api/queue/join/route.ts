@@ -76,13 +76,21 @@ export async function POST(req: NextRequest) {
     const paddedNumber = String(nextNumber).padStart(3, '0');
     const tokenStr = `${counterPrefix}-${paddedNumber}`;
 
-    // Get number of people currently waiting for wait time estimate
-    const { count: waitingCount } = await (supabase
+    // Get number of people currently waiting for wait time estimate (department-aware)
+    let waitingQuery = (supabase
       .from('tokens') as any)
       .select('*', { count: 'exact', head: true })
       .eq('orgId', orgId)
       .eq('status', 'WAITING')
       .gte('createdAt', todayDate);
+    
+    if (departmentId) {
+      waitingQuery = waitingQuery.eq('department_id', departmentId);
+    } else {
+      waitingQuery = waitingQuery.is('department_id', null);
+    }
+
+    const { count: waitingCount } = await waitingQuery;
 
     const estimatedWaitMins = (waitingCount || 0) * 5;
 

@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Clock, MapPin, Zap, Activity as ActivityIcon, ArrowRight, Star, ChevronDown,
-  CheckCircle2, AlertCircle, LogIn, Globe, ShieldCheck, Building2, MessageCircle, QrCode
+  AlertCircle, LogIn, Globe, ShieldCheck, Building2, MessageCircle, QrCode
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,7 +24,7 @@ import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
 
 import { track } from '@/lib/analytics';
-import { Database, Business, Token, Department, Review } from '@/types/database';
+import { Business, Department, Review } from '@/types/database';
 
 // Removed local interfaces in favor of global types from @/types/database
 
@@ -682,7 +682,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
              <button 
                 onClick={() => setShowHours(!showHours)}
                 className="w-full flex items-center justify-between p-6 bg-surface border border-border rounded-brand text-sm text-zinc-300 font-bold"
-                aria-expanded={showHours}
+                aria-expanded={showHours ? "true" : "false"}
                 title={showHours ? "Hide Operating Hours" : "Show Operating Hours"}
              >
                 <div className="flex items-center gap-3">

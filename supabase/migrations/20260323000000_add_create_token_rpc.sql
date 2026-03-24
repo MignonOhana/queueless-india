@@ -12,7 +12,8 @@ CREATE OR REPLACE FUNCTION public.create_queue_token(
   p_customer_name   TEXT,
   p_customer_phone  TEXT,
   p_token_number    TEXT,
-  p_estimated_wait_mins INT
+  p_estimated_wait_mins INT,
+  p_department_id   UUID DEFAULT NULL
 )
 RETURNS SETOF tokens
 LANGUAGE plpgsql
@@ -28,7 +29,8 @@ BEGIN
     "customerPhone",
     "tokenNumber",
     status,
-    "estimatedWaitMins"
+    "estimatedWaitMins",
+    department_id
   )
   VALUES (
     p_org_id,
@@ -37,11 +39,13 @@ BEGIN
     p_customer_phone,
     p_token_number,
     'WAITING',
-    p_estimated_wait_mins
+    p_estimated_wait_mins,
+    p_department_id
   )
   RETURNING *;
 END;
 $$;
 
 -- Allow anyone to call the function (the API route is the trusted gatekeeper)
-GRANT EXECUTE ON FUNCTION public.create_queue_token(TEXT, UUID, TEXT, TEXT, TEXT, INT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.create_queue_token(TEXT, UUID, TEXT, TEXT, TEXT, INT, UUID) TO anon, authenticated;
+
