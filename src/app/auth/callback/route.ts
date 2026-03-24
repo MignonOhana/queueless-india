@@ -31,12 +31,17 @@ export async function GET(request: NextRequest) {
     );
     const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
     
-    const role = requestUrl.searchParams.get("role");
-    if (session?.user && role) {
+    const role = requestUrl.searchParams.get("role") || "customer";
+    if (session?.user) {
+      // Use upsert to handle both new and existing users
       await supabase
         .from("user_profiles")
-        .update({ role })
-        .eq("id", session.user.id);
+        .upsert({ 
+          id: session.user.id, 
+          role,
+          email: session.user.email,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
     }
   }
 

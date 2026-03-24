@@ -82,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setUserRole(null);
     localStorage.removeItem("ql_user_role");
+    window.location.href = "/login";
   };
 
   return (

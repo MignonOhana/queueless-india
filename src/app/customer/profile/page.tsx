@@ -385,12 +385,9 @@ export default function CustomerProfilePage() {
     }
   };
 
+  const { signOut } = useAuth();
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("ql_user_role");
-    localStorage.removeItem("ql_intended_role");
-    router.push("/");
-    toast.success("Signed out successfully");
+    await signOut();
   };
 
   const getInitials = (name?: string | null) => {

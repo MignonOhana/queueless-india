@@ -22,7 +22,7 @@ import { haversineDistance as getDistance } from '@/lib/geolocation';
 import { EmailOTPModal } from '@/components/auth/EmailOTPModal';
 import FastPassCheckout from '@/components/FastPassCheckout';
 import CustomerOnboarding from '@/components/Onboarding/CustomerOnboarding';
-import { AlertCircle, LogIn, Activity as ActivityIcon } from 'lucide-react';
+
 import { track } from '@/lib/analytics';
 import { Database, Business, Token, Department, Review } from '@/types/database';
 
@@ -155,8 +155,8 @@ export default function PublicBusinessClient({ business, departments, initialWai
       setJoinedToken({
         tokenId: savedToken,
         tokenNumber: savedTokenNumber || "Refetching...",
-        position: "?",
-        estimatedWaitMins: "?",
+        position: 0,
+        estimatedWaitMins: 0,
         isGuest: !isAuthenticated
       });
     }
@@ -601,7 +601,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                                 amount={business.settings?.fastPassPrice || 49}
                                 tokenData={{
                                    orgId: business.id,
-                                   counterPrefix: business.services?.[0]?.prefix || "Q",
+                                   counterPrefix: departments?.[0]?.prefix || "Q",
                                    customerName: name,
                                    customerPhone: "+91" + phone
                                 }}
@@ -682,7 +682,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
              <button 
                 onClick={() => setShowHours(!showHours)}
                 className="w-full flex items-center justify-between p-6 bg-surface border border-border rounded-brand text-sm text-zinc-300 font-bold"
-                aria-expanded={showHours ? "true" : "false"}
+                aria-expanded={showHours}
                 title={showHours ? "Hide Operating Hours" : "Show Operating Hours"}
              >
                 <div className="flex items-center gap-3">

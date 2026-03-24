@@ -13,6 +13,7 @@ import { Business, Department } from "@/types/database";
 import QRCodeModal from "@/components/QR/QRCodeModal";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
+import { useAuth } from "@/context/AuthContext";
 import PlanBadge from "@/components/Dashboard/PlanBadge";
 import UpgradeModal from "@/components/pricing/UpgradeModal";
 import QueueRow from "@/components/Dashboard/QueueRow";
@@ -27,6 +28,7 @@ import OnboardingChecklist from "@/components/Dashboard/OnboardingChecklist";
 // dynamic imports...
 
 export default function BusinessDashboard() {
+  const { signOut } = useAuth();
   const supabase = createClient();
   const router = useRouter();
   const [showQR, setShowQR] = useState(false);
@@ -250,7 +252,7 @@ export default function BusinessDashboard() {
             </span>
           </Link>
           <button 
-            onClick={() => supabase.auth.signOut().then(() => window.location.reload())} 
+            onClick={signOut} 
             className="text-zinc-500 hover:text-white transition-colors"
             title="Log Out"
             aria-label="Log Out"
@@ -609,10 +611,7 @@ export default function BusinessDashboard() {
               </GlassCard>
               
               <button 
-                onClick={() => {
-                  localStorage.removeItem("admin_org");
-                  window.location.reload();
-                }}
+                onClick={signOut}
                 className="w-full p-4 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-500 font-black uppercase text-xs flex items-center justify-center gap-2 hover:bg-rose-500/20 transition-all"
               >
                  <LogOut size={16} /> Log Out Business

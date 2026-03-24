@@ -15,7 +15,7 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
   defaultName?: string
 }) {
   const supabase = createClient()
-  const [step, setStep] = useState<Step>(defaultEmail ? 'otp' : 'email')
+  const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState(defaultEmail)
   const [otp, setOtp] = useState('')
   const [isVerifying, setIsVerifying] = useState(false)
@@ -27,12 +27,11 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
   // Cloudflare site key
   const TURNSTILE_SITE_KEY = "0x4AAAAAACvEAGg8tzvQ9woe";
 
-  // Auto-send OTP if defaultEmail is provided
+  // Pre-fill email but don't auto-send, let user see the captcha
   useEffect(() => {
-    if (defaultEmail && step === 'otp') {
-      sendOTP()
+    if (defaultEmail) {
+      setEmail(defaultEmail)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultEmail])
 
   useEffect(() => {
@@ -60,22 +59,34 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
     setError('')
     
     try {
+      const options: { 
+        shouldCreateUser: boolean; 
+        data: { full_name: string }; 
+        captchaToken?: string 
+      } = {
+        shouldCreateUser: true,
+        data: { full_name: defaultName || '' },
+      };
+
+      if (captchaToken) {
+        options.captchaToken = captchaToken;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          shouldCreateUser: true,
-          data: { full_name: defaultName || '' },
-          captchaToken: captchaToken ?? undefined
-        },
+        options
       })
       
       if (error) {
+        console.error("Supabase OTP Error:", error);
         setError(error.message)
       } else {
         setStep('otp')
         setCountdown(60)
+        toast.success("OTP sent to your email!");
       }
     } catch (err: unknown) {
+      console.error("OTP send catch block:", err);
       setError(err instanceof Error ? err.message : 'Failed to send OTP')
     } finally {
       setLoading(false)
@@ -127,6 +138,8 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
         <button 
           onClick={onClose} 
           className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-full transition-all"
+          title="Close Modal"
+          aria-label="Close"
         >
           <X size={20} />
         </button>
@@ -267,10 +280,7 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                 
                 <div className="text-center pt-2">
                   <button
-                    onClick={sendOTP}
-                    disabled={countdown > 0}
-                    className="text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50"
-                    style={{ color: countdown > 0 ? '#6B7280' : '#00F5A0' }}
+                    className={`text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 ${countdown > 0 ? 'text-slate-500' : 'text-[#00F5A0]'}`}
                   >
                     {countdown > 0 ? `Resend code in ${countdown}s` : 'Resend code now'}
                   </button>

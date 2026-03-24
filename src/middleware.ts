@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // 4. Authenticated User Protection & Role-based Routing
-  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/contact", "/map", "/home", "/onboarding"];
+  const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/contact", "/map", "/home", "/onboarding", "/auth/callback", "/auth/confirm"];
   const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/") || pathname.startsWith("/api/");
 
   if (!user && !isPublicRoute) {
@@ -62,14 +62,14 @@ export async function middleware(request: NextRequest) {
   }
 
   if (user) {
-    // Fetch role from profile for routing decisions
     const { data: profile } = await supabase
       .from("user_profiles")
       .select("role")
       .eq("id", user.id)
-      .single();
+      .maybeSingle(); // Better than .single() to avoid 406/404 errors
     
-    const role = profile?.role;
+    // Fallback: check JWT metadata or default to customer
+    const role = profile?.role || user.user_metadata?.role || "customer";
 
     if (pathname === "/login") {
       return NextResponse.redirect(new URL(role === "business_owner" ? "/dashboard" : "/home", request.url));
