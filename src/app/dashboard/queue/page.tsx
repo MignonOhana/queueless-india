@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Users, Play, Pause, XCircle, 
+  Users, Play, Pause, X, CheckCircle2,
   ChevronRight, Loader2, RefreshCw,
-  LayoutDashboard
+  LayoutDashboard, Clock, ArrowLeft, ArrowRight, Settings, Trash2, UserCheck, ToggleLeft, ToggleRight
 } from "lucide-react";
+import CountUp from "@/components/ui/CountUp";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
 import { useRouter } from "next/navigation";
@@ -200,7 +201,7 @@ export default function BusinessQueueManagement() {
     return (
       <div className="min-h-screen bg-[#0D0D14] text-white flex flex-col items-center justify-center p-6 gap-8">
         <div className="w-24 h-24 bg-white/5 rounded-[2.5rem] flex items-center justify-center border border-white/10">
-          <XCircle size={48} className="text-zinc-600" />
+          <X size={48} className="text-zinc-600" />
         </div>
         <div className="text-center">
           <h2 className="text-2xl font-black tracking-tighter mb-2">No Active Queue</h2>
@@ -273,12 +274,12 @@ export default function BusinessQueueManagement() {
           <div className="flex items-center justify-center gap-12 mb-10">
             <div className="text-center">
               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Waiting</p>
-              <p className="text-3xl font-black">{queue.total_waiting}</p>
+              <p className="text-3xl font-black"><CountUp end={queue?.total_waiting ?? 0} /></p>
             </div>
             <div className="w-px h-8 bg-white/10" />
             <div className="text-center">
               <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Est. Time</p>
-              <p className="text-3xl font-black">~{queue.total_waiting * (business?.serviceMins || 5)}<span className="text-xs text-zinc-500 ml-1 font-bold">m</span></p>
+              <p className="text-3xl font-black">~{(queue?.total_waiting ?? 0) * (business?.serviceMins || 5)}<span className="text-xs text-zinc-500 ml-1 font-bold">m</span></p>
             </div>
           </div>
 
@@ -335,7 +336,8 @@ export default function BusinessQueueManagement() {
             onClick={handleCloseQueue}
             className="flex-1 py-5 rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] hover:bg-red-500/20"
           >
-            <XCircle size={16} /> Close Queue
+            <X size={20} />
+ Close Queue
           </button>
         </footer>
 

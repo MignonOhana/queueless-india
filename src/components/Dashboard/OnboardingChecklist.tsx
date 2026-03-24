@@ -35,7 +35,7 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
         .from('businesses')
         .update({
           serviceMins: step2Data.serviceMins,
-          opHours: { open: step2Data.open, close: step2Data.close },
+          opHours: JSON.stringify({ open: step2Data.open, close: step2Data.close }),
           onboarding_step: 3
         })
         .eq('id', business.id);

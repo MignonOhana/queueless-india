@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { Database } from '@/types/database';
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -25,36 +26,35 @@ export async function POST(request: Request) {
       .replace(/[\s_-]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    const businessData = {
+    const businessData: Database['public']['Tables']['businesses']['Insert'] = {
       id: slug,
-      name,
-      category,
-      location,
-      phone,
-      description,
+      name: name as string,
+      category: category as string,
+      location: location as string,
+      phone: phone as string,
+      description: description as string,
       serviceMins: parseInt(serviceMins) || 15,
       owner_id: session.user.id,
-      plan: 'free' as const,
-      claim_status: 'claimed' as const,
-      is_accepting_tokens: true,
+      plan: 'free',
+      claim_status: 'claimed',
       onboarding_step: 2
     };
 
-    const { data, error } = await (supabase
+    // @ts-ignore
+    const { data, error } = await supabase
       .from('businesses')
-      .insert([businessData])
+      .insert(businessData)
       .select()
-      .single() as any);
+      .single();
 
     if (error) {
-      // If slug exists, try appending random suffix once
       if (error.code === '23505') {
         const altSlug = `${slug}-${Math.floor(Math.random() * 1000)}`;
-        const { data: altData, error: altError } = await (supabase
+        const { data: altData, error: altError } = await supabase
           .from('businesses')
           .insert([{ ...businessData, id: altSlug }])
           .select()
-          .single() as any);
+          .single();
         
         if (altError) throw altError;
         return NextResponse.json(altData);

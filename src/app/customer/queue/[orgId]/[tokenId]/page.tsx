@@ -52,7 +52,8 @@ export default function LiveTokenTracking() {
 
       // 2. Fetch Position via RPC
       const { data: pos } = await supabase.rpc("get_queue_position", { p_token_id: tokenId });
-      setPosition(pos);
+      const currentPos = pos && pos.length > 0 ? (pos[0] as any).queue_position : null;
+      setPosition(currentPos);
 
       // 3. Fetch Business
       const { data: bData } = await supabase
@@ -147,10 +148,11 @@ export default function LiveTokenTracking() {
 
   const fetchPosition = async () => {
     const { data: pos } = await supabase.rpc("get_queue_position", { p_token_id: tokenId });
-    if (pos === 1 && position !== 1) {
+    const currentPos = pos && pos.length > 0 ? (pos[0] as any).queue_position : null;
+    if (currentPos === 1 && position !== 1) {
       triggerNextPulse();
     }
-    setPosition(pos);
+    setPosition(currentPos);
   };
 
   const updateServingNumber = async (sTokenId: string) => {

@@ -21,7 +21,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newStaff, setNewStaff] = useState({ name: '', role: 'Operator', counter_id: 'default' });
+  const [newStaff, setNewStaff] = useState({ name: '', role: 'Operator' });
 
   const fetchStaff = async () => {
     if (!businessId) return;
@@ -52,7 +52,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
         ...newStaff, 
         business_id: businessId, 
         is_active: true,
-        role: newStaff.role as 'operator' | 'owner' | 'viewer'
+        role: newStaff.role.toLowerCase() as 'operator' | 'owner' | 'viewer'
       }])
       .select()
       .single();
@@ -62,7 +62,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
     } else {
       setStaff([...staff, data]);
       setShowAddForm(false);
-      setNewStaff({ name: '', role: 'Operator', counter_id: 'default' });
+      setNewStaff({ name: '', role: 'Operator' });
       toast.success('Staff member added');
     }
   };
@@ -174,12 +174,12 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
                 <div className="flex items-center gap-2 mt-1">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{member.role}</span>
                   <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Counter: {member.counter_id}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">{member.phone || 'No phone'}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => toggleStatus(member.id, member.is_active)}
+                  onClick={() => toggleStatus(member.id, !!member.is_active)}
                   className={`p-2 rounded-lg transition-colors ${member.is_active ? 'text-[#00F5A0] hover:bg-[#00F5A0]/10' : 'text-zinc-500 hover:bg-white/5'}`}
                   title={member.is_active ? 'Deactivate' : 'Activate'}
                 >

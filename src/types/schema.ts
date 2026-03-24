@@ -30,7 +30,6 @@ export interface Business {
   plan: "free" | "growth" | "enterprise";
   avg_rating: number;
   total_reviews: number;
-  is_open?: boolean; // actually used in dashboard updates
   whatsapp_enabled: boolean;
   fastPassEnabled: boolean;
   fastPassPrice: number;
