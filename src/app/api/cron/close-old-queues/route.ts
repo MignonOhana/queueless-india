@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextResponse } from 'next/server';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
+const supabase = createServiceRoleClient();
 
 export const maxDuration = 30
 
@@ -19,18 +15,18 @@ export async function GET(request: Request) {
   yesterday.setDate(yesterday.getDate() - 1)
   const yesterdayStr = yesterday.toISOString().split('T')[0]
 
-  const { error } = await supabase
+  const { error } = await (supabase as any)
     .from('queues')
     .update({ is_active: false, is_accepting_tokens: false })
     .eq('session_date', yesterdayStr)
-    .eq('is_active', true)
+    .eq('is_active', true);
 
   // Also cancel WAITING tokens for those queues
-  await supabase
+  await (supabase as any)
     .from('tokens')
     .update({ status: 'CANCELLED' })
     .eq('status', 'WAITING')
-    .lt('createdAt', `${yesterdayStr}T23:59:59Z`)
+    .lt('createdAt', `${yesterdayStr}T23:59:59Z`);
 
   return NextResponse.json({ success: !error })
 }

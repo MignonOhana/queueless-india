@@ -123,7 +123,8 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         queue_id: 'q1',
         isPriority: false,
         servedAt: null,
-        customerPhone: null
+        customerPhone: null,
+        department_id: null
       });
       setQueue([
         {
@@ -139,7 +140,8 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
           queue_id: 'q1',
           isPriority: false,
           servedAt: null,
-          customerPhone: null
+          customerPhone: null,
+          department_id: null
         },
         {
           id: "3",
@@ -154,7 +156,8 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
           queue_id: 'q1',
           isPriority: false,
           servedAt: null,
-          customerPhone: null
+          customerPhone: null,
+          department_id: null
         },
       ]);
       setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });

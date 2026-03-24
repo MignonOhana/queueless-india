@@ -183,22 +183,22 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
 
     // Fetch live organically created businesses from Supabase MVP DB
     const fetchLiveBusinesses = async (userLat?: number, userLng?: number) => {
-      const { data, error } = await supabase
-        .from("businesses")
+      const { data, error } = await (supabase
+        .from("businesses") as any)
         .select("*")
         .not("latitude", "is", null)
         .not("longitude", "is", null);
         
       if (!error && data) {
         // Fetch Predictions
-        const { data: predData } = await supabase.from('predictions').select('id, bestTimeToVisit');
+        const { data: predData } = await (supabase.from('predictions').select('id, bestTimeToVisit') as any);
         const predMap: Record<string, string> = {};
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         predData?.forEach((p: any) => { predMap[p.id] = p.bestTimeToVisit; });
 
         // Fetch Queue info
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: queueData } = await supabase.from("queues").select("org_id, last_issued_number, total_waiting, max_capacity") as any;
+        const { data: queueData } = await (supabase.from("queues") as any).select("org_id, last_issued_number, total_waiting, max_capacity");
         const qMap: Record<string, number> = {};
         const qLenMap: Record<string, number> = {};
         const qCapMap: Record<string, number> = {};
@@ -243,8 +243,8 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
         setLiveBusinesses(mappedData);
 
         // Fetch Trending
-        const { data: trendData } = await supabase
-          .from("businesses")
+        const { data: trendData } = await (supabase
+          .from("businesses") as any)
           .select("*")
           .order('total_reviews', { ascending: false })
           .limit(5);
@@ -375,7 +375,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' }, async (payload) => {
         // Fetch new pulse data or manually prepend
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single() as any;
+        const { data: biz } = await (supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single() as any);
         if (biz) {
           const newItem = {
             type: 'LIVE',
@@ -427,10 +427,9 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
     setShowOnboarding(false);
     
     // Increment visit_count in DB
-    await supabase
-      .from('user_profiles')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ visit_count: (visitCount || 0) + 1 } as any)
+    await (supabase
+      .from('user_profiles') as any)
+      .update({ visit_count: (visitCount || 0) + 1 })
       .eq('id', user.id);
   };
 

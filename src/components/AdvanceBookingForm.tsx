@@ -151,7 +151,7 @@ export default function AdvanceBookingForm({
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { error } = await supabase.from('advance_bookings').insert({
+      const { error } = await (supabase.from('advance_bookings') as any).insert({
         business_id: businessId,
         user_id: user?.id || null,
         customer_name: customerName,
@@ -199,29 +199,38 @@ export default function AdvanceBookingForm({
       </div>
 
       <div className="space-y-4">
-        {/* Customer Name */}
-        <input
-          type="text"
-          placeholder="Your Name"
-          value={customerName}
-          onChange={(e) => setCustomerName(e.target.value)}
-          className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-sm"
-        />
+        <div className="space-y-1">
+          <label htmlFor="customerName" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</label>
+          <input
+            id="customerName"
+            type="text"
+            placeholder="Your Name"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-sm"
+            title="Full Name"
+          />
+        </div>
 
         {/* Phone */}
-        <input
-          type="tel"
-          placeholder="WhatsApp Number (optional)"
-          value={customerPhone}
-          onChange={(e) => setCustomerPhone(e.target.value)}
-          className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-sm"
-        />
+        <div className="space-y-1">
+          <label htmlFor="customerPhone" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone (for alerts)</label>
+          <input
+            id="customerPhone"
+            type="tel"
+            placeholder="WhatsApp Number (optional)"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 text-sm"
+            title="WhatsApp Number"
+          />
+        </div>
 
         {/* Date Picker */}
         <div>
-          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">Select Date</label>
+          <label htmlFor="bookingDate" className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1 block">Select Date</label>
           <input
-            type="date"
+            id="bookingDate" type="date"
             min={today}
             max={maxDate}
             value={selectedDate}
@@ -235,6 +244,7 @@ export default function AdvanceBookingForm({
               setSelectedSlot('');
             }}
             className="w-full px-4 py-3 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 text-sm"
+            title="Select Booking Date"
           />
           {holidayName && (
             <p className="text-amber-500 text-xs font-bold mt-1 flex items-center gap-1">

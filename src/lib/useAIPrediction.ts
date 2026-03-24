@@ -27,8 +27,8 @@ export function useAIPrediction(orgId: string, stats: { currentlyWaiting: number
         const predictionId = orgId;
 
         // 1. Try to fetch from Supabase first
-        const { data: cachedPred, error: fetchErr } = await supabase
-          .from('predictions')
+        const { data: cachedPred, error: fetchErr } = await (supabase
+          .from('predictions') as any)
           .select('*')
           .eq('id', predictionId)
           .maybeSingle();

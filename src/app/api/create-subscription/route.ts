@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { createClient } from '@supabase/supabase-js';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
   key_secret: process.env.RAZORPAY_KEY_SECRET || 'placeholder_secret',
 });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder';
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
-
 export async function POST(req: NextRequest) {
   try {
+    const supabaseAdmin = createServiceRoleClient();
     const { businessId, planId, customerData } = await req.json();
 
     if (!businessId || !planId) {
@@ -34,8 +30,8 @@ export async function POST(req: NextRequest) {
     });
 
     // 3. Save pending subscription info to Supabase
-    const { error: dbError } = await supabaseAdmin
-      .from('subscriptions')
+    const { error: dbError } = await (supabaseAdmin
+      .from('subscriptions') as any)
       .insert({
         business_id: businessId,
         plan: planId.includes('growth') ? 'growth' : 'enterprise',
@@ -50,8 +46,9 @@ export async function POST(req: NextRequest) {
       short_url: subscription.short_url,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Internal Server Error';
     console.error('Razorpay Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,125 +1,139 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Ticket, Clock, History, Search, ChevronRight, 
-  MapPin, LogOut, User, Bell, Star, ArrowRight, Activity, QrCode, LayoutDashboard
-} from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { Ticket, Search, LogOut, User, ArrowRight, Activity, QrCode, LayoutDashboard } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/context/AuthContext';
+import { Database } from '@/types/database';
 
 const supabase = createClient();
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import GlassCard from '@/components/ui/GlassCard';
-import CountUp from '@/components/ui/CountUp';
-import LiveIndicator from '@/components/ui/LiveIndicator';
+import TokenCard from '@/components/Customer/TokenCard';
 import { getAllGuestSessions } from '@/hooks/useGuestSession';
+
+type Token = Database['public']['Tables']['tokens']['Row'] & {
+  businesses?: {
+    name: string;
+    category: string;
+    serviceMins: number | null;
+    avg_rating?: number | null;
+  } | null;
+};
 
 export default function CustomerDashboard() {
   const { user, userRole, signOut, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTokens, setActiveTokens] = useState<any[]>([]);
-  const [historyTokens, setHistoryTokens] = useState<any[]>([]);
+  const [activeTokens, setActiveTokens] = useState<Token[]>([]);
+  const [historyTokens, setHistoryTokens] = useState<Token[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading) return;
+  const fetchData = useCallback(async () => {
+    // Only show loader if we don't have tokens already
+    if (activeTokens.length === 0 && historyTokens.length === 0) setLoading(true);
+    
+    let active: Token[] = [];
+    let history: Token[] = [];
 
-    const fetchData = async () => {
-      setLoading(true);
-      
-      let active: any[] = [];
-      let history: any[] = [];
+    if (user) {
+      const { data: act } = await supabase
+        .from('tokens')
+        .select('*, businesses(name, address, category, serviceMins)')
+        .eq('userId', user.id)
+        .in('status', ['WAITING', 'SERVING'])
+        .order('createdAt', { ascending: false });
 
-      if (user) {
-        // Fetch Active Tokens for User
+      const { data: hist } = await supabase
+        .from('tokens')
+        .select('*, businesses(name, avg_rating)')
+        .eq('userId', user.id)
+        .in('status', ['SERVED', 'CANCELLED'])
+        .order('createdAt', { ascending: false })
+        .limit(10);
+        
+      active = (act as any) || [];
+      history = (hist as any) || [];
+    } else {
+      const guestSessions = getAllGuestSessions();
+      const tokenIds = guestSessions.map(s => s.activeTokenId).filter(Boolean) as string[];
+      if (tokenIds.length > 0) {
         const { data: act } = await supabase
           .from('tokens')
           .select('*, businesses(name, address, category, serviceMins)')
-          .eq('userId', user.id)
+          .in('id', tokenIds)
           .in('status', ['WAITING', 'SERVING'])
           .order('createdAt', { ascending: false });
 
-        // Fetch History for User
         const { data: hist } = await supabase
           .from('tokens')
           .select('*, businesses(name, avg_rating)')
-          .eq('userId', user.id)
+          .in('id', tokenIds)
           .in('status', ['SERVED', 'CANCELLED'])
-          .order('createdAt', { ascending: false })
-          .limit(10);
-          
-        active = act || [];
-        history = hist || [];
-      } else {
-        // Guest mode fetching
-        const guestSessions = getAllGuestSessions();
-        const tokenIds = guestSessions.map(s => s.activeTokenId).filter(Boolean) as string[];
-        if (tokenIds.length > 0) {
-          const { data: act } = await supabase
-            .from('tokens')
-            .select('*, businesses(name, address, category, serviceMins)')
-            .in('id', tokenIds)
-            .in('status', ['WAITING', 'SERVING'])
-            .order('createdAt', { ascending: false });
+          .order('createdAt', { ascending: false });
 
-          const { data: hist } = await supabase
-            .from('tokens')
-            .select('*, businesses(name, avg_rating)')
-            .in('id', tokenIds)
-            .in('status', ['SERVED', 'CANCELLED'])
-            .order('createdAt', { ascending: false });
-
-          active = act || [];
-          history = hist || [];
-        }
+        active = (act as any) || [];
+        history = (hist as any) || [];
       }
+    }
 
-      setActiveTokens(active);
-      setHistoryTokens(history);
-      setLoading(false);
-    };
+    setActiveTokens(active);
+    setHistoryTokens(history);
+    setLoading(false);
+  }, [user, activeTokens.length, historyTokens.length]);
 
+  useEffect(() => {
+    if (authLoading) return;
     fetchData();
 
+    let channel: any;
+
     if (user) {
-      // Realtime subscription for status changes
-      const channel = supabase
+      channel = supabase
         .channel(`customer_tokens_${user.id}`)
         .on('postgres_changes', {
           event: 'UPDATE',
           schema: 'public',
           table: 'tokens',
           filter: `userId=eq.${user.id}`
-        }, () => {
-          fetchData();
-        });
-
-      const handleVisibility = () => {
-        if (document.hidden) {
-          channel.unsubscribe();
-        } else {
-          channel.subscribe();
-        }
-      };
-
-      channel.subscribe();
-      document.addEventListener('visibilitychange', handleVisibility);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibility);
-        supabase.removeChannel(channel);
-      };
+        }, (payload: any) => {
+          const updatedToken = payload.new as Token;
+          setActiveTokens(prev => prev.map(t => t.id === updatedToken.id ? { ...t, ...updatedToken } : t));
+          // If status moved to SERVED or CANCELLED, refetch to update sections
+          if (['SERVED', 'CANCELLED'].includes(updatedToken.status)) {
+            fetchData();
+          }
+        })
+        .subscribe();
     } else {
-      // Basic polling mechanism for guest realtime simulation
-      const interval = setInterval(() => {
-        fetchData();
-      }, 5000);
-      return () => clearInterval(interval);
+      // Guest realtime subscription
+      const guestSessions = getAllGuestSessions();
+      const tokenIds = guestSessions.map(s => s.activeTokenId).filter(Boolean) as string[];
+      
+      if (tokenIds.length > 0) {
+        channel = supabase
+          .channel(`guest_tokens_${tokenIds[0]}`) // Simple unique group
+          .on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'tokens',
+            // No in filter support in realtime yet, using generic and then javascript filter
+          }, (payload: any) => {
+            const updatedToken = payload.new as Token;
+            if (tokenIds.includes(updatedToken.id)) {
+              setActiveTokens(prev => prev.map(t => t.id === updatedToken.id ? { ...t, ...updatedToken } : t));
+              if (['SERVED', 'CANCELLED'].includes(updatedToken.status)) {
+                fetchData();
+              }
+            }
+          })
+          .subscribe();
+      }
     }
-  }, [user, authLoading, router]);
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [user, authLoading, fetchData]);
 
   const handleLogout = async () => {
     await signOut();
@@ -211,7 +225,7 @@ export default function CustomerDashboard() {
                     <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
                     <Ticket size={64} className="text-primary relative z-10" />
                  </div>
-                 <h2 className="text-3xl font-black mb-4 tracking-tight leading-tight">You haven't joined<br/>any queues yet</h2>
+                 <h2 className="text-3xl font-black mb-4 tracking-tight leading-tight">You haven&apos;t joined<br/>any queues yet</h2>
                  <p className="text-zinc-500 text-sm font-medium mb-10 max-w-[280px] leading-relaxed">
                     Find a nearby hospital, bank, or temple and skip the wait with a digital token.
                  </p>
@@ -268,47 +282,11 @@ export default function CustomerDashboard() {
                     <div className="space-y-4">
                        {activeTokens.length > 0 ? (
                          activeTokens.map(token => (
-                           <motion.div 
-                             key={token.id}
-                             initial={{ opacity: 0, scale: 0.95 }}
-                             animate={{ opacity: 1, scale: 1 }}
-                             onClick={() => router.push(`/customer/queue/${token.orgId}/${token.id}`)}
-                             className="cursor-pointer"
-                           >
-                              <GlassCard className="relative overflow-hidden group">
-                                 {token.status === 'SERVING' && (
-                                    <div className="absolute top-0 right-0 px-4 py-1 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-widest rounded-bl-xl shadow-lg animate-pulse">
-                                       Now Serving
-                                    </div>
-                                 )}
-                                 
-                                 <div className="flex items-start justify-between">
-                                    <div>
-                                       <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 block">
-                                          {token.businesses?.category || 'Service'}
-                                       </span>
-                                       <h3 className="text-xl font-black tracking-tight mb-2 group-hover:text-primary transition-colors">
-                                          {token.businesses?.name}
-                                       </h3>
-                                       <div className="flex items-center gap-3 text-zinc-400 text-xs font-bold">
-                                          <p className="flex items-center gap-1"><Ticket size={14} className="text-primary" /> {token.tokenNumber}</p>
-                                          {token.status === 'WAITING' ? (
-                                             <div className="flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                                                <Clock size={12} /> EWT: ~{token.businesses?.serviceMins || 15} mins
-                                             </div>
-                                          ) : (
-                                             <div className="flex items-center gap-1 text-primary">
-                                                <Activity size={12} /> {token.status}
-                                             </div>
-                                          )}
-                                       </div>
-                                    </div>
-                                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:bg-primary group-hover:text-black transition-all">
-                                       <ChevronRight size={20} />
-                                    </div>
-                                 </div>
-                              </GlassCard>
-                           </motion.div>
+                           <TokenCard 
+                            key={token.id} 
+                            token={token} 
+                            onClick={() => router.push(`/customer/queue/${token.orgId}/${token.id}`)}
+                           />
                          ))
                        ) : (
                           <GlassCard className="py-12 flex flex-col items-center text-center opacity-50 border-dashed">
@@ -342,29 +320,12 @@ export default function CustomerDashboard() {
                      <h2 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-4 px-2">Recent History</h2>
                      <div className="space-y-3">
                          {historyTokens.map(token => (
-                            <div 
-                              key={token.id}
+                            <TokenCard 
+                              key={token.id} 
+                              token={token} 
+                              isHistory 
                               onClick={() => router.push(`/customer/queue/${token.orgId}/${token.id}`)}
-                              className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/5 transition-colors"
-                            >
-                             <div className="flex items-center gap-4">
-                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${token.status === 'SERVED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                                   <History size={18} />
-                                 </div>
-                                 <div>
-                                   <h4 className="font-black text-sm">{token.businesses?.name}</h4>
-                                   <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">
-                                       {token.status} • {new Date(token.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                   </p>
-                                 </div>
-                             </div>
-                             <Link 
-                                 href={`/b/${token.orgId}`}
-                                 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-white"
-                             >
-                                 Rate
-                             </Link>
-                           </div>
+                            />
                          ))}
                      </div>
                    </section>

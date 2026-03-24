@@ -17,12 +17,12 @@ export function useQueueRealtime(queueId: string) {
     if (!queueId) return;
 
     // Initial fetch
-    supabase
-      .from("tokens")
+    (supabase
+      .from("tokens") as any)
       .select("*")
       .eq("queue_id", queueId)
       .order("createdAt", { ascending: true })
-      .then(({ data }) => setTokens(data || []));
+      .then(({ data }: any) => setTokens(data || []));
 
     // Subscribe to real-time changes
     const channel = supabase

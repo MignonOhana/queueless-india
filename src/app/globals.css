@@ -145,3 +145,37 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* Form Inputs — Dark Theme */
+.form-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 0.875rem 1.5rem;
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--brand-primary, #00F5A0);
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Fix select & date input in dark theme */
+.form-input option {
+  background: #111118;
+  color: white;
+}
+
+.form-input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}

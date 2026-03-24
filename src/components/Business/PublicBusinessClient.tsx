@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Star, MapPin, Clock, Share2, ShieldCheck, 
-  ChevronDown, MessageCircle, Copy, QrCode, ArrowRight, Zap, Globe 
+  ChevronDown, MessageCircle, Copy, QrCode, ArrowRight, Zap, Globe, 
+  Building2, Users
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
@@ -26,11 +27,12 @@ import { track } from '@/lib/analytics';
 
 interface PublicBusinessClientProps {
   business: any;
+  departments: any[];
   initialWaitingCount: number;
   initialReviews: any[];
 }
 
-export default function PublicBusinessClient({ business, initialWaitingCount, initialReviews }: PublicBusinessClientProps) {
+export default function PublicBusinessClient({ business, departments, initialWaitingCount, initialReviews }: PublicBusinessClientProps) {
   const router = useRouter();
   const { user, isAuthenticated, userRole } = useAuth();
   const { t } = useLanguage();
@@ -39,6 +41,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
   const [waitingCount, setWaitingCount] = useState(initialWaitingCount);
   const [showHours, setShowHours] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [selectedDept, setSelectedDept] = useState<any>(null);
   
   // Join Flow States
   const [isJoining, setIsJoining] = useState(false);
@@ -68,7 +71,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
   // Fetch Live Serving Token
   useEffect(() => {
     const fetchServing = async () => {
-      const { data } = await supabase.from("tokens")
+      const { data } = await (supabase.from("tokens") as any)
         .select("tokenNumber")
         .eq("orgId", business.id)
         .eq("status", "SERVING")
@@ -96,8 +99,8 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
         filter: `orgId=eq.${business.id}`
       }, async () => {
         // Refetch total waiting on any change
-        const { count } = await supabase
-          .from('tokens')
+        const { count } = await (supabase
+          .from('tokens') as any)
           .select('*', { count: 'exact', head: true })
           .eq('orgId', business.id)
           .eq('status', 'WAITING')
@@ -170,7 +173,7 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
 
     setIsJoining(true);
     try {
-      const counterPrefix = business?.services?.[0]?.prefix || "Q";
+      const counterPrefix = selectedDept?.prefix || business?.services?.[0]?.prefix || "Q";
       const userId = asGuest ? null : user?.id;
       const customerPhone = asGuest ? "+91" + digits : user?.phone || "+91" + digits;
 
@@ -182,7 +185,8 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
           counterPrefix, 
           userId, 
           customerName: name.trim(), 
-          customerPhone 
+          customerPhone,
+          departmentId: selectedDept?.id
         })
       });
 
@@ -382,6 +386,46 @@ export default function PublicBusinessClient({ business, initialWaitingCount, in
                    </div>
                 </div>
              </div>
+
+             {/* DEPARTMENTS SECTION */}
+             {departments && departments.length > 0 && (
+               <div className="mt-8 space-y-4">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 px-1">Select Department</h3>
+                  <div className="grid grid-cols-1 gap-4">
+                     {departments.map((dept) => (
+                        <button
+                           key={dept.id}
+                           onClick={() => {
+                              setSelectedDept(dept);
+                              setJoinMode(isAuthenticated ? 'account' : 'choose');
+                           }}
+                           className="flex items-center justify-between p-6 rounded-3xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-primary/30 transition-all group text-left"
+                        >
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                 <Building2 size={24} />
+                              </div>
+                              <div>
+                                 <p className="font-black text-white text-lg tracking-tight">{dept.name}</p>
+                                 <div className="flex items-center gap-3 mt-1">
+                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                                       <Users size={12} /> {dept.waiting_count || 0} waiting
+                                    </span>
+                                    <div className="w-1 h-1 rounded-full bg-zinc-800" />
+                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary">
+                                       <Clock size={12} /> ~{(dept.waiting_count || 0) * (business.avg_service_time || 5)}m
+                                    </span>
+                                 </div>
+                              </div>
+                           </div>
+                           <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-zinc-600 group-hover:bg-primary group-hover:text-black transition-all">
+                              <ArrowRight size={18} />
+                           </div>
+                        </button>
+                     ))}
+                  </div>
+               </div>
+             )}
 
              {/* ACTIONS / JOIN FLOW */}
              <div className="mt-8">

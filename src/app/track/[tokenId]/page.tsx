@@ -100,8 +100,8 @@ export default function TokenTrackingPage() {
 
       try {
         // 1. Fetch Token
-        const { data: tData, error: tErr } = await supabase
-          .from("tokens")
+        const { data: tData, error: tErr } = await (supabase
+          .from("tokens") as any)
           .select("*")
           .eq("tokenNumber", tokenId) // assuming tokenId is the tokenNumber like OPD-001 based on URL structure /track/[tokenId]
           .maybeSingle();
@@ -113,8 +113,8 @@ export default function TokenTrackingPage() {
         }
 
         // 2. Fetch Business
-        const { data: bData, error: bErr } = await supabase
-          .from("businesses")
+        const { data: bData, error: bErr } = await (supabase
+          .from("businesses") as any)
           .select("*")
           .eq("id", tData.orgId)
           .maybeSingle();
@@ -138,8 +138,8 @@ export default function TokenTrackingPage() {
 
         // 3. Calculate initial position (people ahead)
         if (tData.status === "WAITING") {
-           const { count } = await supabase
-             .from("tokens")
+           const { count } = await (supabase
+             .from("tokens") as any)
              .select("*", { count: "exact", head: true })
              .eq("orgId", tData.orgId)
              .eq("counterId", tData.counterId || 'opd')
@@ -186,13 +186,13 @@ export default function TokenTrackingPage() {
           .on('postgres_changes', { event: '*', schema: 'public', table: 'tokens', filter: `orgId=eq.${tData.orgId}` }, async () => {
              // Recalculate position whenever the queue for this business changes
              if (tData.status === "WAITING") {
-                const { count } = await supabase
-                  .from("tokens")
-                  .select("*", { count: "exact", head: true })
-                  .eq("orgId", tData.orgId)
-                  .eq("counterId", tData.counterId || 'opd')
-                  .eq("status", "WAITING")
-                  .lt("createdAt", tData.createdAt);
+                 const { count } = await (supabase
+                   .from("tokens") as any)
+                   .select("*", { count: "exact", head: true })
+                   .eq("orgId", tData.orgId)
+                   .eq("counterId", tData.counterId || 'opd')
+                   .eq("status", "WAITING")
+                   .lt("createdAt", tData.createdAt);
                   
                 if (isMounted) {
                    const countAhead = count || 0;
@@ -266,7 +266,7 @@ export default function TokenTrackingPage() {
   const handleCancelQueue = async () => {
     try {
       if (!token) return;
-      await supabase.from("tokens").update({ status: "CANCELLED" }).eq("id", token.id);
+      await (supabase.from("tokens") as any).update({ status: "CANCELLED" }).eq("id", token.id);
       router.push("/");
     } catch (e) {
       console.error(e);
@@ -277,7 +277,7 @@ export default function TokenTrackingPage() {
   const submitReview = async () => {
      setIsSubmittingReview(true);
      try {
-        await supabase.from("reviews").insert({
+        await (supabase.from("reviews") as any).insert({
            business_id: business?.id,
            user_id: user?.id,
            rating,
@@ -386,7 +386,7 @@ export default function TokenTrackingPage() {
                 </AnimatePresence>
 
                 <div className="flex justify-between items-center w-full">
-                  <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <button onClick={() => router.push("/")} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Go Back Home" title="Go Back Home">
                      <ChevronLeft size={20} className="text-white" />
                   </button>
                   <div className="flex gap-2 text-sm font-bold opacity-80 px-4 py-2 rounded-full border border-white/10 bg-white/5">
@@ -463,7 +463,7 @@ export default function TokenTrackingPage() {
 
             {/* Full Screen Close Button */}
             {isFullScreen && (
-               <button onClick={() => setIsFullScreen(false)} className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors">
+               <button onClick={() => setIsFullScreen(false)} className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors" aria-label="Close Full Screen" title="Close Full Screen">
                   <Minimize2 size={24} />
                </button>
             )}
@@ -647,6 +647,8 @@ export default function TokenTrackingPage() {
                         <button 
                           key={star}
                           onClick={() => setRating(star)}
+                          aria-label={`${star} Stars`}
+                          title={`${star} Stars`}
                           onMouseEnter={() => setHoverRating(star)}
                           onMouseLeave={() => setHoverRating(0)}
                           className="p-1 transition-transform hover:scale-110 focus:outline-none"

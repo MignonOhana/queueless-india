@@ -63,29 +63,29 @@ export const callNextToken = async (
 ) => {
   try {
     // Build Serving Query (either global or specific counter)
-    let servingQ = supabase.from("tokens").select("*").eq("orgId", orgId).eq(
+    let servingQ = (supabase.from("tokens") as any).select("*").eq("orgId", orgId).eq(
       "status",
       "SERVING",
     );
     if (counterId) servingQ = servingQ.eq("counterId", counterId);
 
-    const { data: servingData } = await servingQ;
+    const { data: servingData } = await (servingQ as any);
 
     // Build Waiting Query
-    let waitingQ = supabase.from("tokens").select("*").eq("orgId", orgId).eq(
+    let waitingQ = (supabase.from("tokens") as any).select("*").eq("orgId", orgId).eq(
       "status",
       "WAITING",
     ).order("createdAt", { ascending: true }).limit(1);
     if (counterId) waitingQ = waitingQ.eq("counterId", counterId);
 
-    const { data: waitingData } = await waitingQ;
+    const { data: waitingData } = await (waitingQ as any);
 
     let calledToken = null;
 
     // Mark old as served (sequential for MVP, RPC for production)
     if (servingData && servingData.length > 0) {
       for (const d of servingData) {
-        await supabase.from("tokens").update({
+        await (supabase.from("tokens") as any).update({
           status: "SERVED",
           servedAt: new Date().toISOString(),
         }).eq("id", d.id);
@@ -95,7 +95,7 @@ export const callNextToken = async (
     // Mark new as serving
     if (waitingData && waitingData.length > 0) {
       const nextDoc = waitingData[0] as TokenItem;
-      await supabase.from("tokens").update({ status: "SERVING" }).eq(
+      await (supabase.from("tokens") as any).update({ status: "SERVING" }).eq(
         "id",
         nextDoc.id,
       );
@@ -103,16 +103,16 @@ export const callNextToken = async (
 
       if (nextDoc.queue_id) {
         // Decrement waiting count AND set active serving ID
-        await supabase.rpc("serve_next_queue_token", {
+        await (supabase as any).rpc("serve_next_queue_token", {
           p_queue_id: nextDoc.queue_id,
           p_token_id: nextDoc.id,
         });
       }
 
       // --- WHATSAPP NOTIFICATION ---
-      const { data: biz } = await supabase.from("businesses").select(
+      const { data: biz } = await (supabase.from("businesses").select(
         "name, whatsapp_enabled",
-      ).eq("id", orgId).single();
+      ).eq("id", orgId).single() as any);
 
       if (biz?.whatsapp_enabled) {
         // 1. Notify the one being served NOW
@@ -134,13 +134,13 @@ export const callNextToken = async (
         // Let's stick to the user's request: "pos drops to 2".
         // If Token B is serving, Token C is Pos 1, Token D is Pos 2.
         // So notify Token D.
-        const { data: waitingList } = await supabase.from("tokens")
+        const { data: waitingList } = await (supabase.from("tokens")
           .select("customerPhone, tokenNumber")
           .eq("orgId", orgId)
           .eq("status", "WAITING")
           .order("createdAt", { ascending: true })
           .range(1, 1) // Offset 1 is the 2nd person waiting
-          .maybeSingle();
+          .maybeSingle() as any);
 
         if (waitingList?.customerPhone) {
           supabase.functions.invoke("send-whatsapp", {
@@ -168,20 +168,20 @@ export const skipToken = async (
   supabase: SupabaseClient = defaultSupabase,
 ) => {
   try {
-    const { data: tokenData, error: tokenErr } = await supabase
+    const { data: tokenData, error: tokenErr } = await (supabase
       .from("tokens")
       .update({ status: "SKIPPED", servedAt: new Date().toISOString() })
       .eq("id", tokenId)
       .eq("orgId", orgId)
       .select("queue_id")
-      .maybeSingle();
+      .maybeSingle() as any);
 
     if (tokenErr) throw tokenErr;
     if (!tokenData) return false;
 
     if (tokenData && tokenData.queue_id) {
       // Decrement total_waiting since they left the queue
-      await supabase.rpc("decrement_queue_waiting", {
+      await (supabase as any).rpc("decrement_queue_waiting", {
         p_queue_id: tokenData.queue_id,
       });
     }
@@ -200,28 +200,28 @@ export const recallToken = async (
 ) => {
   try {
     // Check if there is currently a Serving token, mark it back to waiting so we don't have 2 serving
-    await supabase
-      .from("tokens")
+    await (supabase
+      .from("tokens") as any)
       .update({ status: "WAITING" })
       .eq("orgId", orgId)
       .eq("status", "SERVING");
 
     // Force target token to SERVING and wipe the 'servedAt' timestamp so it reappears as active
-    const { data: tokenData, error } = await supabase
+    const { data: tokenData, error } = await (supabase
       .from("tokens")
       .update({ status: "SERVING", servedAt: null })
       .eq("id", tokenId)
       .eq("orgId", orgId)
       .select("queue_id")
-      .maybeSingle();
+      .maybeSingle() as any);
 
     if (error) throw error;
     if (!tokenData) return false;
 
     if (tokenData && tokenData.queue_id) {
       // Update queues table to point currently_serving_token_id to this recalled token
-      await supabase
-        .from("queues")
+      await (supabase
+        .from("queues") as any)
         .update({ currently_serving: tokenId
  })
         .eq("id", tokenData.queue_id);
@@ -256,7 +256,7 @@ export const createBusiness = async (data: {
     data.location.toLowerCase().replace(/[^a-z0-9]+/g, "-")
   }`;
 
-  const { data: newDoc, error } = await supabase.from("businesses").insert({
+  const { data: newDoc, error } = await (supabase.from("businesses").insert({
     id,
     name: data.name,
     category: data.category,
@@ -269,7 +269,7 @@ export const createBusiness = async (data: {
     fastPassEnabled: false,
     fastPassPrice: 50,
     advanceBookingEnabled: false,
-  }).select().single();
+  }).select().single() as any);
 
   if (error) throw error;
   return newDoc;

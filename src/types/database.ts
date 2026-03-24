@@ -55,6 +55,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       businesses: {
         Row: {
@@ -148,6 +149,7 @@ export interface Database {
           claim_status?: string
           onboarding_step?: number | null
         }
+        Relationships: []
       }
       counters: {
         Row: {
@@ -168,6 +170,7 @@ export interface Database {
           lastNumber?: number | null
           created_at?: string | null
         }
+        Relationships: []
       }
       daily_stats: {
         Row: {
@@ -212,6 +215,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       fastpass_logs: {
         Row: {
@@ -241,6 +245,7 @@ export interface Database {
           transaction_type?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       fastpass_transactions: {
         Row: {
@@ -291,6 +296,7 @@ export interface Database {
           created_at?: string | null
           paid_at?: string | null
         }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -326,6 +332,7 @@ export interface Database {
           sent_at?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       otp_attempts: {
         Row: {
@@ -349,6 +356,7 @@ export interface Database {
           attempted_at?: string
           success?: boolean
         }
+        Relationships: []
       }
       predictions: {
         Row: {
@@ -378,6 +386,52 @@ export interface Database {
           confidence?: string
           created_at?: string | null
         }
+        Relationships: []
+      }
+      departments: {
+        Row: {
+          id: string
+          business_id: string
+          name: string
+          description: string | null
+          icon: string | null
+          is_active: boolean | null
+          serviceMins: number | null
+          opHours: string | null
+          max_capacity: number | null
+          sort_order: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          business_id: string
+          name: string
+          description?: string | null
+          icon?: string | null
+          is_active?: boolean | null
+          serviceMins?: number | null
+          opHours?: string | null
+          max_capacity?: number | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          business_id?: string
+          name?: string
+          description?: string | null
+          icon?: string | null
+          is_active?: boolean | null
+          serviceMins?: number | null
+          opHours?: string | null
+          max_capacity?: number | null
+          sort_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       queues: {
         Row: {
@@ -393,6 +447,7 @@ export interface Database {
           updated_at: string | null
           max_capacity: number | null
           is_accepting_tokens: boolean | null
+          department_id: string | null
         }
         Insert: {
           id?: string
@@ -407,6 +462,7 @@ export interface Database {
           updated_at?: string | null
           max_capacity?: number | null
           is_accepting_tokens?: boolean | null
+          department_id?: string | null
         }
         Update: {
           id?: string
@@ -421,7 +477,9 @@ export interface Database {
           updated_at?: string | null
           max_capacity?: number | null
           is_accepting_tokens?: boolean | null
+          department_id?: string | null
         }
+        Relationships: []
       }
       razorpay_webhook_events: {
         Row: {
@@ -460,6 +518,7 @@ export interface Database {
           error?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       reviews: {
         Row: {
@@ -489,6 +548,7 @@ export interface Database {
           comment?: string | null
           created_at?: string | null
         }
+        Relationships: []
       }
       staff_members: {
         Row: {
@@ -502,6 +562,10 @@ export interface Database {
           invited_at: string | null
           accepted_at: string | null
           created_at: string | null
+          department_id: string | null
+          access_code: string | null
+          pin: string | null
+          last_login_at: string | null
         }
         Insert: {
           id?: string
@@ -514,6 +578,10 @@ export interface Database {
           invited_at?: string | null
           accepted_at?: string | null
           created_at?: string | null
+          department_id?: string | null
+          access_code?: string | null
+          pin?: string | null
+          last_login_at?: string | null
         }
         Update: {
           id?: string
@@ -526,7 +594,12 @@ export interface Database {
           invited_at?: string | null
           accepted_at?: string | null
           created_at?: string | null
+          department_id?: string | null
+          access_code?: string | null
+          pin?: string | null
+          last_login_at?: string | null
         }
+        Relationships: []
       }
       subscriptions: {
         Row: {
@@ -571,6 +644,7 @@ export interface Database {
           created_at?: string | null
           updated_at?: string | null
         }
+        Relationships: []
       }
       tokens: {
         Row: {
@@ -587,6 +661,7 @@ export interface Database {
           servedAt: string | null
           createdAt: string | null
           queue_id: string | null
+          department_id: string | null
         }
         Insert: {
           id?: string
@@ -602,6 +677,7 @@ export interface Database {
           servedAt?: string | null
           createdAt?: string | null
           queue_id?: string | null
+          department_id?: string | null
         }
         Update: {
           id?: string
@@ -617,7 +693,9 @@ export interface Database {
           servedAt?: string | null
           createdAt?: string | null
           queue_id?: string | null
+          department_id?: string | null
         }
+        Relationships: []
       }
       tokens_archive: {
         Row: {
@@ -665,6 +743,7 @@ export interface Database {
           createdAt?: string | null
           queue_id?: string | null
         }
+        Relationships: []
       }
       user_profiles: {
         Row: {
@@ -682,6 +761,18 @@ export interface Database {
           preferred_language: string | null
           profile_completed: boolean | null
           notification_preference: string | null
+          date_of_birth: string | null
+          gender: string | null
+          pincode: string | null
+          state: string | null
+          bio: string | null
+          aadhaar_last4: string | null
+          pan_last4: string | null
+          kyc_status: string
+          kyc_submitted_at: string | null
+          kyc_verified_at: string | null
+          is_business_owner: boolean | null
+          primary_business_id: string | null
         }
         Insert: {
           id: string
@@ -698,6 +789,18 @@ export interface Database {
           preferred_language?: string | null
           profile_completed?: boolean | null
           notification_preference?: string | null
+          date_of_birth?: string | null
+          gender?: string | null
+          pincode?: string | null
+          state?: string | null
+          bio?: string | null
+          aadhaar_last4?: string | null
+          pan_last4?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
+          kyc_verified_at?: string | null
+          is_business_owner?: boolean | null
+          primary_business_id?: string | null
         }
         Update: {
           id?: string
@@ -714,7 +817,20 @@ export interface Database {
           preferred_language?: string | null
           profile_completed?: boolean | null
           notification_preference?: string | null
+          date_of_birth?: string | null
+          gender?: string | null
+          pincode?: string | null
+          state?: string | null
+          bio?: string | null
+          aadhaar_last4?: string | null
+          pan_last4?: string | null
+          kyc_status?: string
+          kyc_submitted_at?: string | null
+          kyc_verified_at?: string | null
+          is_business_owner?: boolean | null
+          primary_business_id?: string | null
         }
+        Relationships: []
       }
     }
     Views: {
@@ -743,9 +859,119 @@ export interface Database {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_hourly_distribution: {
+        Args: {
+          p_org_id: string
+          p_date: string
+        }
+        Returns: {
+          hour_val: number
+          token_count: number
+        }[]
+      }
+      get_wait_time_trend: {
+        Args: {
+          p_org_id: string
+          p_days: number
+        }
+        Returns: {
+          date_val: string
+          avg_wait: number
+        }[]
+      }
+      activate_queue_for_today: {
+        Args: {
+          p_org_id: string
+        }
+        Returns: boolean
+      }
+      check_otp_rate_limit: {
+        Args: {
+          p_email: string
+        }
+        Returns: boolean
+      }
+      archive_old_tokens: {
+        Args: {
+          [_ in never]: never
+        }
+        Returns: number
+      }
+      generate_business_id: {
+        Args: {
+          p_location: string
+        }
+        Returns: string
+      }
+      generate_department_id: {
+        Args: {
+          p_business_id: string
+          p_name: string
+        }
+        Returns: string
+      }
+      generate_staff_access_code: {
+        Args: {
+          [_ in never]: never
+        }
+        Returns: string
+      }
+      create_department: {
+        Args: {
+          p_business_id: string
+          p_name: string
+          p_description?: string
+          p_icon?: string
+          p_service_mins?: number
+          p_op_hours?: string
+          p_max_capacity?: number
+        }
+        Returns: {
+          id: string
+          name: string
+          queue_id: string
+        }[]
+      }
+      add_staff_member: {
+        Args: {
+          p_business_id: string
+          p_department_id: string
+          p_name: string
+          p_phone?: string
+          p_role?: string
+        }
+        Returns: {
+          id: string
+          access_code: string
+        }[]
+      }
+      staff_login_by_code: {
+        Args: {
+          p_code: string
+        }
+        Returns: {
+          staff_id: string
+          staff_name: string
+          staff_role: string
+          business_id: string
+          business_name: string
+          department_id: string
+          dept_name: string
+          dept_icon: string
+          queue_id: string
+        }[]
+      }
+      get_business_with_departments: {
+        Args: {
+          p_business_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }
@@ -758,3 +984,4 @@ export type Queue = Database['public']['Tables']['queues']['Row'];
 export type StaffMember = Database['public']['Tables']['staff_members']['Row'];
 export type DailyStats = Database['public']['Tables']['daily_stats']['Row'];
 export type AdvanceBooking = Database['public']['Tables']['advance_bookings']['Row'];
+export type Department = Database['public']['Tables']['departments']['Row'];

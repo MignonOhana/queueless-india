@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder';
-
-const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
 
 export async function POST(req: NextRequest) {
   try {
+    const supabaseAdmin = createServiceRoleClient();
     const body = await req.text();
     const signature = req.headers.get('x-razorpay-signature');
     const secret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
@@ -40,8 +36,8 @@ export async function POST(req: NextRequest) {
         const planType = planId.includes('growth') ? 'growth' : 'enterprise';
 
         // Update Subscriptions Table
-        await supabaseAdmin
-          .from('subscriptions')
+        await (supabaseAdmin
+          .from('subscriptions') as any)
           .update({
             status: 'active',
             current_period_end: new Date(sub.current_end * 1000).toISOString(),
@@ -50,8 +46,8 @@ export async function POST(req: NextRequest) {
           .eq('razorpay_subscription_id', sub.id);
 
         // Update Business Plan
-        await supabaseAdmin
-          .from('businesses')
+        await (supabaseAdmin
+          .from('businesses') as any)
           .update({ plan: planType })
           .eq('id', businessId);
         
@@ -63,13 +59,13 @@ export async function POST(req: NextRequest) {
         const sub = payload.subscription.entity;
         const businessId = sub.notes.business_id;
 
-        await supabaseAdmin
-          .from('subscriptions')
+        await (supabaseAdmin
+          .from('subscriptions') as any)
           .update({ status: 'cancelled', updated_at: new Date().toISOString() })
           .eq('razorpay_subscription_id', sub.id);
 
-        await supabaseAdmin
-          .from('businesses')
+        await (supabaseAdmin
+          .from('businesses') as any)
           .update({ plan: 'free' })
           .eq('id', businessId);
         
@@ -78,8 +74,9 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
-    console.error('Webhook Error:', err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Internal Server Error';
+    console.error('Webhook Error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Users, Play, Pause, X, CheckCircle2,
+  Users, Play, Pause, X,
   ChevronRight, Loader2, RefreshCw,
-  LayoutDashboard, Clock, ArrowLeft, ArrowRight, Settings, Trash2, UserCheck, ToggleLeft, ToggleRight
+  LayoutDashboard
 } from "lucide-react";
 import CountUp from "@/components/ui/CountUp";
 import { toast } from "sonner";
@@ -34,43 +34,43 @@ export default function BusinessQueueManagement() {
         return;
       }
 
-      const { data: bData } = await supabase
+      const { data: bData } = await (supabase
         .from("businesses")
         .select("*")
         .eq("id", adminOrgId)
-        .single();
+        .single() as any);
       setBusiness(bData);
 
       // 2. Get today's queue
       const today = new Date().toISOString().split("T")[0];
-      const { data: qData } = await supabase
+      const { data: qData } = await (supabase
         .from("queues")
         .select("*")
         .eq("org_id", adminOrgId)
         .eq("session_date", today)
         .eq("is_active", true)
-        .maybeSingle();
+        .maybeSingle() as any);
       
       setQueue(qData);
 
       if (qData) {
         // 3. Get waiting tokens
-        const { data: wTokens } = await supabase
+        const { data: wTokens } = await (supabase
           .from("tokens")
           .select("*")
           .eq("orgId", adminOrgId)
           .eq("status", "WAITING")
           .order("createdAt", { ascending: true })
-          .limit(5);
+          .limit(5) as any);
         setWaitingTokens(wTokens || []);
 
         // 4. Get currently serving token
         if (qData.currently_serving) {
-          const { data: sToken } = await supabase
+          const { data: sToken } = await (supabase
             .from("tokens")
             .select("*")
             .eq("id", qData.currently_serving as string)
-            .single();
+            .single() as any);
           setServingToken(sToken as Token);
         } else {
           setServingToken(null);
@@ -135,8 +135,8 @@ export default function BusinessQueueManagement() {
     if (!queue?.id) return;
     const newState = !queue?.is_accepting_tokens;
     try {
-      const { error } = await supabase
-        .from("queues")
+      const { error } = await (supabase
+        .from("queues") as any)
         .update({ is_accepting_tokens: newState })
         .eq("id", queue.id);
       if (error) throw error;
@@ -151,13 +151,13 @@ export default function BusinessQueueManagement() {
     try {
       // 1. Close queue
       if (queue?.id) {
-        await supabase.from("queues").update({ is_active: false }).eq("id", queue.id);
+        await (supabase.from("queues") as any).update({ is_active: false }).eq("id", queue.id);
       }
       
       // 2. Cancel waiting tokens
       if (business?.id) {
-        await supabase
-          .from("tokens")
+        await (supabase
+          .from("tokens") as any)
           .update({ status: "CANCELLED" })
           .eq("orgId", business.id)
           .eq("status", "WAITING");
@@ -211,12 +211,16 @@ export default function BusinessQueueManagement() {
           onClick={activateQueue}
           disabled={actionLoading}
           className="w-full max-w-xs py-5 bg-emerald-500 text-black font-black uppercase tracking-widest text-sm rounded-2xl flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
+          title="Activate Queue for Today"
+          aria-label="Activate Queue for Today"
         >
           {actionLoading ? <Loader2 className="animate-spin" /> : <><Play size={20} fill="currentColor" /> Activate for Today</>}
         </button>
         <button 
             onClick={() => router.push('/dashboard')}
             className="flex items-center gap-2 text-zinc-500 font-bold uppercase tracking-widest text-[10px]"
+            title="Back to Hub"
+            aria-label="Back to Hub"
         >
             <LayoutDashboard size={14} /> Back to Hub
         </button>
@@ -245,6 +249,8 @@ export default function BusinessQueueManagement() {
         <button 
           onClick={() => router.push('/dashboard')}
           className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          aria-label="Back to Dashboard"
+          title="Back to Dashboard"
         >
           <LayoutDashboard size={20} />
         </button>
@@ -287,6 +293,8 @@ export default function BusinessQueueManagement() {
             onClick={handleCallNext}
             disabled={actionLoading}
             className="w-full h-24 mb-2 bg-[#00F5A0] text-black rounded-[2rem] flex items-center justify-center gap-4 font-black uppercase tracking-[0.2em] text-lg shadow-[0_20px_50px_rgba(0,245,160,0.3)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
+            title="Call Next Token"
+            aria-label="Call Next Token"
           >
             {actionLoading ? <Loader2 className="animate-spin w-8 h-8" /> : (
               <>
@@ -328,6 +336,8 @@ export default function BusinessQueueManagement() {
                 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' 
                 : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
               }`}
+            title={isPaused ? "Resume Queue" : "Pause Queue"}
+            aria-label={isPaused ? "Resume Queue" : "Pause Queue"}
           >
             {isPaused ? <Play size={16} fill="currentColor" /> : <Pause size={16} fill="currentColor" />}
             {isPaused ? 'Resume Queue' : 'Pause Queue'}
@@ -335,9 +345,11 @@ export default function BusinessQueueManagement() {
           <button 
             onClick={handleCloseQueue}
             className="flex-1 py-5 rounded-[2rem] bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] hover:bg-red-500/20"
+            title="Close Queue"
+            aria-label="Close Queue"
           >
             <X size={20} />
- Close Queue
+            Close Queue
           </button>
         </footer>
 

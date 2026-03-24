@@ -41,44 +41,44 @@ export default function LiveTokenTracking() {
   const fetchData = async () => {
     try {
       // 1. Fetch Token
-      const { data: tData, error: tErr } = await supabase
+      const { data: tData, error: tErr } = await (supabase
         .from("tokens")
         .select("*")
         .eq("id", tokenId)
-        .single();
+        .single() as any);
       
       if (tErr || !tData) throw new Error("Token not found");
       setToken(tData);
 
       // 2. Fetch Position via RPC
-      const { data: pos } = await supabase.rpc("get_queue_position", { p_token_id: tokenId });
-      const currentPos = pos && pos.length > 0 ? (pos[0] as any).queue_position : null;
+      const { data: pos } = await (supabase as any).rpc("get_queue_position", { p_token_id: tokenId });
+      const currentPos = (pos as any) && (pos as any).length > 0 ? ((pos as any)[0] as any).queue_position : null;
       setPosition(currentPos);
 
       // 3. Fetch Business
-      const { data: bData } = await supabase
+      const { data: bData } = await (supabase
         .from("businesses")
         .select("*")
         .eq("id", orgId)
-        .single();
+        .single() as any);
       setBusiness(bData);
 
       // 4. Fetch Queue Status
       if (tData.queue_id) {
-        const { data: qData } = await supabase
+        const { data: qData } = await (supabase
           .from("queues")
           .select("*")
           .eq("id", tData.queue_id)
-          .single();
+          .single() as any);
         setQueue(qData);
 
         // Get currently serving token number
         if (qData?.currently_serving) {
-          const { data: sData } = await supabase
+          const { data: sData } = await (supabase
             .from("tokens")
             .select("tokenNumber")
             .eq("id", qData.currently_serving)
-            .single();
+            .single() as any);
           setServingTokenNumber(sData?.tokenNumber || "None");
         }
       }
@@ -147,8 +147,8 @@ export default function LiveTokenTracking() {
   }, [tokenId, orgId]);
 
   const fetchPosition = async () => {
-    const { data: pos } = await supabase.rpc("get_queue_position", { p_token_id: tokenId });
-    const currentPos = pos && pos.length > 0 ? (pos[0] as any).queue_position : null;
+    const { data: pos } = await (supabase as any).rpc("get_queue_position", { p_token_id: tokenId });
+    const currentPos = (pos as any) && (pos as any).length > 0 ? ((pos as any)[0] as any).queue_position : null;
     if (currentPos === 1 && position !== 1) {
       triggerNextPulse();
     }
@@ -156,11 +156,11 @@ export default function LiveTokenTracking() {
   };
 
   const updateServingNumber = async (sTokenId: string) => {
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("tokens")
       .select("tokenNumber")
       .eq("id", sTokenId)
-      .single();
+      .single() as any);
     setServingTokenNumber(data?.tokenNumber || "None");
   };
 
@@ -201,8 +201,8 @@ export default function LiveTokenTracking() {
 
   const handleLeaveQueue = async () => {
     try {
-      const { error } = await supabase
-        .from("tokens")
+      const { error } = await (supabase
+        .from("tokens") as any)
         .update({ status: "CANCELLED" })
         .eq("id", tokenId);
       
@@ -252,7 +252,7 @@ export default function LiveTokenTracking() {
     if (rating === 0) return;
     setIsSubmittingReview(true);
     try {
-      const { error } = await supabase.from("reviews").insert({
+      const { error } = await (supabase.from("reviews") as any).insert({
         business_id: orgId,
         user_id: token?.userId,
         rating,
@@ -294,6 +294,8 @@ export default function LiveTokenTracking() {
         <button 
           onClick={() => router.push("/customer/dashboard")}
           className="p-2 -ml-2 rounded-full hover:bg-white/5 transition-colors"
+          aria-label="Back to Customer Dashboard"
+          title="Back to Customer Dashboard"
         >
           <ChevronLeft size={24} />
         </button>
@@ -381,12 +383,16 @@ export default function LiveTokenTracking() {
             <button 
               onClick={shareViaWhatsApp}
               className="p-5 rounded-2xl bg-green-600 border border-green-500/20 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-green-500 transition-colors shadow-lg shadow-green-900/20"
+              title="Share via WhatsApp"
+              aria-label="Share via WhatsApp"
             >
               <MessageCircle size={18} /> WhatsApp
             </button>
             <button 
               onClick={handleShare}
               className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs hover:bg-white/10 transition-colors"
+              title="Share Tracking Link"
+              aria-label="Share Tracking Link"
             >
               <Share2 size={18} /> Share
             </button>
@@ -394,6 +400,8 @@ export default function LiveTokenTracking() {
           <button 
             onClick={() => setShowLeaveConfirm(true)}
             className="w-full p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[10px] hover:bg-red-500/20 transition-colors opacity-50"
+            title="Leave Queue"
+            aria-label="Leave Queue"
           >
             <X size={14} /> Leave Queue
           </button>
@@ -460,6 +468,7 @@ export default function LiveTokenTracking() {
                     key={star} 
                     onClick={() => setRating(star)}
                     className={`p-1 transition-transform hover:scale-125 ${rating >= star ? 'text-primary' : 'text-zinc-200'}`}
+                    aria-label={`${star} Stars`}
                   >
                     <Star size={32} fill={rating >= star ? 'currentColor' : 'none'} strokeWidth={3} />
                   </button>

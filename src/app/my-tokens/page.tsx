@@ -88,8 +88,8 @@ export default function MyTokensPage() {
         }
       }
 
-      const { data: tokens, error } = await supabase
-        .from("tokens")
+      const { data: tokens, error } = await (supabase
+        .from("tokens") as any)
         .select("*")
         .eq("userId", user.id)
         .order("createdAt", { ascending: false })
@@ -99,8 +99,8 @@ export default function MyTokensPage() {
 
       const enriched: TokenRecord[] = await Promise.all(
         (tokens || []).map(async (t: any) => {
-          const { data: biz } = await supabase
-            .from("businesses")
+          const { data: biz } = await (supabase
+            .from("businesses") as any)
             .select("name")
             .eq("id", t.orgId)
             .maybeSingle();
@@ -185,7 +185,7 @@ export default function MyTokensPage() {
       <main className="relative z-10 max-w-lg mx-auto px-5 pt-12 pb-24">
         {/* Header */}
         <div className="flex items-center gap-4 mb-10">
-          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors flex-shrink-0">
+          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors flex-shrink-0" aria-label="Go Back" title="Go Back">
             <ChevronLeft size={20} className="text-white" />
           </button>
           <div>

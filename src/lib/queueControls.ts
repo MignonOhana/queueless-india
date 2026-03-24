@@ -7,8 +7,8 @@ import { SupabaseClient } from "@supabase/supabase-js";
 
 /** Pause a queue — stops accepting new tokens */
 export async function pauseQueue(queueId: string, supabase: SupabaseClient) {
-  const { error } = await supabase
-    .from("queues")
+  const { error } = await (supabase
+    .from("queues") as any)
     .update({ is_accepting_tokens: false })
     .eq("id", queueId);
   if (error) throw error;
@@ -17,8 +17,8 @@ export async function pauseQueue(queueId: string, supabase: SupabaseClient) {
 
 /** Resume a queue — starts accepting new tokens */
 export async function resumeQueue(queueId: string, supabase: SupabaseClient) {
-  const { error } = await supabase
-    .from("queues")
+  const { error } = await (supabase
+    .from("queues") as any)
     .update({ is_accepting_tokens: true })
     .eq("id", queueId);
   if (error) throw error;
@@ -27,8 +27,8 @@ export async function resumeQueue(queueId: string, supabase: SupabaseClient) {
 
 /** Close a queue for the day — marks inactive and stops accepting */
 export async function closeQueue(queueId: string, supabase: SupabaseClient) {
-  const { error } = await supabase
-    .from("queues")
+  const { error } = await (supabase
+    .from("queues") as any)
     .update({ is_active: false, is_accepting_tokens: false })
     .eq("id", queueId);
   if (error) throw error;
@@ -42,15 +42,15 @@ export async function markNoShow(
   supabase: SupabaseClient,
 ) {
   // 1. Mark the current token as NO_SHOW
-  const { error: updateErr } = await supabase
-    .from("tokens")
+  const { error: updateErr } = await (supabase
+    .from("tokens") as any)
     .update({ status: "NO_SHOW", servedAt: new Date().toISOString() })
     .eq("id", tokenId);
   if (updateErr) throw updateErr;
 
   // 2. Auto-advance: find the next WAITING token and mark as SERVING
-  const { data: next, error: nextErr } = await supabase
-    .from("tokens")
+  const { data: next, error: nextErr } = await (supabase
+    .from("tokens") as any)
     .select("*")
     .eq("orgId", orgId)
     .eq("status", "WAITING")
@@ -61,15 +61,15 @@ export async function markNoShow(
   if (nextErr) throw nextErr;
 
   if (next) {
-    await supabase
-      .from("tokens")
+    await (supabase
+      .from("tokens") as any)
       .update({ status: "SERVING" })
       .eq("id", next.id);
 
     // Update the queue's currently_serving pointer
     if (next.queue_id) {
-      await supabase
-        .from("queues")
+      await (supabase
+        .from("queues") as any)
         .update({ currently_serving: next.id })
         .eq("id", next.queue_id);
     }

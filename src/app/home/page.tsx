@@ -28,8 +28,8 @@ export default async function HomePage() {
   const supabase = await createClient();
   
   // Fetch initial businesses on the server for ISR
-  const { data, error } = await supabase
-    .from("businesses")
+  const { data, error } = await (supabase
+    .from("businesses") as any)
     .select("*")
     .not("latitude", "is", null)
     .not("longitude", "is", null);

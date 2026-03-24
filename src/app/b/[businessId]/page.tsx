@@ -52,17 +52,18 @@ export default async function PublicBusinessPage(props: { params: Promise<{ busi
   const { businessId } = await props.params;
   const supabase = await createClient();
 
-  // 1. Fetch Business Initial Data (SSR)
-  const { data: business, error: bizErr } = await (supabase
-    .from('businesses')
-    .select('*')
-    .eq('id', businessId)
-    .single() as any);
+  // 1. Fetch Business & Departments Data (SSR) via RPC
+  const { data: businessData, error: bizErr } = await supabase.rpc('get_business_with_departments', {
+    p_business_id: businessId
+  }) as any;
 
-  if (bizErr || !business) {
-    console.error("DEBUG NOTFOUND bizErr:", bizErr, "business:", business, "ID lookup:", businessId);
+  if (bizErr || !businessData) {
+    console.error("DEBUG NOTFOUND bizErr:", bizErr, "businessData:", businessData, "ID lookup:", businessId);
     notFound();
   }
+
+  const business = businessData.business;
+  const departments = businessData.departments || [];
 
   // 2. Fetch Initial Tokens for stats
   const { count: waitingCount } = await supabase
@@ -124,6 +125,7 @@ export default async function PublicBusinessPage(props: { params: Promise<{ busi
 
        <PublicBusinessClient 
          business={business} 
+         departments={departments}
          initialWaitingCount={waitingCount || 0} 
          initialReviews={reviews || []}
        />

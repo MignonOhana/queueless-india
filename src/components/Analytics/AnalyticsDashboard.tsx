@@ -3,20 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Users, Clock, Zap, TrendingUp, TrendingDown, 
-  ArrowLeft, Download, Calendar, Info, BrainCircuit, Lock
+  Users, Clock, Zap, TrendingUp,
+  Download, BrainCircuit 
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, LineChart, Line, ReferenceLine, 
+  BarChart, Bar, XAxis, Tooltip, 
+  ResponsiveContainer, ReferenceLine,
   PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
+import { Database } from '@/types/database';
 import { FEATURES } from '@/lib/features';
-import Link from 'next/link';
 import GlassCard from '@/components/ui/GlassCard';
-import CountUp from '@/components/ui/CountUp';
 import { jsPDF } from 'jspdf';
 import { toast } from 'sonner';
 
@@ -37,12 +36,23 @@ const MOCK_PIE = [
   { name: 'First-time', value: 64, color: 'rgba(255,255,255,0.1)' }
 ];
 
+interface HourlyData {
+  hour: string;
+  count: number;
+  isPeak: boolean;
+}
+
+interface DailyStatsTrend {
+  day: string;
+  wait: number;
+}
+
 export default function AnalyticsDashboard({ businessId }: { businessId: string }) {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(true);
   const [insights, setInsights] = useState<string[]>([]);
-  const [hourlyData, setHourlyData] = useState<any[]>(MOCK_HOURLY);
-  const [dailyStats, setDailyStats] = useState<any[]>(MOCK_LINE);
+  const [hourlyData, setHourlyData] = useState<HourlyData[]>(MOCK_HOURLY);
+  const [dailyStats, setDailyStats] = useState<DailyStatsTrend[]>(MOCK_LINE);
   const [isLocked, setIsLocked] = useState(false);
   const [summaryStats, setSummaryStats] = useState({ totalServed: 0, avgWait: 0, noShowRate: 0, completionRate: 0 });
   
@@ -53,11 +63,11 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
       try {
         // 1. Check Subscription Gate (bypassed during testing phase)
         if (!FEATURES.IS_TESTING_PHASE) {
-          const { data: biz } = await supabase.from('businesses').select('plan').eq('id', businessId).single();
+          const { data: biz }: any = await supabase.from('businesses').select('plan').eq('id', businessId).single();
           if (biz?.plan === 'free') {
-             setIsLocked(true);
-             setIsLoading(false);
-             return;
+            setIsLocked(true);
+            setIsLoading(false);
+            return;
           }
         }
 
@@ -71,17 +81,18 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
           .order('stat_date', { ascending: true });
 
         if (statsRows && statsRows.length > 0) {
-          const totalServed = statsRows.reduce((sum: number, s: any) => sum + (s.total_served || 0), 0);
-          const avgWait = Math.round(statsRows.reduce((sum: number, s: any) => sum + (s.avg_wait_mins || 0), 0) / statsRows.length);
-          const totalIssued = statsRows.reduce((sum: number, s: any) => sum + (s.total_tokens_issued || 0), 0);
-          const totalNoShows = statsRows.reduce((sum: number, s: any) => sum + (s.total_no_shows || 0), 0);
+          const stats = statsRows as Database['public']['Tables']['daily_stats']['Row'][];
+          const totalServed = stats.reduce((sum, s) => sum + (s.total_served || 0), 0);
+          const avgWait = Math.round(stats.reduce((sum, s) => sum + (s.avg_wait_mins || 0), 0) / stats.length);
+          const totalIssued = stats.reduce((sum, s) => sum + (s.total_tokens_issued || 0), 0);
+          const totalNoShows = stats.reduce((sum, s) => sum + (s.total_no_shows || 0), 0);
           const noShowRate = totalIssued > 0 ? Math.round((totalNoShows / totalIssued) * 100) : 0;
           const completionRate = totalIssued > 0 ? Math.round((totalServed / totalIssued) * 100) : 0;
 
           setSummaryStats({ totalServed, avgWait, noShowRate, completionRate });
 
           // Update daily trend chart from real data
-          setDailyStats(statsRows.map((d: any) => ({
+          setDailyStats(stats.map((d) => ({
             day: format(new Date(d.stat_date), 'EEE'),
             wait: d.avg_wait_mins || 0
           })));
@@ -89,15 +100,15 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
 
         // 2. Fetch Hourly Data
         const today = new Date().toISOString().split('T')[0];
-        const { data: hourly } = await supabase.rpc('get_hourly_distribution', { 
+        const { data: hourly }: any = await (supabase as any).rpc('get_hourly_distribution', { 
           p_org_id: businessId, 
           p_date: today 
-        } as any);
+        });
         
         if (hourly) {
           const formattedHourly = Array.from({ length: 15 }, (_, i) => {
              const h = i + 6;
-             const found = hourly.find((d: any) => d.hour_val === h);
+             const found = (hourly as any[]).find((d) => d.hour_val === h);
              return {
                hour: `${h}:00`,
                count: found ? found.token_count : 0,
@@ -107,15 +118,13 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
           setHourlyData(formattedHourly);
         }
 
-        // 3. Fetch Wait Time Trend (Last 7 Days) - Skip if RPC missing
         try {
-          // @ts-expect-error - get_wait_time_trend RPC not yet in generated types
-          const { data: trend } = await supabase.rpc('get_wait_time_trend', {
+          const { data: trend }: any = await (supabase as any).rpc('get_wait_time_trend', {
             p_org_id: businessId,
             p_days: 7
-          } as any);
+          });
           if (trend && Array.isArray(trend)) {
-             setDailyStats(trend.map((d: any) => ({
+             setDailyStats((trend as any[]).map((d) => ({
                day: format(new Date(d.date_val), 'EEE'),
                wait: d.avg_wait
              })));
@@ -147,6 +156,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
     };
 
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
   const handleExport = () => {
@@ -306,7 +316,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
             </div>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={hourlyData}>
+                <BarChart data={hourlyData} accessibilityLayer aria-label="Hourly Traffic Bar Chart">
                   <XAxis 
                     dataKey="hour" 
                     axisLine={false} 
@@ -334,7 +344,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
               <h3 className="text-xl font-black text-white tracking-tight mb-8">7-Day Wait Trend</h3>
               <div className="h-[300px] w-full">
                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={dailyStats}>
+                    <AreaChart data={dailyStats} accessibilityLayer aria-label="7-Day Wait Time Trend Chart">
                        <defs>
                           <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
                              <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.2}/>
@@ -362,7 +372,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
               
               <div className="relative w-48 h-48">
                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                     <PieChart accessibilityLayer aria-label="Customer Retention Pie Chart">
                        <Pie data={MOCK_PIE} innerRadius={60} outerRadius={80} paddingAngle={8} dataKey="value">
                           {MOCK_PIE.map((entry, index) => (
                              <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
@@ -396,12 +406,11 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
                           return (
                              <div 
                                key={i} 
-                               className="h-6 rounded-md transition-all hover:scale-110 cursor-help" 
-                               style={{ 
-                                  backgroundColor: intensity > 0.8 ? '#00F5A0' : 
-                                                   intensity > 0.5 ? '#00A86B' : 
-                                                   intensity > 0.2 ? '#003322' : 'rgba(255,255,255,0.03)' 
-                               }}
+                               className={`h-6 rounded-md transition-all hover:scale-110 cursor-help ${
+                                 intensity > 0.8 ? 'bg-[#00F5A0]' : 
+                                 intensity > 0.5 ? 'bg-[#00A86B]' : 
+                                 intensity > 0.2 ? 'bg-[#003322]' : 'bg-white/5'
+                               }`} 
                              />
                           );
                        })}
@@ -425,10 +434,21 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
   );
 }
 
-function OverviewCard({ label, value, delta, color, icon: Icon }: any) {
+interface OverviewCardProps {
+  label: string;
+  value: string | number;
+  delta: string;
+  color: string;
+  icon: any;
+}
+
+function OverviewCard({ label, value, delta, color, icon: Icon }: OverviewCardProps) {
   const isPositive = delta.startsWith('+');
   return (
-    <GlassCard className="relative overflow-hidden group">
+    <GlassCard 
+      className="relative overflow-hidden group"
+      style={{ '--card-color': color } as React.CSSProperties}
+    >
       <div className="flex items-start justify-between">
         <div className="relative z-10">
           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">{label}</p>
@@ -439,11 +459,12 @@ function OverviewCard({ label, value, delta, color, icon: Icon }: any) {
              </span>
           </div>
         </div>
-        <div className="p-3 rounded-2xl bg-white/5 text-zinc-400 group-hover:text-white transition-colors" style={{ color: color + '40' }}>
-          <Icon size={20} style={{ color }} />
+        <div className="p-3 rounded-2xl bg-white/5 text-zinc-400 group-hover:text-white transition-colors" style={{ color: 'var(--card-color)' }}>
+          <Icon size={20} />
         </div>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 h-1 opacity-20" style={{ backgroundColor: color }} />
+      <div className="absolute bottom-0 left-0 right-0 h-1 opacity-20" style={{ backgroundColor: 'var(--card-color)' }} />
     </GlassCard>
   );
 }
+

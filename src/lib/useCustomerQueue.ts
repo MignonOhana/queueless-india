@@ -13,17 +13,17 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
     if (!orgId || !tokenNumber) return;
 
     // Helper to get prefix (e.g., 'OPD' from 'OPD-011')
-    const prefix = tokenNumber.split("-")[0].toLowerCase();
+    // const prefix = tokenNumber.split("-")[0].toLowerCase(); // Unused
 
     const fetchQueueState = async () => {
       try {
         // 1. Fetch the user's specific token for status
-        const { data: tokenData, error: tokenErr } = await supabase
+        const { data: tokenData, error: tokenErr } = await (supabase
           .from("tokens")
           .select("*")
           .eq("orgId", orgId)
           .eq("tokenNumber", tokenNumber)
-          .maybeSingle();
+          .maybeSingle() as any);
 
         if (tokenErr) throw tokenErr;
 
@@ -34,22 +34,22 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
 
         // 2. Fetch the aggregate queue row for currently serving & people ahead calculation
         if (tokenData && tokenData.queue_id) {
-          const { data: queueData, error: qErr } = await supabase
+          const { data: queueData, error: qErr } = await (supabase
             .from("queues")
             .select(
               "last_issued_number, currently_serving, total_waiting",
             )
             .eq("id", tokenData.queue_id)
-            .maybeSingle();
+            .maybeSingle() as any);
 
           if (!qErr && queueData) {
             // If there's an active serving token, fetch its number just for display
             if (queueData.currently_serving) {
-              const { data: activeToken } = await supabase
+              const { data: activeToken } = await (supabase
                 .from("tokens")
                 .select("tokenNumber")
                 .eq("id", queueData.currently_serving)
-                .maybeSingle();
+                .maybeSingle() as any);
 
               if (activeToken) setCurrentlyServing(activeToken.tokenNumber);
             } else {
@@ -57,25 +57,19 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
             }
 
             // Simplified 'people ahead' calculation using the active tokens ID vs this users ID
-            // In a production app, this would be computed on the server side or by difference in token numbers
-            // For this MVP, we just use the raw tokens rank since tokenNumber is sequential 'OPD-001'
-            const myNum = parseInt(tokenNumber.split("-")[1] || "0", 10);
             let servingNum = 0;
-            if (queueData.currently_serving) {
-              const { data: activeToken } = await supabase
+            if (tokenData.status === "WAITING" && queueData.currently_serving) {
+               const { data: activeToken } = await (supabase
                 .from("tokens")
                 .select("tokenNumber")
                 .eq("id", queueData.currently_serving)
-                .maybeSingle();
-              servingNum = parseInt(
-                activeToken?.tokenNumber?.split("-")[1] || "0",
-                10,
-              );
-            }
-
-            const ahead = Math.max(0, myNum - servingNum - 1);
-            if (tokenData.status === "WAITING") {
-              setPeopleAhead(ahead);
+                .maybeSingle() as any);
+               
+               if (activeToken) {
+                  const myNum = parseInt(tokenNumber.split("-")[1] || "0", 10);
+                  servingNum = parseInt(activeToken.tokenNumber?.split("-")[1] || "0", 10);
+                  setPeopleAhead(Math.max(0, myNum - servingNum - 1));
+               }
             } else {
               setPeopleAhead(0);
             }
@@ -90,7 +84,6 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
     fetchQueueState();
 
     // Setup Realtime Subscriptions
-    // 1. Subscribe to their own token for status changes (WAITING -> SERVING)
     const tokenChannel = supabase
       .channel(`customer-token-${tokenNumber}`)
       .on(
@@ -104,7 +97,6 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
         () => fetchQueueState(),
       );
 
-    // 2. Subscribe to the queues table for movement in the line
     const queueChannel = supabase
       .channel(`queue-aggregate-${orgId}`)
       .on(

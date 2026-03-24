@@ -3,19 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, UserPlus, X, ToggleRight, ToggleLeft, Trash2, UserCheck } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
-import { type SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@/types/database';
+import { Database, StaffMember } from '@/types/database';
 import { type Tables } from '@/types/supabase';
 import GlassCard from '@/components/ui/GlassCard';
-
-const supabase = createBrowserClient<Database, "public">(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as SupabaseClient<Database>;
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 import { toast } from 'sonner';
-
-type StaffMember = Tables<'staff_members'>;
 
 export default function StaffManagement({ businessId }: { businessId: string }) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -26,7 +19,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
-    const { data, error } = await supabase.from('staff_members')
+    const { data, error } = await (supabase as any).from('staff_members')
       .select('*')
       .eq('business_id', businessId)
       .order('created_at', { ascending: true });
@@ -47,12 +40,12 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
-    const { data, error } = await supabase.from('staff_members')
+    const { data, error } = await (supabase as any).from('staff_members')
       .insert([{ 
         ...newStaff, 
         business_id: businessId, 
         is_active: true,
-        role: newStaff.role.toLowerCase() as 'operator' | 'owner' | 'viewer'
+        role: (newStaff.role.toLowerCase() as any)
       }])
       .select()
       .single();
@@ -60,7 +53,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
     if (error) {
       toast.error('Error adding staff');
     } else {
-      setStaff([...staff, data]);
+      setStaff([...staff, data as StaffMember]);
       setShowAddForm(false);
       setNewStaff({ name: '', role: 'Operator' });
       toast.success('Staff member added');
@@ -68,7 +61,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('staff_members')
+    const { error } = await (supabase as any).from('staff_members')
       .update({ is_active: !currentStatus })
       .eq('id', id);
 
@@ -83,7 +76,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const deleteStaff = async (id: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
     
-    const { error } = await supabase.from('staff_members')
+    const { error } = await (supabase as any).from('staff_members')
       .delete()
       .eq('id', id);
 
@@ -134,29 +127,39 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
               </button>
             </div>
             <form onSubmit={handleAddStaff} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input 
-                type="text" 
-                placeholder="Full Name"
-                required
-                value={newStaff.name}
-                onChange={e => setNewStaff({...newStaff, name: e.target.value})}
-                className="bg-[#0A0A0F] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#00F5A0]"
-              />
-              <select 
-                value={newStaff.role}
-                onChange={e => setNewStaff({...newStaff, role: e.target.value})}
-                className="bg-[#0A0A0F] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#00F5A0]"
-              >
-                <option value="Operator" className="text-black">Operator</option>
-                <option value="Manager" className="text-black">Manager</option>
-                <option value="Admin" className="text-black">Admin</option>
-              </select>
-              <button 
-                type="submit"
-                className="bg-[#00F5A0] text-[#0A0A0F] font-black uppercase text-[10px] rounded-xl hover:brightness-110"
-              >
-                Save Member
-              </button>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="staffName" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Full Name</label>
+                <input 
+                  id="staffName"
+                  type="text" 
+                  placeholder="e.g. Rahul Sharma"
+                  required
+                  value={newStaff.name}
+                  onChange={e => setNewStaff({...newStaff, name: e.target.value})}
+                  className="bg-[#0A0A0F] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#00F5A0]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="staffRole" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-1">Role</label>
+                <select 
+                  id="staffRole"
+                  value={newStaff.role}
+                  onChange={e => setNewStaff({...newStaff, role: e.target.value})}
+                  className="bg-[#0A0A0F] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-[#00F5A0]"
+                >
+                  <option value="Operator" className="text-black">Operator</option>
+                  <option value="Manager" className="text-black">Manager</option>
+                  <option value="Admin" className="text-black">Admin</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button 
+                  type="submit"
+                  className="w-full h-[46px] bg-[#00F5A0] text-[#0A0A0F] font-black uppercase text-[10px] rounded-xl hover:brightness-110 active:scale-95 transition-all shadow-lg shadow-[#00F5A0]/20"
+                >
+                  Save Member
+                </button>
+              </div>
             </form>
           </motion.div>
         )}

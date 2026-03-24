@@ -43,7 +43,7 @@ export default function OnboardingPage() {
         router.push("/login");
         return;
       }
-      const { data: profile } = await (supabase.from('user_profiles').select('*').eq('id', user.id).maybeSingle() as any);
+      const { data: profile } = await (supabase.from('user_profiles') as any).select('*').eq('id', user.id).maybeSingle();
       if (profile?.profile_completed) {
         router.push("/home");
       }
@@ -71,7 +71,7 @@ export default function OnboardingPage() {
         updated_at: new Date().toISOString()
       };
 
-      await (supabase.from('user_profiles').update(updates).eq('id', user.id) as any);
+      await (supabase.from('user_profiles') as any).update(updates).eq('id', user.id);
       
       toast.success("Profile updated successfully!");
       router.push("/home");
@@ -104,10 +104,11 @@ export default function OnboardingPage() {
         <div className="space-y-6">
           {/* Full Name */}
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+            <label htmlFor="fullName" className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
               <User size={12} className="text-primary" /> Full Name <span className="text-primary">*</span>
             </label>
             <input 
+              id="fullName"
               type="text"
               value={userData.fullName}
               onChange={(e) => setUserData({ ...userData, fullName: e.target.value })}
@@ -120,10 +121,11 @@ export default function OnboardingPage() {
 
           {/* Phone Number */}
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+            <label htmlFor="phoneInput" className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
               <Phone size={12} className="text-primary" /> Phone Number
             </label>
             <input 
+              id="phoneInput"
               type="tel"
               value={userData.phone}
               onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
@@ -135,10 +137,10 @@ export default function OnboardingPage() {
 
           {/* City */}
           <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+            <label htmlFor="citySelect" className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
               <MapPin size={12} className="text-primary" /> Your City
             </label>
-            <select 
+            <select id="citySelect" 
               value={userData.city}
               onChange={(e) => setUserData({ ...userData, city: e.target.value })}
               className="w-full px-6 py-4 rounded-xl border border-white/10 bg-white/5 text-white focus:outline-none focus:border-primary transition-all font-bold appearance-none cursor-pointer"

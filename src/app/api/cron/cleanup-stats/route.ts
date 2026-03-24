@@ -1,10 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { NextResponse } from 'next/server';
+import { createServiceRoleClient } from '@/lib/supabase/service-role';
+const supabase = createServiceRoleClient();
 
 export const maxDuration = 30
 
@@ -20,7 +16,7 @@ export async function GET(request: Request) {
   const { error } = await supabase
     .from('daily_stats')
     .delete()
-    .lt('stat_date', ninetyDaysAgo)
+    .lt('stat_date', ninetyDaysAgo);
 
   return NextResponse.json({ success: !error, error: error?.message })
 }

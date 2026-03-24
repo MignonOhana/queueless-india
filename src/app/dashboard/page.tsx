@@ -1,23 +1,20 @@
 "use client";
 
-import { Users, Clock, CheckCircle2, QrCode, Lock, LogOut, ChevronRight, ArrowRight, Globe, AlertCircle, TrendingUp, Settings, MoreVertical, LayoutDashboard, Activity, CalendarCheck, BarChart3, Loader2, UserCircle } from "lucide-react";
+import { Users, Clock, CheckCircle2, Lock, LogOut, ChevronRight, ArrowRight, Activity, Loader2, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAdminQueue } from "@/lib/useAdminQueue";
-import { callNextToken, skipToken, recallToken } from "@/lib/queueService";
+import { callNextToken, skipToken } from "@/lib/queueService";
 import { createClient } from "@/lib/supabase/client";
 import QRCodeModal from "@/components/QR/QRCodeModal";
-import AIPredictionCard from "@/components/Dashboard/AIPredictionCard";
 import QRCodeGenerator from "@/components/QRCodeGenerator";
 import { EmailOTPModal } from "@/components/auth/EmailOTPModal";
-import { MOCK_BUSINESSES } from "@/lib/mockHomeData";
 import dynamic from "next/dynamic";
 import PlanBadge from "@/components/Dashboard/PlanBadge";
 import UpgradeModal from "@/components/pricing/UpgradeModal";
-import { PLAN_LIMITS, isFeatureLocked } from "@/lib/planGating";
 import QueueRow from "@/components/Dashboard/QueueRow";
 import GlassCard from "@/components/ui/GlassCard";
 import LiveIndicator from "@/components/ui/LiveIndicator";
@@ -56,11 +53,11 @@ export default function BusinessDashboard() {
        const { data: { session } } = await supabase.auth.getSession();
        if (session?.user) {
           setIsAdminLoggedIn(true);
-          const { data: biz } = await supabase
+          const { data: biz } = await (supabase
             .from('businesses')
             .select('*')
             .eq('owner_id', session.user.id)
-            .maybeSingle();
+            .maybeSingle() as any);
           
           if (biz) {
              setBusinessData(biz);
@@ -87,13 +84,13 @@ export default function BusinessDashboard() {
          const today = new Date().toISOString().split('T')[0];
          const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
          
-         const { data: logs } = await supabase.from('fastpass_logs')
+         const { data: logs } = await (supabase.from('fastpass_logs')
            .select('amount')
            .eq('business_id', businessData?.id)
-           .gte('created_at', firstDay);
+           .gte('created_at', firstDay) as any);
            
-         if (logs) {
-           const totalMonth = logs.reduce((acc, curr) => acc + Number(curr.amount), 0);
+          if (logs) {
+            const totalMonth = (logs as any).reduce((acc: number, curr: any) => acc + Number(curr.amount), 0);
            // Mock today for now or filter strictly
            setFastPassStats({
              today: Math.floor(totalMonth * 0.2), // Mock
@@ -203,11 +200,11 @@ export default function BusinessDashboard() {
             onClose={() => setShowOTP(false)}
             onSuccess={async (user) => {
               setShowOTP(false);
-              const { data: biz } = await supabase
+              const { data: biz } = await (supabase
                 .from('businesses')
                 .select('*')
                 .eq('owner_id', user.id)
-                .maybeSingle();
+                .maybeSingle() as any);
               
               if (biz) {
                 setBusinessData(biz);
@@ -228,11 +225,11 @@ export default function BusinessDashboard() {
     setOnboardingLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const { data: biz } = await supabase
+      const { data: biz } = await (supabase
         .from('businesses')
         .select('*')
         .eq('owner_id', session.user.id)
-        .maybeSingle();
+        .maybeSingle() as any);
       setBusinessData(biz);
     }
     setOnboardingLoading(false);
@@ -251,7 +248,12 @@ export default function BusinessDashboard() {
               QueueLess<span className="text-blue-500"> Business</span>
             </span>
           </Link>
-          <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} className="text-zinc-500 hover:text-white transition-colors">
+          <button 
+            onClick={() => supabase.auth.signOut().then(() => window.location.reload())} 
+            className="text-zinc-500 hover:text-white transition-colors"
+            title="Log Out"
+            aria-label="Log Out"
+          >
             <LogOut size={20} />
           </button>
         </nav>
@@ -299,11 +301,11 @@ export default function BusinessDashboard() {
                 <button 
                    onClick={async () => {
                       try {
-                        const newVal = !businessData?.is_verified; // Using is_verified as a proxy or just toggling UI for now
-                        setBusinessData({...businessData, is_verified: newVal});
-                        const { error } = await supabase.from('businesses').update({ is_verified: newVal }).eq('id', businessData?.id);
+                        const newVal = !businessData?.is_accepting_tokens;
+                        setBusinessData({...businessData, is_accepting_tokens: newVal});
+                        const { error } = await (supabase.from('businesses') as any).update({ is_accepting_tokens: newVal }).eq('id', businessData?.id);
                         if (error) throw error;
-                        toast.success(`Business status updated: ${newVal ? 'Verified' : 'Unverified'}`);
+                        toast.success(`Business status updated: ${newVal ? 'Accepting Tokens' : 'Stopped'}`);
                       } catch (err: any) {
                         toast.error(`Update failed: ${err.message}`);
                       }
@@ -313,6 +315,8 @@ export default function BusinessDashboard() {
                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
                        : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
                    }`}
+                   title={businessData?.is_accepting_tokens ? "Stop accepting tokens" : "Start accepting tokens"}
+                   aria-label={businessData?.is_accepting_tokens ? "Stop accepting tokens" : "Start accepting tokens"}
                 >
                    {businessData?.is_accepting_tokens ? '🟢 ACCEPTING' : '⚪ STOPPED'}
                 </button>
@@ -461,6 +465,8 @@ export default function BusinessDashboard() {
                     value={selectedCounter}
                     onChange={(e) => setSelectedCounter(e.target.value)}
                     className="bg-zinc-900 border border-white/10 rounded-xl px-4 py-2 text-sm font-bold text-white outline-none cursor-pointer hover:bg-white/10 transition-colors"
+                    title="Select Department Filter"
+                    aria-label="Select Department to view"
                   >
                     <option value="all">All Departments</option>
                     <option value="opd" className="text-zinc-300">OPD (General)</option>
@@ -527,7 +533,7 @@ export default function BusinessDashboard() {
                        <input 
                           type="checkbox" 
                           disabled={plan === 'free'}
-                          checked={businessData?.whatsapp_enabled || false}
+                          id="whatsapp_enabled" aria-label="Toggle WhatsApp Notifications" checked={businessData?.whatsapp_enabled || false}
                           onChange={async (e) => {
                             if (plan === 'free') {
                                setIsUpgradeModalOpen(true);
@@ -536,7 +542,7 @@ export default function BusinessDashboard() {
                             const val = e.target.checked;
                             try {
                               setBusinessData({...businessData, whatsapp_enabled: val});
-                              const { error } = await supabase.from("businesses").update({ whatsapp_enabled: val }).eq("id", businessData?.id).select();
+                               const { error } = await (supabase.from("businesses") as any).update({ whatsapp_enabled: val }).eq("id", businessData?.id).select();
                               if (error) throw error;
                               toast.success(`WhatsApp Alerts ${val ? 'Enabled' : 'Disabled'}`);
                             } catch (err: any) {
@@ -554,12 +560,12 @@ export default function BusinessDashboard() {
                        </div>
                        <input 
                           type="checkbox" 
-                          checked={businessData?.fastPassEnabled || false}
+                          id="fast_pass_enabled" aria-label="Enable Fast Pass" checked={businessData?.fastPassEnabled || false}
                           onChange={async (e) => {
                             const val = e.target.checked;
                             try {
                               setBusinessData({...businessData, fastPassEnabled: val});
-                              const { error } = await supabase.from("businesses").update({ fastPassEnabled: val }).eq("id", businessData?.id).select();
+                               const { error } = await (supabase.from("businesses") as any).update({ fastPassEnabled: val }).eq("id", businessData?.id).select();
                               if (error) throw error;
                               toast.success(`Fast Pass ${val ? 'Enabled' : 'Disabled'}`);
                             } catch (err: any) {
@@ -575,14 +581,14 @@ export default function BusinessDashboard() {
                           <input 
                             type="number" 
                             min="25"
-                            value={businessData?.fastPassPrice || 50}
+                            id="fast_pass_price" aria-label="Fast Pass Price" value={businessData?.fastPassPrice || 50}
                             onChange={(e) => setBusinessData({...businessData, fastPassPrice: parseInt(e.target.value) || 25})}
                             className="bg-background border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none flex-1 focus:border-primary"
                           />
                           <button 
                             onClick={async () => {
                               try {
-                                const { error } = await supabase.from("businesses").update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id).select();
+                                 const { error } = await (supabase.from("businesses") as any).update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id).select();
                                 if (error) throw error;
                                 toast.success("Price updated");
                               } catch (err: any) {

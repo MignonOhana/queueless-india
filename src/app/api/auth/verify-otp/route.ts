@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
     const adminSupabase = createServiceRoleClient();
 
     // 1. Check Rate Limit via RPC
-    // Note: The user confirmed the DB table is ready. The RPC should handle the increment.
     const { data: allowed, error: limitErr } = await (adminSupabase.rpc as any)('check_otp_rate_limit', {
       p_email: email
     });

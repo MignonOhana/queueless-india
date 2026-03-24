@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, memo, useMemo } from "react";
 import { GoogleMap, useJsApiLoader, OverlayView } from "@react-google-maps/api";
 import { MapPin, Navigation, Users, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,13 +31,11 @@ const mapContainerStyle = {
   height: "100%",
 };
 
-// Default center: Delhi Gate
 const defaultCenter = {
   lat: 28.6402,
   lng: 77.2405,
 };
 
-// Custom map styling for a cleaner SaaS look (Hiding annoying default POIs)
 const mapOptions = {
   disableDefaultUI: true,
   zoomControl: false,
@@ -60,6 +58,47 @@ const mapOptions = {
      }
   ]
 };
+
+// Helper to determine dot color
+const getMarkerColor = (waitMins: number) => {
+  if (waitMins < 10) return "bg-emerald-500 border-emerald-300 shadow-emerald-500/50";
+  if (waitMins <= 25) return "bg-amber-400 border-amber-200 shadow-amber-400/50";
+  return "bg-rose-500 border-rose-300 shadow-rose-500/50";
+};
+
+// 0. Memoized Marker Component to prevent whole-map re-renders
+const BusinessMarkerComponent = memo(({ 
+  biz, 
+  isSelected, 
+  onClick 
+}: { 
+  biz: BusinessMarker, 
+  isSelected: boolean, 
+  onClick: (biz: BusinessMarker) => void 
+}) => {
+  const colorClass = useMemo(() => getMarkerColor(biz.estimatedWait), [biz.estimatedWait]);
+  const needleColorClass = useMemo(() => colorClass.split(' ')[0], [colorClass]);
+
+  return (
+    <OverlayView
+      position={{ lat: biz.latitude, lng: biz.longitude }}
+      mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+      getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
+    >
+      <button 
+        onClick={() => onClick(biz)}
+        className={`relative -top-2 flex flex-col items-center group transition-transform ${isSelected ? 'scale-125 z-50' : 'hover:scale-110 z-20'}`}
+      >
+        <div className={`w-10 h-10 md:w-8 md:h-8 rounded-full border-2 text-white flex items-center justify-center shadow-lg transition-colors ${colorClass}`}>
+           <span className="text-xs md:text-[10px] font-black">{biz.estimatedWait}m</span>
+        </div>
+        <div className={`w-1.5 h-4 md:w-1 md:h-3 -mt-1 rounded-b-full shadow-sm transition-colors ${needleColorClass}`} />
+      </button>
+    </OverlayView>
+  );
+});
+
+BusinessMarkerComponent.displayName = 'BusinessMarkerComponent';
 
 export default function QueueMap({ onLocationFound }: QueueMapProps) {
   const { isLoaded } = useJsApiLoader({
@@ -100,30 +139,24 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
   }, [onLocationFound]);
 
   // 2. Fetch Businesses & Live Queues
-  const fetchMapData = async () => {
-     // Start by getting all businesses that have coordinates
+  const fetchMapData = useCallback(async () => {
      const { data: bData, error: bErr } = await supabase.from('businesses')
        .select('id, name, category, latitude, longitude')
-       .not('latitude', 'is', null);
+       .not('latitude', 'is', null) as any;
 
      if (bErr || !bData) return;
 
-     // Fetch all active queues for today to attach realtime stats
      const today = new Date().toISOString().split('T')[0];
      const { data: qData, error: qErr } = await supabase.from('queues')
        .select('id, org_id, counter_id, currently_serving, total_waiting, is_accepting_tokens')
-       .eq('session_date', today);
+       .eq('session_date', today) as any;
        
      if (qErr) return;
 
-     // Merge data
-     const merged: BusinessMarker[] = (bData || []).map((biz: any) => {
-        // Find the matching queue (Usually the primary one, e.g. OPD or TKN)
-        const queue = (qData || []).find((q: any) => q.org_id === biz.id) || null;
-        
-        // Mock estimate calculations (In prod, this should come from AI table or queue pacing)
+     const merged: BusinessMarker[] = ((bData || []) as any[]).map((biz) => {
+        const queue = ((qData || []) as any[]).find((q) => q.org_id === biz.id) || null;
         const waiting = queue?.total_waiting || 0;
-        const estimate = waiting * 5; // 5 min per person dummy algorithm
+        const estimate = waiting * 5; 
 
         return {
            id: biz.id,
@@ -139,22 +172,46 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
      });
 
      setBusinesses(merged);
-  };
+  }, []);
+
+  // 2b. Initial Data Load when map engine is ready
+  useEffect(() => {
+    if (isLoaded) {
+      // Use a non-synchronous call to avoid lint error
+      const initLoad = async () => {
+        await fetchMapData();
+      };
+      initLoad();
+    }
+  }, [isLoaded, fetchMapData]);
 
   useEffect(() => {
-     fetchMapData();
-
-     // 3. Realtime Subscription to Queues table to instantly change marker colors
+     // 3. Surgical Realtime Updates
      const channel = supabase.channel('realtime_map')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'queues' }, () => {
-         // Simply refetch the map data to update all pins on the screen when any change happens
-         fetchMapData();
-      }).subscribe();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'queues' }, (payload) => {
+          const updatedQueue = payload.new as Database['public']['Tables']['queues']['Row'];
+          setBusinesses(prev => prev.map(biz => {
+            if (biz.id === updatedQueue.org_id) {
+              const waiting = updatedQueue.total_waiting || 0;
+              return {
+                ...biz,
+                currentlyServing: updatedQueue.currently_serving || "None",
+                queueLength: waiting,
+                estimatedWait: waiting * 5
+              };
+            }
+            return biz;
+          }));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'queues' }, () => {
+          fetchMapData(); // New queue added for today, need full refetch once
+      })
+      .subscribe();
 
      return () => {
          supabase.removeChannel(channel);
      };
-  }, []);
+  }, [fetchMapData]);
 
   const onLoad = useCallback(function callback(map: google.maps.Map) {
     setMap(map);
@@ -171,12 +228,13 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
     }
   };
 
-  // Helper to determine dot color
-  const getMarkerColor = (waitMins: number) => {
-    if (waitMins < 10) return "bg-emerald-500 border-emerald-300 shadow-emerald-500/50"; // Green
-    if (waitMins <= 25) return "bg-amber-400 border-amber-200 shadow-amber-400/50"; // Yellow
-    return "bg-rose-500 border-rose-300 shadow-rose-500/50"; // Red
-  };
+  const handleMarkerClick = useCallback((biz: BusinessMarker) => {
+    setSelectedBusiness(biz);
+    if (map) {
+      map.panTo({ lat: biz.latitude, lng: biz.longitude });
+      map.panBy(0, window.innerWidth < 768 ? -200 : -100);
+    }
+  }, [map]);
 
   if (!isLoaded) return <div className="w-full h-full bg-slate-100 animate-pulse flex items-center justify-center text-slate-400 text-sm font-bold">Loading Maps Engine...</div>;
 
@@ -189,10 +247,9 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={mapOptions}
-        onClick={() => setSelectedBusiness(null)} // Dismiss info window on map click
+        onClick={() => setSelectedBusiness(null)}
       >
         
-        {/* User Location Pulse Marker */}
         {userLocation && (
           <OverlayView
              position={userLocation}
@@ -205,35 +262,16 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
           </OverlayView>
         )}
 
-        {/* Business Markers utilizing advanced custom HTML overlays for dynamic styling instead of static images */}
         {businesses.map((biz) => (
-          <OverlayView
+          <BusinessMarkerComponent 
             key={biz.id}
-            position={{ lat: biz.latitude, lng: biz.longitude }}
-            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-            getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
-          >
-             <button 
-               onClick={() => {
-                  setSelectedBusiness(biz);
-                  map?.panTo({ lat: biz.latitude, lng: biz.longitude });
-                  // Slightly offset the zoom so the popup doesn't cover the pin
-                  map?.panBy(0, window.innerWidth < 768 ? -200 : -100); 
-               }}
-               className={`relative -top-2 flex flex-col items-center group transition-transform ${selectedBusiness?.id === biz.id ? 'scale-125 z-50' : 'hover:scale-110 z-20'}`}
-             >
-                {/* The Pin Head */}
-                <div className={`w-10 h-10 md:w-8 md:h-8 rounded-full border-2 text-white flex items-center justify-center shadow-lg transition-colors ${getMarkerColor(biz.estimatedWait)}`}>
-                   <span className="text-xs md:text-[10px] font-black">{biz.estimatedWait}m</span>
-                </div>
-                {/* The Pin Needle */}
-                <div className={`w-1.5 h-4 md:w-1 md:h-3 -mt-1 rounded-b-full shadow-sm transition-colors ${getMarkerColor(biz.estimatedWait).split(' ')[0]}`} />
-             </button>
-          </OverlayView>
+            biz={biz}
+            isSelected={selectedBusiness?.id === biz.id}
+            onClick={handleMarkerClick}
+          />
         ))}
       </GoogleMap>
 
-      {/* Recenter Button Overlay */}
       <button 
         onClick={recenter}
         disabled={!userLocation}
@@ -242,7 +280,6 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
          <Navigation size={22} className={isLoadingLocation ? "animate-spin text-indigo-500" : (userLocation ? "text-indigo-500" : "")} />
       </button>
 
-      {/* Floating Info Window / Bottom Sheet for Selected Marker */}
       <AnimatePresence>
         {selectedBusiness && (
           <motion.div 

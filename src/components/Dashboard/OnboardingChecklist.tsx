@@ -9,8 +9,10 @@ import { toast } from 'sonner';
 const supabase = createClient();
 import BusinessCreationModal from './BusinessCreationModal';
 
+import { Database } from '@/types/database';
+
 interface OnboardingChecklistProps {
-  business: any;
+  business: Database['public']['Tables']['businesses']['Row'];
   onUpdate: () => void;
 }
 
@@ -24,15 +26,14 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
   });
 
   const step1Complete = !!business;
-  const step2Complete = step1Complete && (business.onboarding_step >= 3 || business.claim_status === 'active');
+  const step2Complete = step1Complete && ((business.onboarding_step ?? 0) >= 3 || business.claim_status === 'active');
   const currentStep = !step1Complete ? 1 : (business.claim_status === 'claimed' ? 2 : 3);
 
   const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('businesses')
+      const { error } = await (supabase as any).from('businesses')
         .update({
           serviceMins: step2Data.serviceMins,
           opHours: JSON.stringify({ open: step2Data.open, close: step2Data.close }),
@@ -53,14 +54,13 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
   const handleActivateQueue = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('activate_queue_for_today', {
+      const { error } = await (supabase.rpc as any)('activate_queue_for_today', {
         p_org_id: business.id
       });
 
       if (error) throw error;
       
-      // Also mark business as active
-      await supabase.from('businesses').update({ claim_status: 'active' }).eq('id', business.id);
+      await (supabase.from('businesses') as any).update({ claim_status: 'active' }).eq('id', business.id);
 
       toast.success('Queue is now LIVE! 🚀');
       onUpdate();
@@ -111,31 +111,31 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
                 <form onSubmit={handleStep2Submit} className="mt-6 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Service Mins</label>
+                      <label htmlFor="serviceMins" className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Service Mins</label>
                       <input 
                         type="number"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white"
-                        value={step2Data.serviceMins}
+                        id="serviceMins" value={step2Data.serviceMins}
                         onChange={e => setStep2Data({...step2Data, serviceMins: parseInt(e.target.value)})}
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Opens at</label>
+                      <label htmlFor="opensAt" className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Opens at</label>
                       <input 
                         type="time"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white"
-                        value={step2Data.open}
+                        id="opensAt" value={step2Data.open}
                         onChange={e => setStep2Data({...step2Data, open: e.target.value})}
                       />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Closes at</label>
+                      <label htmlFor="closesAt" className="block text-[8px] font-black uppercase text-zinc-500 mb-1">Closes at</label>
                       <input 
                         type="time"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white"
-                        value={step2Data.close}
+                        id="closesAt" value={step2Data.close}
                         onChange={e => setStep2Data({...step2Data, close: e.target.value})}
                       />
                     </div>

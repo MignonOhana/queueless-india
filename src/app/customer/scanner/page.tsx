@@ -58,11 +58,11 @@ export default function QRScanner() {
     
     // Attempt to fetch business name for success UI
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from('businesses')
         .select('name')
         .eq('id', businessId)
-        .maybeSingle();
+        .maybeSingle() as any);
       
       if (data) {
         setScannedBusinessName(data.name);

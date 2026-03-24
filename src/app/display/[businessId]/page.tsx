@@ -26,16 +26,16 @@ export default function DisplayBoard() {
 
     const fetchData = async () => {
       // Fetch business info
-      const { data: biz } = await supabase
-        .from('businesses')
+      const { data: biz } = await (supabase
+        .from('businesses') as any)
         .select('*')
         .eq('id', businessId)
         .maybeSingle();
       if (biz) setBusiness(biz);
 
       // Fetch currently serving
-      const { data: servingToken } = await supabase
-        .from('tokens')
+      const { data: servingToken } = await (supabase
+        .from('tokens') as any)
         .select('*')
         .eq('orgId', businessId)
         .eq('status', 'SERVING')
@@ -43,8 +43,8 @@ export default function DisplayBoard() {
       setServing(servingToken);
 
       // Fetch next 5 waiting
-      const { data: waiting } = await supabase
-        .from('tokens')
+      const { data: waiting } = await (supabase
+        .from('tokens') as any)
         .select('*')
         .eq('orgId', businessId)
         .eq('status', 'WAITING')
@@ -56,8 +56,8 @@ export default function DisplayBoard() {
       // Fetch served today count
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
-      const { count: servedCount } = await supabase
-        .from('tokens')
+      const { count: servedCount } = await (supabase
+        .from('tokens') as any)
         .select('*', { count: 'exact', head: true })
         .eq('orgId', businessId)
         .eq('status', 'SERVED')

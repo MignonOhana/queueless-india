@@ -20,8 +20,8 @@ export default function GlobalTurnAlert() {
     }
 
     const fetchActiveServing = async () => {
-      const { data } = await supabase
-        .from('tokens')
+      const { data } = await (supabase
+        .from('tokens') as any)
         .select('*, businesses(name)')
         .eq('userId', user.id)
         .eq('status', 'SERVING')

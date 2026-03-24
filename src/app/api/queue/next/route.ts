@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -9,21 +9,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing orgId" }, { status: 400 });
     }
 
-    // Initialize admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    );
+    const supabaseAdmin = createServiceRoleClient();
 
     // 1. Get current queue
-    const { data: queue, error: qErr } = await supabaseAdmin
-      .from("queues")
+    const { data: queue, error: qErr } = await (supabaseAdmin
+      .from("queues") as any)
       .select("*")
       .eq("org_id", orgId)
       .eq("session_date", new Date().toISOString().split("T")[0])
@@ -36,8 +26,8 @@ export async function POST(req: Request) {
 
     // 2. Mark current serving token as SERVED if it exists
     if (queue.currently_serving) {
-      await supabaseAdmin
-        .from("tokens")
+      await (supabaseAdmin
+        .from("tokens") as any)
         .update({ 
           status: "SERVED",
           servedAt: new Date().toISOString()
@@ -46,8 +36,8 @@ export async function POST(req: Request) {
     }
 
     // 3. Find next WAITING token
-    const { data: nextToken, error: nErr } = await supabaseAdmin
-      .from("tokens")
+    const { data: nextToken, error: nErr } = await (supabaseAdmin
+      .from("tokens") as any)
       .select("*")
       .eq("orgId", orgId)
       .eq("status", "WAITING")
@@ -60,14 +50,14 @@ export async function POST(req: Request) {
     let updatedQueue;
     if (nextToken) {
       // 4. Update next token to SERVING
-      await supabaseAdmin
-        .from("tokens")
+      await (supabaseAdmin
+        .from("tokens") as any)
         .update({ status: "SERVING" })
         .eq("id", nextToken.id);
 
       // 5. Update queue table
-      const { data: uQ, error: uQErr } = await supabaseAdmin
-        .from("queues")
+      const { data: uQ, error: uQErr } = await (supabaseAdmin
+        .from("queues") as any)
         .update({
           currently_serving: nextToken.id,
           total_waiting: Math.max(0, queue.total_waiting - 1)
@@ -80,8 +70,8 @@ export async function POST(req: Request) {
       updatedQueue = uQ;
     } else {
       // No more tokens waiting
-      const { data: uQ, error: uQErr } = await supabaseAdmin
-        .from("queues")
+      const { data: uQ, error: uQErr } = await (supabaseAdmin
+        .from("queues") as any)
         .update({
           currently_serving: null,
           total_waiting: 0
@@ -99,8 +89,9 @@ export async function POST(req: Request) {
       nextToken: nextToken || null,
       queue: updatedQueue
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Internal Server Error";
     console.error("Next token error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

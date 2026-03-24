@@ -30,8 +30,8 @@ export default function BusinessQRPage() {
         return;
       }
 
-      const { data, error } = await supabase
-        .from("businesses")
+      const { data, error } = await (supabase
+        .from("businesses") as any)
         .select("*")
         .eq("id", adminOrgId)
         .single();
@@ -126,6 +126,8 @@ export default function BusinessQRPage() {
           <button 
             onClick={() => router.push("/dashboard")}
             className="p-2 rounded-xl hover:bg-white/5 transition-colors"
+            aria-label="Back"
+            title="Back"
           >
             <ChevronLeft size={24} />
           </button>
@@ -137,6 +139,8 @@ export default function BusinessQRPage() {
         <button 
           onClick={() => router.push("/dashboard")}
           className="p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+          aria-label="Dashboard Hub"
+          title="Dashboard Hub"
         >
           <LayoutDashboard size={20} />
         </button>
@@ -180,7 +184,7 @@ export default function BusinessQRPage() {
                   <code className="text-[10px] text-zinc-400 font-mono bg-black/40 px-2 py-1 rounded border border-white/5 truncate max-w-[200px]">
                     {publicUrl}
                   </code>
-                  <a href={publicUrl} target="_blank" className="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                  <a href={publicUrl} target="_blank" className="text-primary opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Open Public URL" title="Open Public URL">
                     <Globe size={14} />
                   </a>
                 </div>

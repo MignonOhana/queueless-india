@@ -62,8 +62,8 @@ export default function CityQueueMap() {
   const fetchBusinesses = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('businesses')
+      const { data, error } = await (supabase
+        .from('businesses') as any)
         .select(`
           *,
           queues!queues_org_id_fkey (

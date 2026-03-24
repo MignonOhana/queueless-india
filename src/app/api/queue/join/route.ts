@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       userId: user?.id ?? body.userId ?? null,
     };
 
-    const { orgId, userId, customerName, customerPhone } = payload;
+    const { orgId, userId, customerName, customerPhone, departmentId } = payload;
     const counterPrefix = payload.counterPrefix || 'Q';
 
     if (!orgId || !customerName) {
@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Check business
-    const { data: bizData } = await supabase
-      .from('businesses')
+    const { data: bizData } = await (supabase
+      .from('businesses') as any)
       .select('name, whatsapp_enabled')
       .eq('id', orgId)
       .single();
@@ -41,15 +41,22 @@ export async function POST(req: NextRequest) {
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    // Fetch the active queue for this org
-    const { data: queueData, error: queueErr } = await supabase
-      .from('queues')
+    // Fetch the active queue for this org/department
+    let queueQuery = (supabase
+      .from('queues') as any)
       .select('id')
-      .eq('org_id', orgId)
-      .single();
+      .eq('org_id', orgId);
+    
+    if (departmentId) {
+      queueQuery = queueQuery.eq('department_id', departmentId);
+    } else {
+      queueQuery = queueQuery.is('department_id', null);
+    }
+
+    const { data: queueData, error: queueErr } = await queueQuery.single();
 
     if (queueErr || !queueData) {
-      return NextResponse.json({ error: "No active queue found for this business" }, { status: 404 });
+      return NextResponse.json({ error: "No active queue found for this selection" }, { status: 404 });
     }
 
     const adminSupabase = createServiceRoleClient();
@@ -70,8 +77,8 @@ export async function POST(req: NextRequest) {
     const tokenStr = `${counterPrefix}-${paddedNumber}`;
 
     // Get number of people currently waiting for wait time estimate
-    const { count: waitingCount } = await supabase
-      .from('tokens')
+    const { count: waitingCount } = await (supabase
+      .from('tokens') as any)
       .select('*', { count: 'exact', head: true })
       .eq('orgId', orgId)
       .eq('status', 'WAITING')
@@ -90,6 +97,7 @@ export async function POST(req: NextRequest) {
         p_customer_phone: customerPhone || '',
         p_token_number: tokenStr,
         p_estimated_wait_mins: estimatedWaitMins,
+        p_department_id: departmentId || null,
       } as any);
 
     if (insertErr || !tokenRows || (tokenRows as any[]).length === 0) {
