@@ -9,6 +9,9 @@ interface GenerateTokenPayload {
   userId: string;
   customerName: string;
   customerPhone: string;
+  departmentId?: string;
+  isPriority?: boolean;
+  paymentId?: string;
 }
 
 const corsHeaders = {
@@ -86,12 +89,15 @@ serve(async (req) => {
         orgId: orgId,
         counterId: counterPrefix.toLowerCase(),
         queue_id: queue.id,
+        department_id: payload.departmentId || null,
         userId: userId,
         customerName: customerName,
         customerPhone: customerPhone || "",
         tokenNumber: tokenStr,
         status: "WAITING",
         estimatedWaitMins: estimatedWaitMins,
+        isPriority: payload.isPriority || false,
+        paymentId: payload.paymentId || null,
       })
       .select()
       .single()

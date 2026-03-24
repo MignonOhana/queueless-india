@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Star, MapPin, Clock, ShieldCheck, 
-  ChevronDown, MessageCircle, QrCode, ArrowRight, Zap, Globe, 
-  Building2, Users
+import {
+  Users, Clock, MapPin, Zap, Activity as ActivityIcon, ArrowRight, Star, ChevronDown,
+  CheckCircle2, AlertCircle, LogIn, Globe, ShieldCheck, Building2, MessageCircle, QrCode
 } from 'lucide-react';
 import { createClient } from "@/lib/supabase/client";
 
@@ -54,7 +53,15 @@ export default function PublicBusinessClient({ business, departments, initialWai
   const [phone, setPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [notifyWhatsApp] = useState(true);
-  const [joinedToken, setJoinedToken] = useState<Partial<Token> | null>(null);
+  const [joinedToken, setJoinedToken] = useState<{
+    id?: string;
+    tokenNumber: string;
+    orgId?: string;
+    position?: number;
+    estimatedWaitMins?: number;
+    isGuest?: boolean;
+    tokenId?: string; // Some parts of the code use tokenId
+  } | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [distance, setDistance] = useState<number | null>(null);
   const [, setLiveServingToken] = useState<string | null>(null);
@@ -179,7 +186,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
 
     setIsJoining(true);
     try {
-      const counterPrefix = selectedDept?.prefix || business?.services?.[0]?.prefix || "Q";
+      const counterPrefix = (selectedDept as any)?.prefix || (business as any).services?.[0]?.prefix || "Q";
       const userId = asGuest ? null : user?.id;
       const customerPhone = asGuest ? "+91" + digits : user?.phone || "+91" + digits;
 
@@ -298,11 +305,11 @@ export default function PublicBusinessClient({ business, departments, initialWai
       });
     }
 
-    if (!business.settings?.businessHours) return true; // Fallback
-    const day = now.toLocaleDateString("en-US", { weekday: "long" });
-    const hours =
-      business.settings.businessHours[day] ||
-      business.settings.businessHours["default"];
+    const opHours = business.op_hours_json;
+    if (!opHours) return true; // Fallback if no hours set
+
+    const day = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][new Date().getDay()];
+    const hours = opHours[day];
     if (!hours || hours.closed) return false;
 
     const [start, end] = hours.slots?.[0] || ["09:00", "20:00"];
@@ -313,7 +320,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
     return currentTime >= sH * 60 + sM && currentTime <= eH * 60 + eM;
   };
 
-  const avgWait = waitingCount * (business.avg_service_time || 5);
+  const avgWait = waitingCount * (business.serviceMins || 5);
   const isOpen = isBusinessOpen();
 
   return (
@@ -428,11 +435,11 @@ export default function PublicBusinessClient({ business, departments, initialWai
                                  <p className="font-black text-white text-lg tracking-tight">{dept.name}</p>
                                  <div className="flex items-center gap-3 mt-1">
                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                       <Users size={12} /> {dept.waiting_count || 0} waiting
+                                       <Users size={12} /> {(dept as any).waiting_count || 0} waiting
                                     </span>
                                     <div className="w-1 h-1 rounded-full bg-zinc-800" />
                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary">
-                                       <Clock size={12} /> ~{(dept.waiting_count || 0) * (business.avg_service_time || 5)}m
+                                       <Clock size={12} /> ~{((dept as any).waiting_count || 0) * (business.serviceMins || 5)}m
                                     </span>
                                  </div>
                               </div>
@@ -518,12 +525,11 @@ export default function PublicBusinessClient({ business, departments, initialWai
                            >
                               {isOpen ? <>{t('joinQueue')} <ArrowRight size={18} /></> : "Closed for now"}
                            </button>
-
                            {business.settings?.fastPassEnabled && isOpen && (
                               <div className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 py-3 rounded-2xl border border-primary/10">
                                  <Zap size={14} fill="currentColor" /> Skip the line for ₹{business.settings?.fastPassPrice || 49}
-                              </div>
-                           )}
+                               </div>
+                            )}
                          </>
                        )}
                     </motion.div>
@@ -605,13 +611,13 @@ export default function PublicBusinessClient({ business, departments, initialWai
                                       activeTokenId: data.tokenId, 
                                       activeTokenNumber: data.tokenNumber 
                                    });
-                                   setJoinedToken({ 
-                                      tokenNumber: data.tokenNumber, 
-                                      position: 1, 
-                                      estimatedWaitMins: 5, 
-                                      isGuest: true, 
-                                      tokenId: data.tokenId 
-                                   });
+                                    setJoinedToken({ 
+                                       tokenNumber: data.tokenNumber, 
+                                       position: 1, 
+                                       estimatedWaitMins: data.estimatedWaitMins || 5, 
+                                       isGuest: true, 
+                                       tokenId: data.tokenId 
+                                    });
                                 }}
                                 onError={(err) => toast.error(err)}
                                 isLoading={isJoining}
@@ -630,13 +636,41 @@ export default function PublicBusinessClient({ business, departments, initialWai
                              <p className="text-indigo-400 text-[10px] font-black uppercase">Verified Account</p>
                           </div>
                        </div>
-                       <button 
-                         disabled={isJoining}
-                         onClick={() => handleJoinQueue(false)}
-                         className="btn-primary w-full py-5 text-sm"
-                       >
-                          {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : "Confirm & Join"}
-                       </button>
+                        <div className="flex gap-2">
+                           <button 
+                             disabled={isJoining}
+                             onClick={() => handleJoinQueue(false)}
+                             className="btn-primary flex-1 py-5 text-sm"
+                           >
+                              {isJoining ? <ActivityIcon className="animate-spin mx-auto" /> : "Confirm & Join"}
+                           </button>
+
+                           {business.settings?.fastPassEnabled && (
+                              <FastPassCheckout 
+                                 businessId={business.id}
+                                 businessName={business.name}
+                                 amount={business.settings?.fastPassPrice || 49}
+                                 tokenData={{
+                                    orgId: business.id,
+                                    counterPrefix: (selectedDept as any)?.prefix || (business as any)?.services?.[0]?.prefix || "Q",
+                                    customerName: user?.user_metadata?.full_name || "User",
+                                    customerPhone: user?.phone,
+                                    departmentId: selectedDept?.id
+                                 }}
+                                 onSuccess={(data) => {
+                                    setJoinedToken({ 
+                                       tokenNumber: data.tokenNumber, 
+                                       position: 1, 
+                                       estimatedWaitMins: data.estimatedWaitMins || 5, 
+                                       isGuest: false, 
+                                       tokenId: data.tokenId 
+                                    });
+                                 }}
+                                 onError={(err) => toast.error(err)}
+                                 isLoading={isJoining}
+                              />
+                           )}
+                        </div>
                     </motion.div>
                   )}
                 </AnimatePresence>

@@ -14,7 +14,7 @@ interface FastPassCheckoutProps {
   businessName: string;
   amount: number;
   tokenData: any;
-  onSuccess: (data: { tokenId: string; tokenNumber: string }) => void;
+  onSuccess: (data: { tokenId: string; tokenNumber: string; estimatedWaitMins?: number }) => void;
   onError: (error: string) => void;
   isLoading?: boolean;
 }

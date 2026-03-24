@@ -89,6 +89,9 @@ export interface Database {
           claim_status: string
           onboarding_step: number | null
           is_accepting_tokens: boolean | null
+          op_hours_json: any | null
+          settings: any | null
+          avg_service_time: number | null
         }
         Insert: {
           id: string
@@ -120,6 +123,9 @@ export interface Database {
           claim_status?: string
           onboarding_step?: number | null
           is_accepting_tokens?: boolean | null
+          op_hours_json?: any | null
+          settings?: any | null
+          avg_service_time?: number | null
         }
         Update: {
           id?: string
@@ -405,6 +411,8 @@ export interface Database {
           sort_order: number | null
           created_at: string | null
           updated_at: string | null
+          prefix: string | null
+          waiting_count: number | null
         }
         Insert: {
           id?: string
@@ -419,6 +427,8 @@ export interface Database {
           sort_order?: number | null
           created_at?: string | null
           updated_at?: string | null
+          prefix?: string | null
+          waiting_count?: number | null
         }
         Update: {
           id?: string

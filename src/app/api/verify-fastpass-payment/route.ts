@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       tokenId: token.id,
-      tokenNumber: token.tokenNumber
+      tokenNumber: token.tokenNumber,
+      estimatedWaitMins: token.estimatedWaitMins
     });
 
   } catch (error: unknown) {
