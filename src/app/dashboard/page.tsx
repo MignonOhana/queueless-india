@@ -299,23 +299,23 @@ export default function BusinessDashboard() {
                 <button 
                    onClick={async () => {
                      try {
-                       const newVal = !businessData?.is_open;
-                       setBusinessData({...businessData, is_open: newVal});
-                       const { error } = await supabase.from('businesses').update({ is_open: newVal }).eq('id', businessData?.id).select();
+                       const newVal = !businessData?.is_accepting_tokens;
+                       setBusinessData({...businessData, is_accepting_tokens: newVal});
+                       const { error } = await supabase.from('businesses').update({ is_accepting_tokens: newVal }).eq('id', businessData?.id).select();
                        if (error) throw error;
-                       toast.success(`Queue is now ${newVal ? 'OPEN' : 'CLOSED'}`);
+                       toast.success(`Tokens are now ${newVal ? 'ENABLED' : 'DISABLED'}`);
                      } catch (err: any) {
                        toast.error(`Update failed: ${err.message}`);
-                       setBusinessData({...businessData, is_open: businessData?.is_open});
+                       setBusinessData({...businessData, is_accepting_tokens: businessData?.is_accepting_tokens});
                      }
                    }}
                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${
-                     businessData?.is_open 
+                     businessData?.is_accepting_tokens 
                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
                        : 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'
                    }`}
                 >
-                   {businessData?.is_open ? '🟢 OPEN' : '⚪ CLOSED'}
+                   {businessData?.is_accepting_tokens ? '🟢 ACCEPTING' : '⚪ STOPPED'}
                 </button>
              </div>
           </div>

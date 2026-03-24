@@ -64,11 +64,11 @@ export default function BusinessQueueManagement() {
         setWaitingTokens(wTokens || []);
 
         // 4. Get currently serving token
-        if (qData.currently_serving_token_id) {
+        if (qData.currently_serving) {
           const { data: sToken } = await supabase
             .from("tokens")
             .select("*")
-            .eq("id", qData.currently_serving_token_id as string)
+            .eq("id", qData.currently_serving as string)
             .single();
           setServingToken(sToken as Token);
         } else {

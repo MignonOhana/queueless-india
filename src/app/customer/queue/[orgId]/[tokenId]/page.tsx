@@ -72,11 +72,11 @@ export default function LiveTokenTracking() {
         setQueue(qData);
 
         // Get currently serving token number
-        if (qData?.currently_serving_token_id) {
+        if (qData?.currently_serving) {
           const { data: sData } = await supabase
             .from("tokens")
             .select("tokenNumber")
-            .eq("id", qData.currently_serving_token_id)
+            .eq("id", qData.currently_serving)
             .single();
           setServingTokenNumber(sData?.tokenNumber || "None");
         }
@@ -131,8 +131,8 @@ export default function LiveTokenTracking() {
         (payload) => {
           setQueue(payload.new as Queue);
           // Update serving token number if changed
-          if (payload.new.currently_serving_token_id) {
-            updateServingNumber(payload.new.currently_serving_token_id);
+          if (payload.new.currently_serving) {
+            updateServingNumber(payload.new.currently_serving);
           }
         }
       )

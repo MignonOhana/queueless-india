@@ -36,7 +36,6 @@ export async function POST(request: Request) {
       owner_id: session.user.id,
       plan: 'free' as const,
       claim_status: 'claimed' as const,
-      is_open: false,
       is_accepting_tokens: true,
       onboarding_step: 2
     };

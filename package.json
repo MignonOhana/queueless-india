@@ -15,6 +15,7 @@
     "@deck.gl/react": "^9.2.11",
     "@ducanh2912/next-pwa": "^10.2.6",
     "@gsap/react": "^2.1.2",
+    "@marsidev/react-turnstile": "^1.4.2",
     "@react-google-maps/api": "^2.20.8",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
@@ -72,6 +73,7 @@
     "eslint-config-next": "16.1.6",
     "eslint-plugin-security": "^4.0.0",
     "sharp": "^0.34.5",
+    "supabase": "^2.83.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

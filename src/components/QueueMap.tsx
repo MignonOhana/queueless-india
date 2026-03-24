@@ -6,6 +6,7 @@ import { MapPin, Navigation, Users, ArrowRight, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import type { Database } from "@/types/database";
 
 const supabase = createClient();
 
@@ -116,9 +117,9 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
      if (qErr) return;
 
      // Merge data
-     const merged: BusinessMarker[] = bData.map(biz => {
+     const merged: BusinessMarker[] = (bData || []).map((biz: any) => {
         // Find the matching queue (Usually the primary one, e.g. OPD or TKN)
-        const queue = qData?.find(q => q.org_id === biz.id) || null;
+        const queue = (qData || []).find((q: any) => q.org_id === biz.id) || null;
         
         // Mock estimate calculations (In prod, this should come from AI table or queue pacing)
         const waiting = queue?.total_waiting || 0;
@@ -141,7 +142,6 @@ export default function QueueMap({ onLocationFound }: QueueMapProps) {
   };
 
   useEffect(() => {
-     // eslint-disable-next-line react-hooks/set-state-in-effect
      fetchMapData();
 
      // 3. Realtime Subscription to Queues table to instantly change marker colors

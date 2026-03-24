@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { X, Mail, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Script from 'next/script'
+import { Turnstile } from '@marsidev/react-turnstile'
 import { toast } from 'sonner'
 
 type Step = 'email' | 'otp' | 'done'
@@ -24,8 +24,8 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
   const [countdown, setCountdown] = useState(0)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
-  // Use placeholder if env is missing
-  const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
+  // Cloudflare site key
+  const TURNSTILE_SITE_KEY = "0x4AAAAAACvEAGg8tzvQ9woe";
 
   // Auto-send OTP if defaultEmail is provided
   useEffect(() => {
@@ -64,7 +64,8 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
         email,
         options: {
           shouldCreateUser: true,
-          data: { full_name: defaultName || '' }
+          data: { full_name: defaultName || '' },
+          captchaToken: captchaToken ?? undefined
         },
       })
       
@@ -172,18 +173,25 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
 
                 {/* Cloudflare Turnstile Widget */}
                 <div className="flex justify-center my-4 min-h-[65px]">
-                  <div 
-                    id="turnstile-container"
-                    className="cf-turnstile" 
-                    data-sitekey={TURNSTILE_SITE_KEY}
-                    data-callback="onTurnstileSuccess"
-                    data-theme="dark"
+                  <Turnstile
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => {
+                      setCaptchaToken(token);
+                      setError('');
+                    }}
+                    onError={() => setCaptchaToken(null)}
+                    onExpire={() => setCaptchaToken(null)}
+                    options={{
+                      theme: 'dark',
+                      size: 'normal',
+                    }}
+                    className="mb-3"
                   />
                 </div>
                 
                 <button
                   onClick={sendOTP}
-                  disabled={loading || (!captchaToken && process.env.NODE_ENV === 'production')}
+                  disabled={loading || !captchaToken}
                   className="w-full group relative bg-[#00F5A0] text-[#0A0A0F] font-black py-4 rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,160,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden disabled:opacity-50"
                 >
                   {loading ? (
@@ -192,18 +200,6 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                     <>Send Code <ArrowRight size={18} /></>
                   )}
                 </button>
-
-                <Script 
-                  src="https://challenges.cloudflare.com/turnstile/v0/api.js" 
-                  async 
-                  defer 
-                  onLoad={() => {
-                    (window as Window & { onTurnstileSuccess?: (token: string) => void }).onTurnstileSuccess = (token: string) => {
-                      setCaptchaToken(token);
-                      setError('');
-                    };
-                  }}
-                />
                 
                 <p className="text-center text-[10px] uppercase font-black tracking-widest text-slate-600 mt-6">
                   No password required • Secure & Free

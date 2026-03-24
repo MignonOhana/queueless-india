@@ -222,7 +222,8 @@ export const recallToken = async (
       // Update queues table to point currently_serving_token_id to this recalled token
       await supabase
         .from("queues")
-        .update({ currently_serving_token_id: tokenId })
+        .update({ currently_serving: tokenId
+ })
         .eq("id", tokenData.queue_id);
     }
 

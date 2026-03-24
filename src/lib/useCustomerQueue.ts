@@ -37,18 +37,18 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
           const { data: queueData, error: qErr } = await supabase
             .from("queues")
             .select(
-              "last_issued_number, currently_serving_token_id, total_waiting",
+              "last_issued_number, currently_serving, total_waiting",
             )
             .eq("id", tokenData.queue_id)
             .maybeSingle();
 
           if (!qErr && queueData) {
             // If there's an active serving token, fetch its number just for display
-            if (queueData.currently_serving_token_id) {
+            if (queueData.currently_serving) {
               const { data: activeToken } = await supabase
                 .from("tokens")
                 .select("tokenNumber")
-                .eq("id", queueData.currently_serving_token_id)
+                .eq("id", queueData.currently_serving)
                 .maybeSingle();
 
               if (activeToken) setCurrentlyServing(activeToken.tokenNumber);
@@ -61,11 +61,11 @@ export const useCustomerQueue = (orgId: string, tokenNumber: string | null) => {
             // For this MVP, we just use the raw tokens rank since tokenNumber is sequential 'OPD-001'
             const myNum = parseInt(tokenNumber.split("-")[1] || "0", 10);
             let servingNum = 0;
-            if (queueData.currently_serving_token_id) {
+            if (queueData.currently_serving) {
               const { data: activeToken } = await supabase
                 .from("tokens")
                 .select("tokenNumber")
-                .eq("id", queueData.currently_serving_token_id)
+                .eq("id", queueData.currently_serving)
                 .maybeSingle();
               servingNum = parseInt(
                 activeToken?.tokenNumber?.split("-")[1] || "0",

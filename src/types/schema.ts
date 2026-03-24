@@ -90,7 +90,7 @@ export interface Queue {
   counter_id: string;
   session_date: string;
   last_issued_number: number;
-  currently_serving_token_id: string | null;
+  currently_serving: string | null;
   total_waiting: number;
   is_active: boolean;
   created_at: Date;

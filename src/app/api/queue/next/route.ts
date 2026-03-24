@@ -35,14 +35,14 @@ export async function POST(req: Request) {
     }
 
     // 2. Mark current serving token as SERVED if it exists
-    if (queue.currently_serving_token_id) {
+    if (queue.currently_serving) {
       await supabaseAdmin
         .from("tokens")
         .update({ 
           status: "SERVED",
           servedAt: new Date().toISOString()
         })
-        .eq("id", queue.currently_serving_token_id);
+        .eq("id", queue.currently_serving);
     }
 
     // 3. Find next WAITING token
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       const { data: uQ, error: uQErr } = await supabaseAdmin
         .from("queues")
         .update({
-          currently_serving_token_id: nextToken.id,
+          currently_serving: nextToken.id,
           total_waiting: Math.max(0, queue.total_waiting - 1)
         })
         .eq("id", queue.id)
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       const { data: uQ, error: uQErr } = await supabaseAdmin
         .from("queues")
         .update({
-          currently_serving_token_id: null,
+          currently_serving: null,
           total_waiting: 0
         })
         .eq("id", queue.id)

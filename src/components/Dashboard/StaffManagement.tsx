@@ -3,19 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, UserPlus, X, ToggleRight, ToggleLeft, Trash2, UserCheck } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createBrowserClient } from '@supabase/ssr';
+import { type SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/database';
+import { type Tables } from '@/types/supabase';
 import GlassCard from '@/components/ui/GlassCard';
 
-const supabase = createClient();
+const supabase = createBrowserClient<Database, "public">(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+) as SupabaseClient<Database>;
 import { toast } from 'sonner';
 
-interface StaffMember {
-  id: string;
-  name: string;
-  role: string;
-  counter_id: string;
-  is_active: boolean;
-}
+type StaffMember = Tables<'staff_members'>;
 
 export default function StaffManagement({ businessId }: { businessId: string }) {
   const [staff, setStaff] = useState<StaffMember[]>([]);
@@ -26,8 +26,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const fetchStaff = async () => {
     if (!businessId) return;
     setIsLoading(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from('staff_members') as any)
+    const { data, error } = await supabase.from('staff_members')
       .select('*')
       .eq('business_id', businessId)
       .order('created_at', { ascending: true });
@@ -48,9 +47,13 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!businessId) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from('staff_members') as any)
-      .insert([{ ...newStaff, business_id: businessId, is_active: true }])
+    const { data, error } = await supabase.from('staff_members')
+      .insert([{ 
+        ...newStaff, 
+        business_id: businessId, 
+        is_active: true,
+        role: newStaff.role as 'operator' | 'owner' | 'viewer'
+      }])
       .select()
       .single();
 
@@ -65,8 +68,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('staff_members') as any)
+    const { error } = await supabase.from('staff_members')
       .update({ is_active: !currentStatus })
       .eq('id', id);
 
@@ -81,8 +83,7 @@ export default function StaffManagement({ businessId }: { businessId: string }) 
   const deleteStaff = async (id: string) => {
     if (!confirm('Are you sure you want to remove this staff member?')) return;
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from('staff_members') as any)
+    const { error } = await supabase.from('staff_members')
       .delete()
       .eq('id', id);
 

@@ -70,7 +70,7 @@ export async function markNoShow(
     if (next.queue_id) {
       await supabase
         .from("queues")
-        .update({ currently_serving_token_id: next.id })
+        .update({ currently_serving: next.id })
         .eq("id", next.queue_id);
     }
   }
