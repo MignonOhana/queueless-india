@@ -157,6 +157,9 @@ export interface Database {
           claim_status?: string
           onboarding_step?: number | null
           is_accepting_tokens?: boolean | null
+          op_hours_json?: any | null
+          settings?: any | null
+          avg_service_time?: number | null
         }
         Relationships: []
       }
@@ -675,6 +678,7 @@ export interface Database {
           createdAt: string | null
           queue_id: string | null
           department_id: string | null
+          paymentId: string | null
         }
         Insert: {
           id?: string
@@ -691,6 +695,7 @@ export interface Database {
           createdAt?: string | null
           queue_id?: string | null
           department_id?: string | null
+          paymentId?: string | null
         }
         Update: {
           id?: string
@@ -707,6 +712,7 @@ export interface Database {
           createdAt?: string | null
           queue_id?: string | null
           department_id?: string | null
+          paymentId?: string | null
         }
         Relationships: []
       }
@@ -892,11 +898,44 @@ export interface Database {
           avg_wait: number
         }[]
       }
+      increment_queue_counter: {
+        Args: {
+          p_queue_id: string
+        }
+        Returns: number
+      }
+      create_queue_token: {
+        Args: {
+          p_org_id: string
+          p_user_id: string | null
+          p_customer_name: string
+          p_customer_phone: string
+          p_token_number: string
+          p_estimated_wait_mins: number
+          p_department_id?: string | null
+          p_is_priority?: boolean
+          p_payment_id?: string | null
+        }
+        Returns: { id: string, orgId: string }[]
+      }
       activate_queue_for_today: {
         Args: {
           p_org_id: string
         }
         Returns: boolean
+      }
+      decrement_queue_waiting: {
+        Args: {
+          p_queue_id: string
+        }
+        Returns: void
+      }
+      serve_next_queue_token: {
+        Args: {
+          p_queue_id: string
+          p_token_id: string
+        }
+        Returns: void
       }
       check_otp_rate_limit: {
         Args: {

@@ -14,25 +14,9 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
+import { StaffMember, Department } from "@/types/database";
 
 const supabase = createClient();
-
-interface StaffMember {
-  id: string;
-  name: string;
-  phone: string | null;
-  role: string;
-  department_id: string | null;
-  access_code: string | null;
-  is_active: boolean;
-  last_login_at: string | null;
-  created_at: string;
-}
-
-interface Department {
-  id: string;
-  name: string;
-}
 
 export default function StaffManagementPage() {
   const router = useRouter();
@@ -61,8 +45,8 @@ export default function StaffManagementPage() {
     if (!user?.id) return;
     try {
       // 1. Get Business ID
-      const { data: profile, error: pError } = await (supabase
-        .from("user_profiles") as any)
+      const { data: profile, error: pError } = await supabase
+        .from("user_profiles")
         .select("primary_business_id")
         .eq("id", user.id)
         .single();
@@ -78,33 +62,21 @@ export default function StaffManagementPage() {
       // 2. Fetch Departments
       const { data: depts } = await supabase
         .from("departments")
-        .select("id, name")
+        .select("*")
         .eq("business_id", profile.primary_business_id);
       
       if (depts) setDepartments(depts);
 
       // 3. Fetch Staff
-      const { data: staffData, error: sError } = await (supabase
-        .from("staff_members") as any)
+      const { data: staffData, error: sError } = await supabase
+        .from("staff_members")
         .select("*")
         .eq("business_id", profile.primary_business_id)
         .order("created_at", { ascending: false });
 
       if (sError) throw sError;
+      if (staffData) setStaff(staffData);
 
-      const mappedStaff = (staffData || []).map((s: any) => ({
-        id: s.id,
-        name: s.name,
-        role: s.role,
-        department_id: s.department_id,
-        phone: s.phone,
-        access_code: s.access_code,
-        is_active: s.is_active,
-        last_login_at: s.last_login_at,
-        created_at: s.created_at
-      }));
-
-      setStaff(mappedStaff);
     } catch (error: any) {
       console.error("Fetch error:", error);
       toast.error("Failed to load staff management data");
@@ -124,11 +96,12 @@ export default function StaffManagementPage() {
     }
     setIsSubmitting(true);
     try {
-      const { data, error } = await (supabase as any).rpc("add_staff_member", {
+      // Add staff member via RPC
+      const { data, error } = await supabase.rpc("add_staff_member", {
         p_business_id: businessId,
         p_department_id: form.departmentId,
         p_name: form.name,
-        p_phone: form.phone,
+        p_phone: form.phone || undefined,
         p_role: form.role
       });
 
@@ -137,6 +110,15 @@ export default function StaffManagementPage() {
       if (data && data.length > 0) {
         const newStaff = data[0];
         setShowCodeModal({ name: form.name, code: newStaff.access_code });
+        
+        // Update onboarding status if this is the first staff
+        if (staff.length === 0) {
+           await supabase
+             .from('businesses')
+             .update({ onboarding_step: 3 })
+             .eq('id', businessId)
+             .lte('onboarding_step', 2);
+        }
       }
       
       setIsAddModalOpen(false);
@@ -151,8 +133,8 @@ export default function StaffManagementPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await (supabase
-        .from("staff_members") as any)
+      const { error } = await supabase
+        .from("staff_members")
         .update({ is_active: !current })
         .eq("id", id);
       if (error) throw error;
@@ -166,11 +148,11 @@ export default function StaffManagementPage() {
   const regenerateCode = async (id: string, name: string) => {
     if (!confirm(`Regenerate access code for ${name}? The old code will stop working.`)) return;
     try {
-      const { data: newCode, error: genErr } = await (supabase as any).rpc("generate_staff_access_code");
+      const { data: newCode, error: genErr } = await supabase.rpc("generate_staff_access_code");
       if (genErr) throw genErr;
 
-      const { error: upErr } = await (supabase
-        .from("staff_members") as any)
+      const { error: upErr } = await supabase
+        .from("staff_members")
         .update({ access_code: newCode })
         .eq("id", id);
       if (upErr) throw upErr;
@@ -185,8 +167,8 @@ export default function StaffManagementPage() {
 
   const changeDepartment = async (staffId: string, deptId: string) => {
     try {
-      const { error } = await (supabase
-        .from("staff_members") as any)
+      const { error } = await supabase
+        .from("staff_members")
         .update({ department_id: deptId })
         .eq("id", staffId);
       if (error) throw error;

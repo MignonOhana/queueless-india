@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { rateLimit } from "@/lib/rateLimit";
+import { Database } from "@/types/database.types";
+
+type BusinessSelect = Pick<Database['public']['Tables']['businesses']['Row'], 'name' | 'whatsapp_enabled'>;
+type QueueSelect = Pick<Database['public']['Tables']['queues']['Row'], 'id'>;
+type TokenRow = Database['public']['Tables']['tokens']['Row'];
 
 export async function POST(req: NextRequest) {
   // Rate limit: 5 requests per minute per IP
@@ -21,7 +26,15 @@ export async function POST(req: NextRequest) {
       userId: user?.id ?? body.userId ?? null,
     };
 
-    const { orgId, userId, customerName, customerPhone, departmentId } = payload;
+    const { 
+      orgId, 
+      userId, 
+      customerName, 
+      customerPhone, 
+      departmentId, 
+      isPriority = false, 
+      paymentId = null 
+    } = payload;
     const counterPrefix = payload.counterPrefix || 'Q';
 
     if (!orgId || !customerName) {
@@ -29,11 +42,11 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Check business
-    const { data: bizData } = await (supabase
-      .from('businesses') as any)
+    const { data: bizData } = await supabase
+      .from('businesses')
       .select('name, whatsapp_enabled')
       .eq('id', orgId)
-      .single();
+      .single<BusinessSelect>();
 
     if (!bizData) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -42,8 +55,8 @@ export async function POST(req: NextRequest) {
     const todayDate = new Date().toISOString().split('T')[0];
 
     // Fetch the active queue for this org/department
-    let queueQuery = (supabase
-      .from('queues') as any)
+    let queueQuery = supabase
+      .from('queues')
       .select('id')
       .eq('org_id', orgId);
     
@@ -53,7 +66,7 @@ export async function POST(req: NextRequest) {
       queueQuery = queueQuery.is('department_id', null);
     }
 
-    const { data: queueData, error: queueErr } = await queueQuery.single();
+    const { data: queueData, error: queueErr } = await queueQuery.single<QueueSelect>();
 
     if (queueErr || !queueData) {
       return NextResponse.json({ error: "No active queue found for this selection" }, { status: 404 });
@@ -65,8 +78,8 @@ export async function POST(req: NextRequest) {
     // This uses `FOR UPDATE` in the DB, guaranteeing no duplicates under concurrent load
     const { data: nextNumber, error: incrementErr } = await adminSupabase
       .rpc('increment_queue_counter', {
-        p_queue_id: (queueData as { id: string }).id
-      } as any);
+        p_queue_id: queueData.id
+      });
 
     if (incrementErr || !nextNumber) {
       console.error("Increment error:", incrementErr);
@@ -77,8 +90,8 @@ export async function POST(req: NextRequest) {
     const tokenStr = `${counterPrefix}-${paddedNumber}`;
 
     // Get number of people currently waiting for wait time estimate (department-aware)
-    let waitingQuery = (supabase
-      .from('tokens') as any)
+    let waitingQuery = supabase
+      .from('tokens')
       .select('*', { count: 'exact', head: true })
       .eq('orgId', orgId)
       .eq('status', 'WAITING')
@@ -106,14 +119,16 @@ export async function POST(req: NextRequest) {
         p_token_number: tokenStr,
         p_estimated_wait_mins: estimatedWaitMins,
         p_department_id: departmentId || null,
-      } as any);
+        p_is_priority: isPriority,
+        p_payment_id: paymentId
+      });
 
-    if (insertErr || !tokenRows || (tokenRows as any[]).length === 0) {
+    if (insertErr || !tokenRows || (tokenRows as TokenRow[]).length === 0) {
        console.error("Insert error:", JSON.stringify(insertErr, null, 2));
        return NextResponse.json({ error: "Failed to create token" }, { status: 500 });
     }
 
-    const tokenDoc = (tokenRows as Record<string, any>[])[0];
+    const tokenDoc = (tokenRows as TokenRow[])[0];
 
     // 4. WhatsApp Fallback (Async trigger, don't await blocking response if not critical)
     const business = bizData as { name: string, whatsapp_enabled: boolean } | null;

@@ -27,7 +27,7 @@ export default function StaffLoginPage() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.rpc("staff_login_by_code", {
+      const { data, error } = await (supabase as any).rpc("staff_login_by_code", {
         p_code: code.toUpperCase()
       });
 
@@ -39,10 +39,10 @@ export default function StaffLoginPage() {
       const staffContext = data[0];
       
       // Store staff context
-      localStorage.setItem("ql_staff_context", JSON.stringify(staffContext));
+      localStorage.setItem("queueless_staff_session", JSON.stringify(staffContext));
       
       toast.success(`Welcome back, ${staffContext.staff_name}!`);
-      router.push("/staff/dashboard");
+      router.push("/staff/queue");
     } catch (err: any) {
       console.error("Login error:", err);
       toast.error(err.message || "Invalid Access Code");

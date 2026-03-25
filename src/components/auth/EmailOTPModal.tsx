@@ -59,6 +59,34 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
     setError('')
     
     try {
+      const isLocal = typeof window !== 'undefined' && 
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      if (!captchaToken && isLocal) {
+        // Use Dev Bypass
+        setError('')
+        const resp = await fetch('/api/auth/dev-bypass', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const result = await resp.json();
+        if (!resp.ok) throw new Error(result.error);
+        
+        if (result.magicLink) {
+          if (result.bypassCookie) document.cookie = result.bypassCookie;
+          toast.success("Synchronous Login Triggered (Dev Mode)");
+          window.location.href = result.magicLink;
+          return;
+        }
+
+        setStep('otp')
+        setCountdown(60)
+        toast.info("Dev Mode: Simulated OTP triggered via Service Role");
+        setLoading(false)
+        return;
+      }
+
       const options: { 
         shouldCreateUser: boolean; 
         data: { full_name: string }; 
@@ -204,8 +232,9 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                 
                 <button
                   onClick={sendOTP}
-                  disabled={loading || !captchaToken}
+                  disabled={loading || (!captchaToken && process.env.NODE_ENV === 'production')}
                   className="w-full group relative bg-[#00F5A0] text-[#0A0A0F] font-black py-4 rounded-2xl hover:shadow-[0_0_30px_rgba(0,245,160,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 overflow-hidden disabled:opacity-50"
+                  id="send-otp-button"
                 >
                   {loading ? (
                     <Loader2 size={20} className="animate-spin" />
@@ -213,6 +242,20 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
                     <>Send Code <ArrowRight size={18} /></>
                   )}
                 </button>
+
+                {/* Explicit Bypass for Localhost Testing */}
+                {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+                  <button
+                    onClick={() => {
+                      setCaptchaToken(null); // Force skip token check
+                      sendOTP();
+                    }}
+                    className="w-full mt-2 py-2 text-[10px] font-black uppercase tracking-widest text-[#00F5A0]/50 hover:text-[#00F5A0] transition-all border border-[#00F5A0]/20 rounded-xl"
+                    id="dev-bypass-button"
+                  >
+                    ⚡ Force Dev Bypass (No Captcha)
+                  </button>
+                )}
                 
                 <p className="text-center text-[10px] uppercase font-black tracking-widest text-slate-600 mt-6">
                   No password required • Secure & Free

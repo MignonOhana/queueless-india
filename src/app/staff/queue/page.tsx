@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { 
   Users, Play, CheckCircle, 
   UserX, ArrowUpCircle, SkipForward,
-  Loader2, LogOut, Setting2,
-  Bell, Power, Clock, User
+  Loader2, LogOut,
+  Power
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,13 +27,13 @@ interface StaffSession {
 
 interface Token {
   id: string;
-  tokenNumber: string;
-  customerName: string;
-  customerPhone: string;
+  token_number: string;
+  customer_name: string;
+  customer_phone: string | null;
   status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
-  estimatedWaitMins: number;
-  isPriority: boolean;
-  createdAt: string;
+  estimated_wait_mins: number;
+  is_priority: boolean;
+  created_at: string;
 }
 
 export default function StaffQueueDashboard() {
@@ -49,8 +49,8 @@ export default function StaffQueueDashboard() {
   const fetchQueueContext = useCallback(async (sess: StaffSession) => {
     try {
       // 1. Fetch Today's Queue for this department
-      const { data: queue, error: qError } = await (supabase
-        .from("queues") as any)
+      const { data: queue, error: qError } = await supabase
+        .from("queues")
         .select("id, is_accepting_tokens, currently_serving_token_id")
         .eq("org_id", sess.business_id)
         .eq("department_id", sess.department_id)
@@ -58,8 +58,6 @@ export default function StaffQueueDashboard() {
         .single();
 
       if (qError) {
-        // If no queue, maybe auto-activate? 
-        // For now, let's assume business owner initialized it.
         throw qError;
       }
 
@@ -67,19 +65,19 @@ export default function StaffQueueDashboard() {
       setIsAccepting(queue.is_accepting_tokens);
 
       // 2. Fetch Tokens
-      const { data: tokenData, error: tError } = await (supabase
-        .from("tokens") as any)
+      const { data: tokenData, error: tError } = await supabase
+        .from("tokens")
         .select("*")
         .eq("queue_id", queue.id)
         .in("status", ["WAITING", "SERVING"])
-        .order("isPriority", { ascending: false })
-        .order("createdAt", { ascending: true });
+        .order("is_priority", { ascending: false })
+        .order("created_at", { ascending: true });
 
       if (tError) throw tError;
 
-      const allTokens = tokenData || [];
-      setTokens(allTokens.filter((t: Token) => t.status === "WAITING"));
-      setCurrentlyServing(allTokens.find((t: Token) => t.status === "SERVING") || null);
+      const allTokens = (tokenData || []) as any as Token[];
+      setTokens(allTokens.filter((t) => t.status === "WAITING"));
+      setCurrentlyServing(allTokens.find((t) => t.status === "SERVING") || null);
 
     } catch (err: any) {
       console.error("Context fetch error:", err);
@@ -92,7 +90,7 @@ export default function StaffQueueDashboard() {
   useEffect(() => {
     const raw = localStorage.getItem("queueless_staff_session");
     if (!raw) {
-      router.push("/staff-login");
+      router.push("/staff/login");
       return;
     }
     const sess = JSON.parse(raw);
@@ -133,20 +131,20 @@ export default function StaffQueueDashboard() {
       
       // 1. Mark current as completed if exists
       if (currentlyServing) {
-        await (supabase
-          .from("tokens") as any)
-          .update({ status: "COMPLETED", servedAt: new Date().toISOString() })
+        await supabase
+          .from("tokens")
+          .update({ status: "COMPLETED", served_at: new Date().toISOString() })
           .eq("id", currentlyServing.id);
       }
 
       // 2. Mark next as SERVING
-      await (supabase
-        .from("tokens") as any)
+      await supabase
+        .from("tokens")
         .update({ status: "SERVING" })
         .eq("id", nextToken.id);
 
       // 3. Update Queue Pointer via RPC
-      const { error: rpcErr } = await (supabase as any).rpc("serve_next_queue_token", {
+      const { error: rpcErr } = await supabase.rpc("serve_next_queue_token", {
         p_queue_id: queueId,
         p_token_id: nextToken.id
       });
@@ -164,9 +162,9 @@ export default function StaffQueueDashboard() {
   const handleStatusUpdate = async (tokenId: string, status: string) => {
     setActionLoading(tokenId);
     try {
-      const { error } = await (supabase
-        .from("tokens") as any)
-        .update({ status })
+      const { error } = await supabase
+        .from("tokens")
+        .update({ status: status as any })
         .eq("id", tokenId);
       if (error) throw error;
       toast.success(`Token marked as ${status}`);
@@ -179,9 +177,9 @@ export default function StaffQueueDashboard() {
 
   const handlePriority = async (tokenId: string, isPriority: boolean) => {
     try {
-      await (supabase
-        .from("tokens") as any)
-        .update({ isPriority })
+      await supabase
+        .from("tokens")
+        .update({ is_priority: isPriority })
         .eq("id", tokenId);
       toast.success(isPriority ? "Moved to top" : "Priority removed");
     } catch (err) {
@@ -191,10 +189,10 @@ export default function StaffQueueDashboard() {
 
   const handleSkip = async (tokenId: string) => {
     try {
-      // Move to end by updating createdAt
-      await (supabase
-        .from("tokens") as any)
-        .update({ createdAt: new Date().toISOString() })
+      // Move to end by updating created_at
+      await supabase
+        .from("tokens")
+        .update({ created_at: new Date().toISOString() })
         .eq("id", tokenId);
       toast.success("Moved to end of queue");
     } catch (err) {
@@ -206,8 +204,8 @@ export default function StaffQueueDashboard() {
     if (!queueId) return;
     try {
       const newVal = !isAccepting;
-      const { error } = await (supabase
-        .from("queues") as any)
+      const { error } = await supabase
+        .from("queues")
         .update({ is_accepting_tokens: newVal })
         .eq("id", queueId);
       if (error) throw error;
@@ -249,7 +247,7 @@ export default function StaffQueueDashboard() {
             <button 
               onClick={() => {
                 localStorage.removeItem("queueless_staff_session");
-                router.push("/staff-login");
+                router.push("/staff/login");
               }}
               className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all group"
               title="Logout"
@@ -302,11 +300,11 @@ export default function StaffQueueDashboard() {
                   className="space-y-6"
                 >
                   <p className="text-8xl font-black tracking-tighter text-primary group">
-                    {currentlyServing.tokenNumber}
+                    {currentlyServing.token_number}
                   </p>
                   <div className="space-y-1">
-                    <p className="text-2xl font-black text-white">{currentlyServing.customerName}</p>
-                    <p className="text-zinc-500 font-mono text-sm tracking-widest">{currentlyServing.customerPhone || "NO PHONE"}</p>
+                    <p className="text-2xl font-black text-white">{currentlyServing.customer_name}</p>
+                    <p className="text-zinc-500 font-mono text-sm tracking-widest">{currentlyServing.customer_phone || "NO PHONE"}</p>
                   </div>
 
                   <div className="flex gap-4 pt-8">
@@ -366,12 +364,12 @@ export default function StaffQueueDashboard() {
                   >
                     <div className="flex items-center gap-4">
                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                        token.isPriority ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "bg-white/10 text-white"
+                        token.is_priority ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "bg-white/10 text-white"
                       }`}>
-                        {token.tokenNumber}
+                        {token.token_number}
                       </div>
                       <div>
-                        <p className="font-bold text-sm tracking-tight">{token.customerName}</p>
+                        <p className="font-bold text-sm tracking-tight">{token.customer_name}</p>
                         <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
                           {index === 0 ? "Next Up" : `${index} people ahead`}
                         </p>
@@ -380,8 +378,8 @@ export default function StaffQueueDashboard() {
 
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => handlePriority(token.id, !token.isPriority)}
-                        className={`p-2 rounded-xl transition-all ${token.isPriority ? "text-amber-500 bg-amber-500/10" : "text-zinc-500 hover:text-white"}`}
+                        onClick={() => handlePriority(token.id, !token.is_priority)}
+                        className={`p-2 rounded-xl transition-all ${token.is_priority ? "text-amber-500 bg-amber-500/10" : "text-zinc-500 hover:text-white"}`}
                         title="Toggle Priority"
                       >
                         <ArrowUpCircle size={18} />

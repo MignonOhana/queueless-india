@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Token as TokenItem } from "@/types/database";
+import { Token } from "@/types/database";
 
 export interface StaffContext {
   staff_id: string;
@@ -12,54 +12,55 @@ export interface StaffContext {
   queue_id: string;
 }
 
+const supabase = createClient();
+
 export const useStaffQueue = (context: StaffContext | null) => {
-  const supabase = createClient();
-  const [waitingTokens, setWaitingTokens] = useState<TokenItem[]>([]);
-  const [currentlyServing, setCurrentlyServing] = useState<TokenItem | null>(null);
+  const [waitingTokens, setWaitingTokens] = useState<Token[]>([]);
+  const [currentlyServing, setCurrentlyServing] = useState<Token | null>(null);
   const [stats, setStats] = useState({
     totalWaiting: 0,
     servedToday: 0,
   });
 
+  const fetchData = useCallback(async () => {
+    if (!context) return;
+    try {
+      // 1. Fetch current queue state
+      const { data: queueData } = await supabase
+        .from("queues")
+        .select("*")
+        .eq("id", context.queue_id)
+        .single();
+
+      // 2. Fetch all tokens for this department today
+      const { data: tokens, error: tErr } = await supabase
+        .from("tokens")
+        .select("*")
+        .eq("department_id", context.department_id)
+        .order("createdAt", { ascending: true });
+
+      if (tErr) throw tErr;
+
+      const allTokens: Token[] = tokens || [];
+      const serving = allTokens.find(t => t.status === "SERVING") || null;
+      const waiting = allTokens.filter(t => t.status === "WAITING");
+      const served = allTokens.filter(t => t.status === "SERVED");
+
+      setCurrentlyServing(serving);
+      setWaitingTokens(waiting);
+      
+      setStats({
+        totalWaiting: waiting.length,
+        servedToday: served.length,
+      });
+
+    } catch (err) {
+      console.error("Staff fetch error:", err);
+    }
+  }, [context]);
+
   useEffect(() => {
     if (!context) return;
-
-    const fetchData = async () => {
-      try {
-        // 1. Fetch current queue state
-        const { data: queueData } = await (supabase
-          .from("queues") as any)
-          .select("*")
-          .eq("id", context.queue_id)
-          .single();
-
-        // 2. Fetch all active tokens for this department
-        const { data: tokens, error: tErr } = await (supabase
-          .from("tokens") as any)
-          .select("*")
-          .eq("department_id", context.department_id)
-          .in("status", ["WAITING", "SERVING"])
-          .order("createdAt", { ascending: true });
-
-        if (tErr) throw tErr;
-
-        const allTokens: TokenItem[] = tokens || [];
-        const serving = allTokens.find(t => t.status === "SERVING") || null;
-        const waiting = allTokens.filter(t => t.status === "WAITING");
-
-        setCurrentlyServing(serving);
-        setWaitingTokens(waiting);
-        
-        // 3. Update Stats
-        setStats({
-          totalWaiting: waiting.length,
-          servedToday: (queueData?.last_issued_number || 0) - waiting.length - (serving ? 1 : 0),
-        });
-
-      } catch (err) {
-        console.error("Staff fetch error:", err);
-      }
-    };
 
     fetchData();
 
@@ -81,7 +82,7 @@ export const useStaffQueue = (context: StaffContext | null) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [context?.department_id, context?.queue_id]);
+  }, [context, fetchData]);
 
-  return { waitingTokens, currentlyServing, stats };
+  return { waitingTokens, currentlyServing, stats, refresh: fetchData };
 };

@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { 
-  Plus, Search, Edit2, 
+  Plus, Search, 
   Trash2, Power, Users, Clock, 
-  ChevronRight, Store,
-  LayoutDashboard, LogOut, Loader2,
-  Check, X, Info, User
+  ChevronRight, Store, Loader2,
+  X, Info, User
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -20,28 +19,12 @@ const supabase = createClient();
 
 const EMOJIS = ["🏥", "🔬", "💊", "🦷", "🧪", "👁️", "🩺", "🏦", "⚖️", "📋", "🧾", "🏢", "🏫", "🏪", "🏠"];
 
-interface Department {
-  id: string;
-  business_id: string;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  is_active: boolean;
-  serviceMins: number | null;
-  opHours: string | null;
-  max_capacity: number | null;
-  created_at: string;
-  queue_stats?: {
-    waiting: number;
-    staffCount: number;
-  };
-}
 
 export default function DepartmentsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [departments, setDepartments] = useState<(Department & { queue_stats?: { waiting: number; staffCount: number } })[]>([]);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -61,8 +44,8 @@ export default function DepartmentsPage() {
     if (!user?.id) return;
     try {
       // 1. Get Business ID
-      const { data: profile, error: pError } = await (supabase
-        .from("user_profiles") as any)
+      const { data: profile, error: pError } = await supabase
+        .from("user_profiles")
         .select("primary_business_id")
         .eq("id", user.id)
         .single();
@@ -76,8 +59,8 @@ export default function DepartmentsPage() {
       setBusinessId(profile.primary_business_id);
 
       // 2. Fetch Departments
-      const { data: depts, error: dError } = await (supabase
-        .from("departments") as any)
+      const { data: depts, error: dError } = await supabase
+        .from("departments")
         .select(`
           *,
           queues (
@@ -91,16 +74,16 @@ export default function DepartmentsPage() {
       if (dError) throw dError;
 
       // 3. Fetch Staff counts 
-      const { data: staffCounts } = await (supabase
-        .from("staff_members") as any)
+      const { data: staffCounts } = await supabase
+        .from("staff_members")
         .select("department_id")
         .eq("business_id", profile.primary_business_id);
 
-      const mappedDepts = (depts || []).map((d: any) => ({
+      const mappedDepts = (depts || []).map((d) => ({
         ...d,
         queue_stats: {
-          waiting: d.queues?.[0]?.total_waiting || 0,
-          staffCount: staffCounts?.filter((s: any) => s.department_id === d.id).length || 0
+          waiting: (d.queues as any)?.[0]?.total_waiting || 0,
+          staffCount: staffCounts?.filter(s => s.department_id === d.id).length || 0
         }
       }));
 
@@ -121,7 +104,7 @@ export default function DepartmentsPage() {
     if (!businessId || !form.name) return;
     setIsSubmitting(true);
     try {
-      const { error } = await (supabase as any).rpc("create_department", {
+      const { error } = await supabase.rpc("create_department", {
         p_business_id: businessId,
         p_name: form.name,
         p_description: form.description,
@@ -147,8 +130,8 @@ export default function DepartmentsPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await (supabase
-        .from("departments") as any)
+      const { error } = await supabase
+        .from("departments")
         .update({ is_active: !current })
         .eq("id", id);
 
