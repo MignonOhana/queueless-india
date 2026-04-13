@@ -1,0 +1,87 @@
+{
+  "description": "Department-level queue management — the core differentiator of Queueless India",
+  "required": [
+    "id",
+    "business_id",
+    "name"
+  ],
+  "properties": {
+    "id": {
+      "description": "Note:\nThis is a Primary Key.<pk/>",
+      "format": "text",
+      "type": "string"
+    },
+    "business_id": {
+      "description": "Note:\nThis is a Foreign Key to `businesses.id`.<fk table='businesses' column='id'/>",
+      "format": "text",
+      "type": "string"
+    },
+    "name": {
+      "format": "text",
+      "type": "string"
+    },
+    "description": {
+      "format": "text",
+      "type": "string"
+    },
+    "icon": {
+      "default": "🏥",
+      "format": "text",
+      "type": "string"
+    },
+    "is_active": {
+      "default": true,
+      "format": "boolean",
+      "type": "boolean"
+    },
+    "servicemins": {
+      "default": 10,
+      "format": "integer",
+      "type": "integer"
+    },
+    "ophours": {
+      "default": "09:00-17:00",
+      "format": "text",
+      "type": "string"
+    },
+    "max_capacity": {
+      "default": 50,
+      "format": "integer",
+      "type": "integer"
+    },
+    "sort_order": {
+      "default": 0,
+      "format": "integer",
+      "type": "integer"
+    },
+    "created_at": {
+      "default": "now()",
+      "format": "timestamp with time zone",
+      "type": "string"
+    },
+    "updated_at": {
+      "default": "now()",
+      "format": "timestamp with time zone",
+      "type": "string"
+    },
+    "service_mins": {
+      "default": 15,
+      "format": "integer",
+      "type": "integer"
+    },
+    "op_hours": {
+      "format": "text",
+      "type": "string"
+    },
+    "prefix": {
+      "format": "text",
+      "type": "string"
+    },
+    "waiting_count": {
+      "default": 0,
+      "format": "integer",
+      "type": "integer"
+    }
+  },
+  "type": "object"
+}

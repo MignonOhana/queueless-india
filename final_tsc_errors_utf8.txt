@@ -1,0 +1,47 @@
+﻿
+> queueless-india@0.1.0 type-check
+> tsc --noEmit
+
+src/app/api/queue/join/route.ts(80,39): error TS2345: Argument of type '{ p_queue_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/api/queue/join/route.ts(114,34): error TS2345: Argument of type '{ p_org_id: any; p_user_id: any; p_customer_name: any; p_customer_phone: any; p_token_number: string; p_estimated_wait_mins: number; p_department_id: any; p_is_priority: any; p_payment_id: any; }' is not assignable to parameter of type 'undefined'.
+src/app/api/verify-fastpass-payment/route.ts(50,39): error TS2345: Argument of type '{ p_queue_id: any; }' is not assignable to parameter of type 'undefined'.
+src/app/api/verify-fastpass-payment/route.ts(51,31): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/api/verify-fastpass-payment/route.ts(60,34): error TS2345: Argument of type '{ p_org_id: any; p_user_id: any; p_customer_name: any; p_customer_phone: any; p_token_number: string; p_estimated_wait_mins: number; p_department_id: any; p_is_priority: boolean; p_payment_id: any; }' is not assignable to parameter of type 'undefined'.
+src/app/dashboard/departments/page.tsx(102,36): error TS2339: Property 'primary_business_id' does not exist on type 'never'.
+src/app/dashboard/departments/page.tsx(130,66): error TS2345: Argument of type '{ p_business_id: string; p_name: string; p_description: string; p_icon: string; p_service_mins: number; p_op_hours: any; p_max_capacity: number; }' is not assignable to parameter of type 'undefined'.
+src/app/dashboard/departments/page.tsx(158,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/departments/page.tsx(239,55): error TS2345: Argument of type 'boolean | null' is not assignable to parameter of type 'boolean'.
+  Type 'null' is not assignable to type 'boolean'.
+src/app/dashboard/departments/page.tsx(461,53): error TS2339: Property 'queue_stats' does not exist on type '{ id: string; business_id: string; name: string; description: string | null; icon: string | null; is_active: boolean | null; serviceMins: number | null; opHours: string | null; max_capacity: number | null; ... 4 more ...; waiting_count: number | null; }'.
+src/app/dashboard/departments/page.tsx(468,53): error TS2339: Property 'queue_stats' does not exist on type '{ id: string; business_id: string; name: string; description: string | null; icon: string | null; is_active: boolean | null; serviceMins: number | null; opHours: string | null; max_capacity: number | null; ... 4 more ...; waiting_count: number | null; }'.
+src/app/dashboard/page.tsx(300,18): error TS2322: Type '{ plan: any; onUpgrade: () => void; }' is not assignable to type 'IntrinsicAttributes & PlanBadgeProps'.
+  Property 'plan' does not exist on type 'IntrinsicAttributes & PlanBadgeProps'.
+src/app/dashboard/page.tsx(311,85): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/page.tsx(553,92): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/staff/page.tsx(101,71): error TS2345: Argument of type '{ p_business_id: string; p_department_id: string; p_name: string; p_phone: string | undefined; p_role: string; }' is not assignable to parameter of type 'undefined'.
+src/app/dashboard/staff/page.tsx(119,22): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/staff/page.tsx(139,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/staff/page.tsx(157,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/staff/page.tsx(173,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/dashboard/staff/page.tsx(292,59): error TS2345: Argument of type 'boolean | null' is not assignable to parameter of type 'boolean'.
+  Type 'null' is not assignable to type 'boolean'.
+src/app/staff/queue/page.tsx(137,19): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/staff/queue/page.tsx(144,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/staff/queue/page.tsx(148,79): error TS2345: Argument of type '{ p_queue_id: string; p_token_id: string; }' is not assignable to parameter of type 'undefined'.
+src/app/staff/queue/page.tsx(168,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/staff/queue/page.tsx(183,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/staff/queue/page.tsx(196,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/app/staff/queue/page.tsx(210,17): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+src/components/Analytics/AnalyticsDashboard.tsx(107,81): error TS2345: Argument of type '{ p_org_id: string; p_date: string; }' is not assignable to parameter of type 'undefined'.
+src/components/Analytics/AnalyticsDashboard.tsx(115,42): error TS7006: Parameter 'd' implicitly has an 'any' type.
+src/components/Dashboard/OnboardingChecklist.tsx(34,80): error TS2345: Argument of type '{ p_org_id: string; }' is not assignable to parameter of type 'undefined'.
+src/components/Dashboard/OnboardingChecklist.tsx(42,17): error TS2345: Argument of type '{ claim_status: string; onboarding_step: number; }' is not assignable to parameter of type 'never'.
+src/lib/useAdminQueue.ts(112,27): error TS2345: Argument of type '{ id: string; orgId: string; counterId: string; userId: string; customerName: string; tokenNumber: string; status: string; createdAt: string; estimatedWaitMins: number; queue_id: string; isPriority: false; servedAt: null; customerPhone: null; department_id: null; }' is not assignable to parameter of type 'SetStateAction<{ id: string; tokenNumber: string; orgId: string; counterId: string; userId: string | null; customerName: string; customerPhone: string | null; status: string; estimatedWaitMins: number | null; ... 5 more ...; paymentId: string | null; } | null>'.
+  Property 'paymentId' is missing in type '{ id: string; orgId: string; counterId: string; userId: string; customerName: string; tokenNumber: string; status: string; createdAt: string; estimatedWaitMins: number; queue_id: string; isPriority: false; servedAt: null; customerPhone: null; department_id: null; }' but required in type '{ id: string; tokenNumber: string; orgId: string; counterId: string; userId: string | null; customerName: string; customerPhone: string | null; status: string; estimatedWaitMins: number | null; ... 5 more ...; paymentId: string | null; }'.
+src/lib/useAdminQueue.ts(129,9): error TS2741: Property 'paymentId' is missing in type '{ id: string; orgId: string; counterId: string; userId: string; customerName: string; tokenNumber: string; status: string; createdAt: string; estimatedWaitMins: number; queue_id: string; isPriority: false; servedAt: null; customerPhone: null; department_id: null; }' but required in type '{ id: string; tokenNumber: string; orgId: string; counterId: string; userId: string | null; customerName: string; customerPhone: string | null; status: string; estimatedWaitMins: number | null; ... 5 more ...; paymentId: string | null; }'.
+src/lib/useAdminQueue.ts(145,9): error TS2741: Property 'paymentId' is missing in type '{ id: string; orgId: string; counterId: string; userId: string; customerName: string; tokenNumber: string; status: string; createdAt: string; estimatedWaitMins: number; queue_id: string; isPriority: false; servedAt: null; customerPhone: null; department_id: null; }' but required in type '{ id: string; tokenNumber: string; orgId: string; counterId: string; userId: string | null; customerName: string; customerPhone: string | null; status: string; estimatedWaitMins: number | null; ... 5 more ...; paymentId: string | null; }'.
+tmp_setup_user.ts(45,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "user_profiles", never, "POST">', gave the following error.
+    Argument of type '{ id: string; email: string; full_name: string; is_business_owner: boolean; kyc_status: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: "12"; }, never, never, null, "user_profiles", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type 'never[]'.

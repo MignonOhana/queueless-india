@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { rateLimit } from "@/lib/rateLimit";
-import { Database } from "@/types/database.types";
+import { Database } from "@/types/database";
 
 type BusinessSelect = Pick<Database['public']['Tables']['businesses']['Row'], 'name' | 'whatsapp_enabled'>;
 type QueueSelect = Pick<Database['public']['Tables']['queues']['Row'], 'id'>;
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Atomic Token Generation via RPC
     // This uses `FOR UPDATE` in the DB, guaranteeing no duplicates under concurrent load
-    const { data: nextNumber, error: incrementErr } = await adminSupabase
+    const { data: nextNumber, error: incrementErr } = await (adminSupabase as any)
       .rpc('increment_queue_counter', {
         p_queue_id: queueData.id
       });
@@ -110,21 +110,21 @@ export async function POST(req: NextRequest) {
     // 3. Insert the token document via SECURITY DEFINER RPC to bypass RLS.
     // The `create_queue_token` function runs with elevated privileges and allows
     // both authenticated and guest (userId=NULL) inserts safely from the server.
-    const { data: tokenRows, error: insertErr } = await adminSupabase
+    const { data: tokenRows, error: tokenErr } = await (adminSupabase as any)
       .rpc('create_queue_token', {
         p_org_id: orgId,
-        p_user_id: userId || null,         // null for guests
+        p_user_id: userId,
         p_customer_name: customerName,
         p_customer_phone: customerPhone || '',
         p_token_number: tokenStr,
         p_estimated_wait_mins: estimatedWaitMins,
-        p_department_id: departmentId || null,
+        p_department_id: departmentId,
         p_is_priority: isPriority,
         p_payment_id: paymentId
       });
 
-    if (insertErr || !tokenRows || (tokenRows as TokenRow[]).length === 0) {
-       console.error("Insert error:", JSON.stringify(insertErr, null, 2));
+    if (tokenErr || !tokenRows || (tokenRows as TokenRow[]).length === 0) {
+       console.error("Insert error:", JSON.stringify(tokenErr, null, 2));
        return NextResponse.json({ error: "Failed to create token" }, { status: 500 });
     }
 

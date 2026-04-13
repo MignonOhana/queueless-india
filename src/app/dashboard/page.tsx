@@ -49,18 +49,17 @@ export default function BusinessDashboard() {
   useEffect(() => {
     const checkSession = async () => {
        const { data: { session } } = await supabase.auth.getSession();
-       if (session?.user) {
-          setIsAdminLoggedIn(true);
-          const { data: biz } = await supabase
-            .from('businesses')
-            .select('*')
-            .eq('owner_id', session.user.id)
-            .maybeSingle();
-          
-          if (biz) {
-             setBusinessData(biz);
+          if (session?.user) {
+            const { data: biz } = await (supabase as any)
+              .from('businesses')
+              .select('*')
+              .eq('owner_id', session.user.id)
+              .maybeSingle();
+            
+            if (biz) {
+               setBusinessData(biz as Business);
+            }
           }
-       }
     };
     checkSession();
   }, [supabase]);
@@ -78,10 +77,10 @@ export default function BusinessDashboard() {
        (async () => {
          const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
          
-         const { data: logs } = await supabase.from('fastpass_logs')
-           .select('amount')
-           .eq('business_id', businessData?.id)
-           .gte('created_at', firstDay);
+          const { data: logs } = await (supabase as any).from('fastpass_logs')
+            .select('amount')
+            .eq('business_id', businessData?.id)
+            .gte('created_at', firstDay);
            
           if (logs) {
             const totalMonth = logs.reduce((acc: number, curr: { amount: number }) => acc + Number(curr.amount), 0);
@@ -96,10 +95,10 @@ export default function BusinessDashboard() {
 
         // Fetch Departments
         (async () => {
-          const { data: depts } = await supabase
+          const { data: depts } = await (supabase as any)
             .from('departments')
-            .select('*')
-            .eq('business_id', businessData?.id);
+            .select("*")
+            .eq("business_id", businessData?.id);
           if (depts) setDbDepartments(depts);
         })();
 
@@ -173,7 +172,7 @@ export default function BusinessDashboard() {
                     is_accepting_tokens: true,
                     fastPassPrice: 50,
                     serviceMins: 15
-                  });
+                  } as any);
                   setIsAdminLoggedIn(true);
                   toast.success("Welcome to Demo Mode!");
                 }}
@@ -198,7 +197,7 @@ export default function BusinessDashboard() {
             onSuccess={async (user) => {
               setShowOTP(false);
               if (user) {
-                const { data: biz, error } = await supabase
+                const { data: biz, error } = await (supabase as any)
                   .from('businesses')
                   .select('*')
                   .eq('owner_id', user.id)
@@ -207,7 +206,7 @@ export default function BusinessDashboard() {
                 if (error) {
                   toast.error('Error fetching business data');
                 } else if (biz) {
-                  setBusinessData(biz as any as Business);
+                  setBusinessData(biz as Business);
                   setIsAdminLoggedIn(true);
                   toast.success("Welcome back!");
                 } else {
@@ -226,13 +225,13 @@ export default function BusinessDashboard() {
     setOnboardingLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const { data: biz } = await supabase
+      const { data: biz } = await (supabase as any)
         .from('businesses')
         .select('*')
         .eq('owner_id', session.user.id)
         .maybeSingle();
       if (biz) {
-        setBusinessData(biz as any as Business);
+        setBusinessData(biz as Business);
       }
     }
     setOnboardingLoading(false);
@@ -297,7 +296,10 @@ export default function BusinessDashboard() {
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
                <h1 className="text-2xl font-black text-white tracking-tight">{businessData?.name || "Business Dashboard"}</h1>
-               <PlanBadge currentPlan={businessData?.plan || 'free'} tokensUsed={stats.totalToday} />
+               <PlanBadge 
+                 currentPlan={(plan as any) || 'free'} 
+                 tokensUsed={stats.totalToday}
+               />
             </div>
              <div className="flex items-center gap-3 mt-1">
                 <LiveIndicator />
@@ -306,7 +308,7 @@ export default function BusinessDashboard() {
                       try {
                         const newVal = !businessData?.is_accepting_tokens;
                         setBusinessData({...businessData, is_accepting_tokens: newVal} as Business);
-                        const { error } = await supabase.from('businesses').update({ is_accepting_tokens: newVal }).eq('id', businessData?.id);
+                        const { error } = await (supabase as any).from('businesses').update({ is_accepting_tokens: newVal }).eq('id', businessData?.id);
                         if (error) throw error;
                         toast.success(`Business status updated: ${newVal ? 'Accepting Tokens' : 'Stopped'}`);
                       } catch (err: any) {
@@ -496,15 +498,15 @@ export default function BusinessDashboard() {
                           key={token.id}
                           token={token}
                           onServe={async (id) => {
-                            await callNextToken(businessData?.id, token.counterId, supabase);
+                            await callNextToken(businessData?.id, token.counterId, (supabase as any));
                             toast.success(`Token ${token.tokenNumber} is next!`);
                           }}
                           onSkip={async (id) => {
-                            await skipToken(businessData?.id, id, supabase);
+                            await skipToken(businessData?.id, id, (supabase as any));
                             toast.error(`Token ${token.tokenNumber} skipped`);
                           }}
                           onNoShow={async (id) => {
-                            await skipToken(businessData?.id, id, supabase);
+                            await skipToken(businessData?.id, id, (supabase as any));
                             toast.error(`Token ${token.tokenNumber} marked as no-show`);
                           }}
                           onPriority={() => {}}
@@ -547,13 +549,13 @@ export default function BusinessDashboard() {
                             }
                             const val = e.target.checked;
                             try {
-                              setBusinessData({...businessData, whatsapp_enabled: val});
-                               const { error } = await (supabase.from("businesses") as any).update({ whatsapp_enabled: val }).eq("id", businessData?.id).select();
+                              setBusinessData({...businessData, whatsapp_enabled: val} as Business);
+                               const { error } = await (supabase as any).from("businesses").update({ whatsapp_enabled: val }).eq("id", businessData?.id);
                               if (error) throw error;
                               toast.success(`WhatsApp Alerts ${val ? 'Enabled' : 'Disabled'}`);
                             } catch (err: any) {
                               toast.error(`Update failed: ${err.message}`);
-                              setBusinessData({...businessData, whatsapp_enabled: !val});
+                              setBusinessData({...businessData, whatsapp_enabled: !val} as Business);
                             }
                           }}
                           className="w-5 h-5 accent-primary cursor-pointer"
@@ -570,13 +572,13 @@ export default function BusinessDashboard() {
                           onChange={async (e) => {
                             const val = e.target.checked;
                             try {
-                              setBusinessData({...businessData, fastPassEnabled: val});
-                               const { error } = await (supabase.from("businesses") as any).update({ fastPassEnabled: val }).eq("id", businessData?.id).select();
+                              setBusinessData({...businessData, fastPassEnabled: val} as Business);
+                               const { error } = await (supabase as any).from("businesses").update({ fastPassEnabled: val }).eq("id", businessData?.id);
                               if (error) throw error;
                               toast.success(`Fast Pass ${val ? 'Enabled' : 'Disabled'}`);
                             } catch (err: any) {
                               toast.error(`Update failed: ${err.message}`);
-                              setBusinessData({...businessData, fastPassEnabled: !val});
+                              setBusinessData({...businessData, fastPassEnabled: !val} as Business);
                             }
                           }}
                        />
@@ -588,13 +590,13 @@ export default function BusinessDashboard() {
                             type="number" 
                             min="25"
                             id="fast_pass_price" aria-label="Fast Pass Price" value={businessData?.fastPassPrice || 50}
-                            onChange={(e) => setBusinessData({...businessData, fastPassPrice: parseInt(e.target.value) || 25})}
+                            onChange={(e) => setBusinessData({...businessData, fastPassPrice: parseInt(e.target.value) || 25} as Business)}
                             className="bg-background border border-white/10 rounded-xl px-4 py-3 text-white font-bold outline-none flex-1 focus:border-primary"
                           />
                           <button 
                             onClick={async () => {
                               try {
-                                 const { error } = await (supabase.from("businesses") as any).update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id).select();
+                                 const { error } = await (supabase as any).from("businesses").update({ fastPassPrice: businessData?.fastPassPrice || 50 }).eq("id", businessData?.id);
                                 if (error) throw error;
                                 toast.success("Price updated");
                               } catch (err: any) {

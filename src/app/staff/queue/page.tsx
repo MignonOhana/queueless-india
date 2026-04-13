@@ -27,13 +27,14 @@ interface StaffSession {
 
 interface Token {
   id: string;
-  token_number: string;
-  customer_name: string;
-  customer_phone: string | null;
+  tokenNumber: string;
+  customerName: string;
+  customerPhone: string | null;
   status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'NO_SHOW' | 'CANCELLED';
-  estimated_wait_mins: number;
-  is_priority: boolean;
-  created_at: string;
+  estimatedWaitMins: number;
+  isPriority: boolean;
+  createdAt: string;
+  paymentId: string | null;
 }
 
 export default function StaffQueueDashboard() {
@@ -49,13 +50,13 @@ export default function StaffQueueDashboard() {
   const fetchQueueContext = useCallback(async (sess: StaffSession) => {
     try {
       // 1. Fetch Today's Queue for this department
-      const { data: queue, error: qError } = await supabase
+      const { data: queue, error: qError } = await ((supabase as any)
         .from("queues")
         .select("id, is_accepting_tokens, currently_serving_token_id")
         .eq("org_id", sess.business_id)
         .eq("department_id", sess.department_id)
         .eq("session_date", new Date().toISOString().split("T")[0])
-        .single();
+        .single() as any);
 
       if (qError) {
         throw qError;
@@ -65,13 +66,13 @@ export default function StaffQueueDashboard() {
       setIsAccepting(queue.is_accepting_tokens);
 
       // 2. Fetch Tokens
-      const { data: tokenData, error: tError } = await supabase
+      const { data: tokenData, error: tError } = await ((supabase as any)
         .from("tokens")
         .select("*")
         .eq("queue_id", queue.id)
         .in("status", ["WAITING", "SERVING"])
-        .order("is_priority", { ascending: false })
-        .order("created_at", { ascending: true });
+        .order("isPriority", { ascending: false })
+        .order("createdAt", { ascending: true }) as any);
 
       if (tError) throw tError;
 
@@ -131,89 +132,78 @@ export default function StaffQueueDashboard() {
       
       // 1. Mark current as completed if exists
       if (currentlyServing) {
-        await supabase
+        await ((supabase as any)
           .from("tokens")
-          .update({ status: "COMPLETED", served_at: new Date().toISOString() })
-          .eq("id", currentlyServing.id);
+          .update({ status: "COMPLETED", servedAt: new Date().toISOString() })
+          .eq("id", currentlyServing.id));
       }
 
       // 2. Mark next as SERVING
-      await supabase
+      await ((supabase as any)
         .from("tokens")
         .update({ status: "SERVING" })
-        .eq("id", nextToken.id);
+        .eq("id", nextToken.id));
 
       // 3. Update Queue Pointer via RPC
-      const { error: rpcErr } = await supabase.rpc("serve_next_queue_token", {
+      const { error: rpcErr } = await (supabase as any).rpc("serve_next_queue_token", {
         p_queue_id: queueId,
         p_token_id: nextToken.id
       });
 
       if (rpcErr) throw rpcErr;
-
-      toast.success(`Now serving ${nextToken.tokenNumber}`);
-    } catch (err) {
-      toast.error("Failed to call next token");
+      toast.success(`Calling ${nextToken.tokenNumber}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to call next");
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleStatusUpdate = async (tokenId: string, status: string) => {
-    setActionLoading(tokenId);
+  const handleAction = async (action: "complete" | "no-show") => {
+    if (!currentlyServing || !queueId) return;
+    setActionLoading(action);
     try {
-      const { error } = await supabase
+      // Update token status
+      await ((supabase as any)
         .from("tokens")
-        .update({ status: status as any })
-        .eq("id", tokenId);
-      if (error) throw error;
-      toast.success(`Token marked as ${status}`);
-    } catch (err) {
-      toast.error("Update failed");
+        .update({ status: action === "complete" ? "COMPLETED" : "NO_SHOW", servedAt: new Date().toISOString() })
+        .eq("id", currentlyServing.id));
+
+      // Update queue stats via RPC
+      const { error: rpcErr } = await (supabase as any).rpc("complete_queue_token", {
+        p_queue_id: queueId,
+        p_token_id: currentlyServing.id
+      });
+
+      if (rpcErr) throw rpcErr;
+      toast.success(action === "complete" ? "Token Completed" : "Marked as No-Show");
+      setCurrentlyServing(null);
+    } catch (err: any) {
+      toast.error(err.message || "Action failed");
     } finally {
       setActionLoading(null);
-    }
-  };
-
-  const handlePriority = async (tokenId: string, isPriority: boolean) => {
-    try {
-      await supabase
-        .from("tokens")
-        .update({ is_priority: isPriority })
-        .eq("id", tokenId);
-      toast.success(isPriority ? "Moved to top" : "Priority removed");
-    } catch (err) {
-      toast.error("Action failed");
-    }
-  };
-
-  const handleSkip = async (tokenId: string) => {
-    try {
-      // Move to end by updating created_at
-      await supabase
-        .from("tokens")
-        .update({ created_at: new Date().toISOString() })
-        .eq("id", tokenId);
-      toast.success("Moved to end of queue");
-    } catch (err) {
-      toast.error("Action failed");
     }
   };
 
   const toggleAccepting = async () => {
     if (!queueId) return;
     try {
-      const newVal = !isAccepting;
-      const { error } = await supabase
+      const { error } = await ((supabase as any)
         .from("queues")
-        .update({ is_accepting_tokens: newVal })
-        .eq("id", queueId);
+        .update({ is_accepting_tokens: !isAccepting })
+        .eq("id", queueId));
+
       if (error) throw error;
-      setIsAccepting(newVal);
-      toast.success(newVal ? "Queue opened" : "Queue paused");
+      setIsAccepting(!isAccepting);
+      toast.success(isAccepting ? "Queue Closed" : "Queue Opened");
     } catch (err) {
-      toast.error("Failed to update queue status");
+      toast.error("Toggle failed");
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("queueless_staff_session");
+    router.push("/staff/login");
   };
 
   if (loading || !session) {
@@ -225,183 +215,167 @@ export default function StaffQueueDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] text-white selection:bg-primary/30 selection:text-primary font-sans">
+    <div className="min-h-screen bg-[#0A0A0F] text-white selection:bg-primary/30 selection:text-primary">
       {/* Header */}
       <nav className="sticky top-0 z-40 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/10 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-3xl">
-              🏢
-            </div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-black font-black">QL</div>
             <div>
-              <h2 className="text-sm font-black uppercase tracking-widest text-primary">{session.dept_name}</h2>
-              <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">{session.business_name}</p>
+              <h1 className="font-display font-black tracking-tighter text-lg leading-tight">{session.business_name}</h1>
+              <p className="text-[10px] text-primary font-black uppercase tracking-widest">{session.dept_name}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex flex-col items-end mr-4">
-              <span className="text-xs font-black">{session.staff_name}</span>
-              <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{session.staff_role}</span>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex flex-col items-end mr-2">
+              <p className="text-xs font-bold text-white uppercase tracking-wider">{session.staff_name}</p>
+              <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.1em]">{session.staff_role}</p>
             </div>
             <button 
-              onClick={() => {
-                localStorage.removeItem("queueless_staff_session");
-                router.push("/staff/login");
-              }}
-              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-rose-500 hover:text-white transition-all group"
+              onClick={handleLogout}
+              className="p-3 bg-white/5 border border-white/10 rounded-xl text-zinc-400 hover:text-rose-500 hover:bg-rose-500/5 transition-all"
               title="Logout"
             >
-              <LogOut size={18} className="text-rose-400 group-hover:text-white" />
+              <LogOut size={18} />
             </button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        {/* Controls */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-6">
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border transition-all ${
-              isAccepting ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-400"
-            }`}>
-              <div className={`w-2 h-2 rounded-full animate-pulse ${isAccepting ? "bg-emerald-400" : "bg-rose-400"}`} />
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">{isAccepting ? "Accepting Tokens" : "Queue Paused"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-zinc-500">
-               <Users size={16} />
-               <span className="text-[10px] font-black uppercase tracking-widest">{tokens.length} People Waiting</span>
-            </div>
-          </div>
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           
-          <button 
-            onClick={toggleAccepting}
-            className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              isAccepting ? "bg-rose-500/10 text-rose-400 hover:bg-rose-500/20" : "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-            }`}
-          >
-            <Power size={14} /> {isAccepting ? "Pause Queue" : "Resume Queue"}
-          </button>
-        </div>
-
-        {/* Main Display */}
-        <div className="grid md:grid-cols-5 gap-8">
-          {/* Now Serving */}
-          <GlassCard className="md:col-span-3 p-10 rounded-[3rem] border border-primary/20 bg-primary/[0.02] shadow-2xl shadow-primary/5 text-center flex flex-col justify-center">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Now Serving</h3>
-            
-            <AnimatePresence mode="wait">
-              {currentlyServing ? (
-                <motion.div 
-                  key={currentlyServing.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="space-y-6"
+          {/* Left Column: Currently Serving */}
+          <div className="lg:col-span-7 space-y-8">
+            <section className="space-y-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Currently Serving</h2>
+                <button 
+                  onClick={toggleAccepting}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
+                    isAccepting ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
+                  }`}
                 >
-                  <p className="text-8xl font-black tracking-tighter text-primary group">
-                    {currentlyServing.token_number}
-                  </p>
-                  <div className="space-y-1">
-                    <p className="text-2xl font-black text-white">{currentlyServing.customer_name}</p>
-                    <p className="text-zinc-500 font-mono text-sm tracking-widest">{currentlyServing.customer_phone || "NO PHONE"}</p>
-                  </div>
+                  <Power size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    {isAccepting ? "Accepting" : "Closed"}
+                  </span>
+                </button>
+              </div>
 
-                  <div className="flex gap-4 pt-8">
-                    <button 
-                      onClick={() => handleStatusUpdate(currentlyServing.id, "COMPLETED")}
-                      disabled={!!actionLoading}
-                      className="flex-1 py-5 bg-emerald-500 text-black rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:brightness-110 transition-all flex items-center justify-center gap-2"
-                    >
-                      {actionLoading === currentlyServing.id ? <Loader2 className="animate-spin" /> : <><CheckCircle size={18} /> Done</>}
-                    </button>
-                    <button 
-                      onClick={() => handleStatusUpdate(currentlyServing.id, "NO_SHOW")}
-                      disabled={!!actionLoading}
-                      className="flex-1 py-5 bg-white/5 border border-white/10 text-rose-400 hover:bg-rose-500/10 rounded-[2rem] font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
-                    >
-                      <UserX size={18} /> No Show
-                    </button>
-                  </div>
+              {currentlyServing ? (
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
+                  <GlassCard className="p-12 border-2 border-primary/20 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[100px] -mr-32 -mt-32 transition-all group-hover:bg-primary/20" />
+                    
+                    <div className="relative text-center">
+                      <p className="text-[10px] font-black uppercase tracking-[0.5em] text-primary mb-2">Token Number</p>
+                      <h3 className="text-8xl font-black tracking-tighter text-white mb-8">{currentlyServing.tokenNumber}</h3>
+                      
+                      <div className="space-y-1 mb-12">
+                        <p className="text-2xl font-bold text-white">{currentlyServing.customerName}</p>
+                        <p className="text-zinc-500 font-mono tracking-wider">{currentlyServing.customerPhone || "Guest Customer"}</p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button 
+                          onClick={() => handleAction("complete")}
+                          disabled={!!actionLoading}
+                          className="px-10 py-5 bg-primary text-black rounded-[2rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
+                        >
+                          {actionLoading === "complete" ? <Loader2 className="animate-spin" size={20} /> : <><CheckCircle size={20} /> Complete</>}
+                        </button>
+                        <button 
+                          onClick={() => handleAction("no-show")}
+                          disabled={!!actionLoading}
+                          className="px-10 py-5 bg-white/5 text-white border border-white/10 rounded-[2rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500/30 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                          {actionLoading === "no-show" ? <Loader2 className="animate-spin" size={20} /> : <><UserX size={20} /> No Show</>}
+                        </button>
+                      </div>
+                    </div>
+                  </GlassCard>
                 </motion.div>
               ) : (
-                <div className="space-y-8">
-                  <div className="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center mx-auto text-zinc-800">
-                    <Users size={64} />
+                <GlassCard className="p-20 border border-dashed border-white/10 flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-zinc-600 mb-6">
+                    <Play size={32} />
                   </div>
-                  <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs">Waiting for next token...</p>
+                  <h3 className="text-xl font-black text-zinc-500 mb-4 uppercase tracking-widest">No Active Token</h3>
                   <button 
                     onClick={handleCallNext}
                     disabled={tokens.length === 0 || !!actionLoading}
-                    className="w-full py-6 bg-primary text-black rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-xl shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    className="px-10 py-5 bg-primary text-black rounded-[2rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
                   >
-                    {actionLoading === 'call' ? <Loader2 className="animate-spin" /> : <><Play size={20} fill="black" /> Call Next Person</>}
+                    {actionLoading === "call" ? <Loader2 className="animate-spin" size={20} /> : <><ArrowUpCircle size={20} /> Call Next Token</>}
                   </button>
-                </div>
+                  {tokens.length === 0 && <p className="mt-4 text-[10px] font-bold text-zinc-600 uppercase tracking-widest">Wait-list is empty</p>}
+                </GlassCard>
               )}
-            </AnimatePresence>
-          </GlassCard>
+            </section>
+          </div>
 
-          {/* Next Up List */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="flex items-center justify-between px-2">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Waiting List</h3>
-              <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-1 rounded-lg">{tokens.length}</span>
-            </div>
-
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-              <AnimatePresence initial={false}>
-                {tokens.map((token, index) => (
-                  <motion.div
-                    key={token.id}
-                    layout
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className={`p-5 rounded-3xl border transition-all flex items-center justify-between group ${
-                      token.isPriority ? "bg-amber-500/5 border-amber-500/20" : "bg-white/5 border-white/10 hover:border-white/20"
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                        token.is_priority ? "bg-amber-500 text-black shadow-lg shadow-amber-500/20" : "bg-white/10 text-white"
-                      }`}>
-                        {token.token_number}
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm tracking-tight">{token.customer_name}</p>
-                        <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                          {index === 0 ? "Next Up" : `${index} people ahead`}
-                        </p>
-                      </div>
+          {/* Right Column: Wait-list */}
+          <div className="lg:col-span-5 space-y-8">
+             <section className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Upcoming Wait-list ({tokens.length})</h2>
+                  {tokens.length > 0 && (
+                    <div className="flex items-center gap-2 text-primary">
+                      <Clock size={14} className="animate-pulse" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Live Updates</span>
                     </div>
-
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => handlePriority(token.id, !token.is_priority)}
-                        className={`p-2 rounded-xl transition-all ${token.is_priority ? "text-amber-500 bg-amber-500/10" : "text-zinc-500 hover:text-white"}`}
-                        title="Toggle Priority"
-                      >
-                        <ArrowUpCircle size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleSkip(token.id)}
-                        className="p-2 text-zinc-500 hover:text-white transition-all"
-                        title="Move to End"
-                      >
-                        <SkipForward size={18} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {tokens.length === 0 && !currentlyServing && (
-                <div className="py-12 text-center text-zinc-700 bg-white/[0.02] border border-dashed border-white/5 rounded-3xl">
-                  <p className="text-[10px] font-black uppercase tracking-widest">Queue is Empty</p>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  <AnimatePresence>
+                    {tokens.map((token, idx) => (
+                      <motion.div 
+                        key={token.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
+                        <GlassCard className={`p-6 border border-white/10 flex items-center justify-between group hover:border-primary/30 transition-all ${token.isPriority ? 'ring-1 ring-amber-500/30' : ''}`}>
+                          <div className="flex items-center gap-6">
+                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all ${
+                              token.isPriority ? 'bg-amber-500 text-black' : 'bg-white/5 text-white'
+                            }`}>
+                              {token.tokenNumber}
+                            </div>
+                            <div>
+                              <p className="font-bold text-white flex items-center gap-2">
+                                {token.customerName}
+                                {token.isPriority && <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter">FastPass</span>}
+                              </p>
+                              <p className="text-xs text-zinc-500 font-medium">Est. {token.estimatedWaitMins} mins wait</p>
+                            </div>
+                          </div>
+                          
+                          {idx === 0 && !currentlyServing && (
+                            <button 
+                              onClick={handleCallNext}
+                              className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-primary hover:text-black"
+                            >
+                              <Play size={16} fill="currentColor" />
+                            </button>
+                          )}
+                        </GlassCard>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {tokens.length === 0 && (
+                     <div className="py-20 text-center text-zinc-500 bg-white/[0.02] rounded-[3rem] border border-dashed border-white/5">
+                        <Users size={32} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-30">No one is waiting</p>
+                     </div>
+                  )}
+                </div>
+             </section>
           </div>
         </div>
       </main>
@@ -411,13 +385,37 @@ export default function StaffQueueDashboard() {
           width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: rgba(255, 255, 255, 0.02);
+          border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.1);
           border-radius: 10px;
         }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: var(--primary);
+        }
       `}</style>
     </div>
+  );
+}
+
+// Helper components
+function Clock({ size, className }: { size: number, className: string }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="3" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
   );
 }

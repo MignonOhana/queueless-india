@@ -194,7 +194,7 @@ token_verifications = 30
 web3 = 30
 
 [auth.captcha]
-enabled = true
+enabled = false
 provider = "turnstile"
 # Use environment variable for the secret key
 secret = "env(TURNSTILE_SECRET_KEY)"

@@ -55,7 +55,12 @@ export async function middleware(request: NextRequest) {
 
   // 4. Authenticated User Protection & Role-based Routing
   const publicRoutes = ["/", "/login", "/register", "/about", "/pricing", "/contact", "/map", "/home", "/onboarding", "/auth/callback", "/auth/confirm"];
-  const isPublicRoute = publicRoutes.includes(pathname) || pathname.startsWith("/b/") || pathname.startsWith("/api/");
+  const isPublicRoute = 
+    publicRoutes.includes(pathname) || 
+    pathname.startsWith("/b/") || 
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/track/") ||
+    pathname.startsWith("/customer/queue/");
 
   const isBypass = request.cookies.get("queueless_dev_bypass")?.value === "true";
 

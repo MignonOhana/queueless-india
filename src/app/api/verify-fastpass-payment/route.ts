@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createServiceRoleClient } from '@/lib/supabase/service-role';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/database';
 
 type PublicToken = Pick<Database['public']['Tables']['tokens']['Row'], 'id' | 'tokenNumber' | 'estimatedWaitMins'>;
 
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     
     // First, find the active queue
     const todayDate = new Date().toISOString().split('T')[0];
-    let queueQuery = supabaseAdmin
+    let queueQuery = (supabaseAdmin as any)
       .from('queues')
       .select('id')
       .eq('org_id', tokenData.orgId);
@@ -45,44 +45,47 @@ export async function POST(req: NextRequest) {
     const { data: queueData, error: queueErr } = await queueQuery.single();
     if (queueErr || !queueData) throw new Error("No active queue found");
 
-    // Atomic increment
-    const { data: nextNumber, error: incrementErr } = await supabaseAdmin
-      .rpc('increment_queue_counter', { p_queue_id: queueData.id });
+    // 2. Atomic Token Generation via RPC
+    const { data: nextNumber, error: incrementErr } = await (supabaseAdmin as any)
+      .rpc('increment_queue_counter', {
+        p_queue_id: queueData.id
+      });
 
-    if (incrementErr || !nextNumber) throw new Error("Queue full");
+    if (incrementErr || !nextNumber) {
+      return NextResponse.json({ error: "Counter error" }, { status: 500 });
+    }
 
-    const counterPrefix = tokenData.counterPrefix || 'Q';
-    const paddedNumber = String(nextNumber).padStart(3, '0');
-    const tokenStr = `${counterPrefix}-${paddedNumber}`;
-
-    // Create token row
-    const { data: tokenRows, error: insertErr } = await supabaseAdmin
+    // 3. Insert the token document
+    const { data: tokenRows, error: tokenErr } = await (supabaseAdmin as any)
       .rpc('create_queue_token', {
         p_org_id: tokenData.orgId,
         p_user_id: tokenData.userId || null,
         p_customer_name: tokenData.customerName,
         p_customer_phone: tokenData.customerPhone || '',
-        p_token_number: tokenStr,
-        p_estimated_wait_mins: 0, // Priority gets instant or near-instant service
+        p_token_number: `${nextNumber}`,
+        p_estimated_wait_mins: 15, // Default
         p_department_id: tokenData.departmentId || null,
-        p_is_priority: true,
+        p_is_priority: true, // It's FastPass
         p_payment_id: razorpay_payment_id
       });
 
-    if (insertErr || !tokenRows || tokenRows.length === 0) throw insertErr || new Error("Insert failed");
+    if (tokenErr || !tokenRows || (tokenRows as any[]).length === 0) {
+       console.error("Insert error:", tokenErr);
+       return NextResponse.json({ error: "Failed to create token" }, { status: 500 });
+    }
 
-    const token = tokenRows[0];
+    const token = (tokenRows as any[])[0];
 
-    // 3. Log Fast Pass Transaction
-    await supabaseAdmin.from('fastpass_logs').insert({
+    // 4. Log Fast Pass Transaction
+    await (supabaseAdmin.from('fastpass_logs').insert({
       business_id: tokenData.orgId,
       token_id: token.id,
       amount: tokenData.amount,
       customer_phone: tokenData.customerPhone || ''
-    });
+    } as any) as any);
 
-    return NextResponse.json({
-      success: true,
+    return NextResponse.json({ 
+      success: true, 
       tokenId: token.id,
       tokenNumber: token.tokenNumber,
       estimatedWaitMins: token.estimatedWaitMins

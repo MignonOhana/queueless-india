@@ -1,0 +1,6 @@
+{
+  "code": "23502",
+  "details": "Failing row contains (null, tirupati-ttd-tirupati, Direct Insert Valid Biz, null, 🏥, t, 10, 09:00-17:00, 50, 0, 2026-04-10 20:59:03.664475+00, 2026-04-10 20:59:03.664475+00, 15, null, null, 0).",
+  "hint": null,
+  "message": "null value in column \"id\" of relation \"departments\" violates not-null constraint"
+}

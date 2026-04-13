@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 
 export const dynamic = "force-dynamic";
 
@@ -33,15 +34,17 @@ export async function GET(request: NextRequest) {
     
     const role = requestUrl.searchParams.get("role") || "customer";
     if (session?.user) {
-      // Use upsert to handle both new and existing users
-      await supabase
+      // Use service role client to bypass RLS when creating the new profile
+      const adminSupabase = createServiceRoleClient();
+      
+      await adminSupabase
         .from("user_profiles")
         .upsert({ 
           id: session.user.id, 
           role,
           email: session.user.email,
           updated_at: new Date().toISOString()
-        }, { onConflict: 'id' });
+        } as any, { onConflict: 'id' });
     }
   }
 

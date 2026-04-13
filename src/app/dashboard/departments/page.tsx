@@ -14,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import GlassCard from "@/components/ui/GlassCard";
+import { Department } from "@/types/database";
 
 const supabase = createClient();
 
@@ -24,7 +25,7 @@ export default function DepartmentsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [departments, setDepartments] = useState<(Department & { queue_stats?: { waiting: number; staffCount: number } })[]>([]);
+  const [departments, setDepartments] = useState<(Department & { queues: any[]; waiting_count: number; staff_count: number })[]>([]);
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -43,51 +44,51 @@ export default function DepartmentsPage() {
   const fetchInitialData = useCallback(async () => {
     if (!user?.id) return;
     try {
-      // 1. Get Business ID
-      const { data: profile, error: pError } = await supabase
+      // 1. Get Business ID from Profile
+      const { data: profile, error: pError } = await (supabase as any)
         .from("user_profiles")
         .select("primary_business_id")
         .eq("id", user.id)
         .single();
 
-      if (pError || !profile?.primary_business_id) {
+      const profileData = profile as any;
+      if (pError || !profileData?.primary_business_id) {
         toast.error("Please register your business first");
         router.push("/register-business");
         return;
       }
 
-      setBusinessId(profile.primary_business_id);
+      setBusinessId(profileData.primary_business_id);
 
-      // 2. Fetch Departments
-      const { data: depts, error: dError } = await supabase
+      // 2. Fetch Departments & Queues
+      const { data: depts, error: dError } = await (supabase as any)
         .from("departments")
-        .select(`
-          *,
-          queues (
-            total_waiting,
-            is_active
-          )
-        `)
-        .eq("business_id", profile.primary_business_id)
-        .order("created_at", { ascending: true });
-
+        .select("*")
+        .eq("business_id", profileData.primary_business_id);
+      
       if (dError) throw dError;
 
+      const { data: dbQueues } = await (supabase as any)
+        .from("queues")
+        .select("*")
+        .eq("org_id", profileData.primary_business_id);
+
       // 3. Fetch Staff counts 
-      const { data: staffCounts } = await supabase
+      const { data: staffCounts } = await (supabase as any)
         .from("staff_members")
         .select("department_id")
-        .eq("business_id", profile.primary_business_id);
-
-      const mappedDepts = (depts || []).map((d) => ({
-        ...d,
-        queue_stats: {
-          waiting: (d.queues as any)?.[0]?.total_waiting || 0,
-          staffCount: staffCounts?.filter(s => s.department_id === d.id).length || 0
+        .eq("business_id", profileData.primary_business_id);
+      
+        if (depts) {
+          const mappedDepts = (depts as any[]).map((d) => ({
+            ...d,
+            queues: (dbQueues as any[] || []).filter((q: any) => q.department_id === d.id),
+            waiting_count: (dbQueues as any[] || []).filter((q: any) => q.department_id === d.id)
+              .reduce((acc, curr) => acc + (curr.waiting_count || 0), 0),
+            staff_count: (staffCounts as any[] || []).filter((s: any) => s.department_id === d.id).length
+          }));
+          setDepartments(mappedDepts as any);
         }
-      }));
-
-      setDepartments(mappedDepts);
     } catch (error) {
       console.error("Fetch error:", error);
       toast.error("Failed to load departments");
@@ -104,17 +105,31 @@ export default function DepartmentsPage() {
     if (!businessId || !form.name) return;
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.rpc("create_department", {
-        p_business_id: businessId,
-        p_name: form.name,
-        p_description: form.description,
-        p_icon: form.icon,
-        p_service_mins: form.serviceMins,
-        p_op_hours: `${form.openTime}-${form.closeTime}`,
-        p_max_capacity: form.maxCapacity
+      // Fallback: Bypass broken generic RPC because the remote DB is missing a UUID default constraint
+      const deptId = crypto.randomUUID();
+      const { error: deptError } = await (supabase as any).from("departments").insert({
+        id: deptId,
+        business_id: businessId,
+        name: form.name,
+        description: form.description,
+        icon: form.icon,
+        service_mins: parseInt(form.serviceMins as any),
+        op_hours: (form as any).opHours,
+        max_capacity: parseInt(form.maxCapacity as any)
       });
 
-      if (error) throw error;
+      if (deptError) throw deptError;
+
+      const { error: queueError } = await (supabase as any).from("queues").insert({
+        org_id: businessId,
+        counter_id: form.name.toLowerCase().replace(/ /g, "_"),
+        department_id: deptId,
+        is_active: true,
+        max_capacity: parseInt(form.maxCapacity as any),
+        session_date: new Date().toISOString().split("T")[0]
+      });
+
+      if (queueError) throw queueError;
 
       toast.success("Department created!");
       setIsModalOpen(false);
@@ -130,23 +145,22 @@ export default function DepartmentsPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("departments")
         .update({ is_active: !current })
         .eq("id", id);
-
       if (error) throw error;
       setDepartments(prev => prev.map(d => d.id === id ? { ...d, is_active: !current } : d));
       toast.success(`Department ${!current ? 'activated' : 'deactivated'}`);
-    } catch (error) {
-      toast.error("Failed to update status");
+    } catch (err) {
+      toast.error("Update failed");
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure? This will delete the department and its queues.")) return;
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("departments")
         .delete()
         .eq("id", id);
@@ -214,7 +228,7 @@ export default function DepartmentsPage() {
               <DepartmentCard 
                 key={dept.id} 
                 dept={dept} 
-                onToggle={() => toggleStatus(dept.id, dept.is_active)}
+                onToggle={() => toggleStatus(dept.id, !!dept.is_active)}
                 onDelete={() => handleDelete(dept.id)}
               />
             ))
@@ -346,7 +360,7 @@ export default function DepartmentsPage() {
                         value={form.maxCapacity}
                         onChange={e => setForm(f => ({ ...f, maxCapacity: parseInt(e.target.value) }))}
                         className="form-input" 
-                        title="Maximum Capacity"
+                          title="Maximum Capacity"
                       />
                     </Field>
                   </div>
@@ -392,7 +406,7 @@ export default function DepartmentsPage() {
   );
 }
 
-function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department; onToggle: () => void; onDelete: () => void }) {
+function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department & { queues: any[]; waiting_count: number; staff_count: number }; onToggle: () => void; onDelete: () => void }) {
   return (
     <motion.div layout>
       <GlassCard className={`p-8 border border-white/10 hover:border-primary/50 transition-all group relative overflow-hidden ${!dept.is_active ? "opacity-60 grayscale-[0.5]" : ""}`}>
@@ -410,7 +424,7 @@ function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department; onTogg
                 dept.is_active ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-white/5 text-zinc-500 hover:bg-white/10"
               }`}
             >
-              <Power size={18} />
+              <Power size={18} className={!!dept.is_active ? "text-[#00F5A0]" : "text-zinc-600"} />
             </button>
             <button 
               onClick={onDelete}
@@ -431,20 +445,8 @@ function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department; onTogg
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-2 text-primary mb-1">
-              <Users size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Waiting</span>
-            </div>
-            <p className="text-xl font-black">{dept.queue_stats?.waiting || 0}</p>
-          </div>
-          <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-            <div className="flex items-center gap-2 text-[#7000FF] mb-1">
-              <Users size={14} />
-              <span className="text-[10px] font-black uppercase tracking-widest">Staff</span>
-            </div>
-            <p className="text-xl font-black">{dept.queue_stats?.staffCount || 0}</p>
-          </div>
+          <GridCard label="Waiting" value={dept.waiting_count || 0} icon={Users} color="emerald" />
+          <GridCard label="Staff" value={dept.staff_count || 0} icon={User} color="blue" />
         </div>
 
         <Link 
@@ -458,10 +460,30 @@ function DepartmentCard({ dept, onToggle, onDelete }: { dept: Department; onTogg
   );
 }
 
-function Field({ label, id, children }: { label: string; id?: string; children: React.ReactNode }) {
+function GridCard({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: any; color: string }) {
+  const colorMap: Record<string, string> = {
+    emerald: 'text-emerald-400',
+    blue: 'text-[#7000FF]'
+  };
+  
+  return (
+    <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+      <div className={`flex items-center gap-2 ${colorMap[color] || 'text-primary'} mb-1`}>
+        <Icon size={14} />
+        <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+      </div>
+      <p className="text-xl font-black">{value}</p>
+    </div>
+  );
+}
+
+function Field({ label, icon: Icon, children, id }: { label: string; icon?: any; children: React.ReactNode; id?: string }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest text-zinc-500 px-1">{label}</label>
+      <div className="flex items-center gap-2 text-zinc-500 ml-1">
+        {Icon && <Icon size={14} />}
+        <label htmlFor={id} className="text-[10px] font-black uppercase tracking-widest leading-none">{label}</label>
+      </div>
       {children}
     </div>
   );

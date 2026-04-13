@@ -31,13 +31,13 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
     if (!business) return;
     setLoading(true);
     try {
-      const { error: rpcErr } = await supabase.rpc('activate_queue_for_today', {
+      const { error: rpcErr } = await (supabase as any).rpc('activate_queue_for_today', {
         p_org_id: business.id
       });
 
       if (rpcErr) throw rpcErr;
       
-      const { error: upErr } = await supabase
+      const { error: upErr } = await (supabase as any)
         .from('businesses')
         .update({ claim_status: 'active', onboarding_step: 4 })
         .eq('id', business.id);
@@ -121,7 +121,7 @@ export default function OnboardingChecklist({ business, onUpdate }: OnboardingCh
           disabled={!step3Complete}
         >
           <button 
-            onClick={handleActivateQueue}
+            onClick={handleActivateQueue} 
             disabled={loading}
             className="mt-6 w-full py-5 bg-emerald-500 text-black font-black uppercase tracking-widest text-xs rounded-[2rem] flex items-center justify-center gap-3 hover:bg-emerald-400 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
           >

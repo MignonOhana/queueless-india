@@ -1,0 +1,6 @@
+﻿src/app/api/queue/join/route.ts(2,30): error TS2307: Cannot find module '@/lib/supabase/server' or its corresponding type declarations.
+src/app/api/queue/join/route.ts(3,41): error TS2307: Cannot find module '@/lib/supabase/service-role' or its corresponding type declarations.
+src/app/api/queue/join/route.ts(4,27): error TS2307: Cannot find module '@/lib/rateLimit' or its corresponding type declarations.
+src/app/api/queue/join/route.ts(5,26): error TS2307: Cannot find module '@/types/database' or its corresponding type declarations.
+src/app/api/verify-fastpass-payment/route.ts(3,41): error TS2307: Cannot find module '@/lib/supabase/service-role' or its corresponding type declarations.
+src/app/api/verify-fastpass-payment/route.ts(4,26): error TS2307: Cannot find module '@/types/database' or its corresponding type declarations.

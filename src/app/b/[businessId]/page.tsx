@@ -6,6 +6,7 @@ import PublicBusinessClient from '@/components/Business/PublicBusinessClient';
 import { notFound } from 'next/navigation';
 import LanguageSelector from '@/components/LanguageSelector';
 import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/service-role'
 
 interface PageProps {
   params: Promise<{ businessId: string }>;
@@ -60,19 +61,62 @@ export default async function PublicBusinessPage(props: PageProps) {
   const businessId = params.businessId;
   const supabase = await createClient();
 
-  // 1. Fetch Business & Departments Data (SSR) via RPC
+  // 1. Fetch Business & Departments Data (SSR) via RPC with Fallback
+  let business: any = null;
+  let departments: any[] = [];
+
   const { data: businessData, error: bizErr } = await (supabase as any).rpc('get_business_with_departments', {
     p_business_id: businessId
   });
 
-  if (bizErr || !businessData) {
-    console.error("DEBUG NOTFOUND bizErr:", bizErr, "businessData:", businessData, "ID lookup:", businessId);
-    notFound();
-  }
+  if (!bizErr && businessData) {
+    const typedData = businessData as BusinessWithDepts;
+    business = typedData.business;
+    departments = typedData.departments || [];
+  } else {
+    console.warn("RPC get_business_with_departments failed, using JS fallback...");
+    const adminSupabase = createServiceRoleClient();
 
-  const typedData = businessData as BusinessWithDepts;
-  const business = typedData.business;
-  const departments = typedData.departments || [];
+    const { data: biz } = await adminSupabase
+      .from('businesses')
+      .select('*')
+      .eq('id', businessId)
+      .maybeSingle();
+      
+    if (!biz) {
+      console.error("Fallback failed: Business not found", businessId);
+      notFound();
+    }
+    business = biz as any;
+
+    const { data: rawDepts } = await adminSupabase
+      .from('departments')
+      .select('*')
+      .eq('business_id', businessId)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    const { data: todayQueues } = await adminSupabase
+      .from('queues')
+      .select('department_id, total_waiting')
+      .eq('org_id', businessId)
+      .eq('session_date', new Date().toISOString().split('T')[0]);
+
+    const { data: staff } = await adminSupabase
+      .from('staff_members')
+      .select('department_id')
+      .eq('business_id', businessId);
+
+    departments = (rawDepts || []).map((d: any) => {
+      const dbQ = (todayQueues || []).find((q: any) => q.department_id === d.id);
+      const sCount = (staff || []).filter((s: any) => s.department_id === d.id).length;
+      return {
+        ...d,
+        waiting_count: dbQ ? ((dbQ as any).total_waiting || 0) : 0,
+        staff_count: sCount
+      };
+    });
+  }
 
   // 2. Fetch Initial Tokens for stats
   const { count: waitingCount } = await supabase
@@ -90,7 +134,7 @@ export default async function PublicBusinessPage(props: PageProps) {
     .order('created_at', { ascending: false })
     .limit(5);
 
-  const jsonLd = {
+  const jsonLd: any = {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: business.name,

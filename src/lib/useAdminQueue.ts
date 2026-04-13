@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Database, Token as TokenItem } from "@/types/database";
+import { Token as TokenItem } from "@/types/database";
 
 export const useAdminQueue = (orgId: string, counterId?: string) => {
   const supabase = createClient();
   const [queue, setQueue] = useState<TokenItem[]>([]);
-  const [currentlyServing, setCurrentlyServing] = useState<TokenItem | null>(
-    null,
-  );
+  const [currentlyServing, setCurrentlyServing] = useState<TokenItem | null>(null);
   const [stats, setStats] = useState({
     totalToday: 0,
     currentlyWaiting: 0,
@@ -35,11 +33,10 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         }
 
         const { data: queueRows, error: qErr } = await queuesQuery;
-
         if (qErr && qErr.code !== "PGRST116") throw qErr;
 
         // 2. Fetch the active tokens list (WAITING & SERVING)
-        let query = supabase
+        let query = (supabase as any)
           .from("tokens")
           .select("*")
           .eq("orgId", orgId)
@@ -54,7 +51,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
         if (tokensErr) throw tokensErr;
 
         // 3. Process the state
-        const fullQueue: TokenItem[] = (activeTokens as TokenItem[]) || [];
+        const fullQueue: TokenItem[] = (activeTokens as any[]) || [];
         let serving: TokenItem | null = null;
         let waitingCount = 0;
 
@@ -75,7 +72,7 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
 
           setStats({
             totalToday: totalIssued,
-            currentlyWaiting: waitingCount, // Derived from active tokens
+            currentlyWaiting: waitingCount,
             served: totalIssued - waitingCount - (serving ? 1 : 0),
           });
         } else {
@@ -90,7 +87,6 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
     fetchAdminData();
 
     // Setup Realtime Subscriptions
-    // Listen to changes on the tokens table (new joins, status updates)
     const tokensChannel = supabase
       .channel(`admin-tokens-${orgId}`)
       .on(
@@ -109,59 +105,66 @@ export const useAdminQueue = (orgId: string, counterId?: string) => {
     };
 
     function mockData() {
-      setCurrentlyServing({
+      const mockServing: TokenItem = {
         id: "1",
         orgId,
         counterId: counterId || "opd",
-        userId: "",
+        userId: "demo-user",
         customerName: "Rahul S.",
         tokenNumber: "OPD-011",
         status: "SERVING",
         createdAt: new Date().toISOString(),
         estimatedWaitMins: 0,
-        queue_id: 'q1',
         isPriority: false,
         servedAt: null,
         customerPhone: null,
-        department_id: null
-      });
-      setQueue([
+        queue_id: 'q1',
+        department_id: null,
+        paymentId: null
+      };
+      
+      const mockQueue: TokenItem[] = [
         {
           id: "2",
           orgId,
           counterId: "opd",
-          userId: "",
+          userId: "demo-user",
           customerName: "Anjali M.",
           tokenNumber: "OPD-012",
           status: "WAITING",
           createdAt: new Date().toISOString(),
           estimatedWaitMins: 5,
-          queue_id: 'q1',
           isPriority: false,
           servedAt: null,
           customerPhone: null,
-          department_id: null
+          queue_id: 'q1',
+          department_id: null,
+          paymentId: null
         },
         {
           id: "3",
           orgId,
           counterId: "opd",
-          userId: "",
+          userId: "demo-user",
           customerName: "Vikram K.",
           tokenNumber: "OPD-013",
           status: "WAITING",
           createdAt: new Date().toISOString(),
           estimatedWaitMins: 10,
-          queue_id: 'q1',
           isPriority: false,
           servedAt: null,
           customerPhone: null,
-          department_id: null
+          queue_id: 'q1',
+          department_id: null,
+          paymentId: null
         },
-      ]);
+      ];
+
+      setCurrentlyServing(mockServing);
+      setQueue(mockQueue);
       setStats({ totalToday: 142, currentlyWaiting: 2, served: 118 });
     }
-  }, [orgId, counterId]);
+  }, [orgId, counterId, supabase]);
 
   return { queue, currentlyServing, stats };
 };

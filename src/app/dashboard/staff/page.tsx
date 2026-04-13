@@ -44,35 +44,36 @@ export default function StaffManagementPage() {
   const fetchInitialData = useCallback(async () => {
     if (!user?.id) return;
     try {
-      // 1. Get Business ID
-      const { data: profile, error: pError } = await supabase
+      // 1. Get Business ID from Profile
+      const { data: profile, error: pError } = await (supabase
         .from("user_profiles")
         .select("primary_business_id")
         .eq("id", user.id)
-        .single();
+        .single() as any);
 
-      if (pError || !profile?.primary_business_id) {
+      const profileData = profile as any;
+      if (pError || !profileData?.primary_business_id) {
         toast.error("Please register your business first");
         router.push("/register-business");
         return;
       }
 
-      setBusinessId(profile.primary_business_id);
+      setBusinessId(profileData.primary_business_id);
 
       // 2. Fetch Departments
-      const { data: depts } = await supabase
+      const { data: depts } = await ((supabase as any)
         .from("departments")
         .select("*")
-        .eq("business_id", profile.primary_business_id);
+        .eq("business_id", profileData.primary_business_id) as any);
       
       if (depts) setDepartments(depts);
 
       // 3. Fetch Staff
-      const { data: staffData, error: sError } = await supabase
+      const { data: staffData, error: sError } = await ((supabase as any)
         .from("staff_members")
         .select("*")
-        .eq("business_id", profile.primary_business_id)
-        .order("created_at", { ascending: false });
+        .eq("business_id", profileData.primary_business_id)
+        .order("created_at", { ascending: false }) as any);
 
       if (sError) throw sError;
       if (staffData) setStaff(staffData);
@@ -97,7 +98,7 @@ export default function StaffManagementPage() {
     setIsSubmitting(true);
     try {
       // Add staff member via RPC
-      const { data, error } = await supabase.rpc("add_staff_member", {
+      const { data, error } = await (supabase as any).rpc("add_staff_member", {
         p_business_id: businessId,
         p_department_id: form.departmentId,
         p_name: form.name,
@@ -113,7 +114,7 @@ export default function StaffManagementPage() {
         
         // Update onboarding status if this is the first staff
         if (staff.length === 0) {
-           await supabase
+           await (supabase as any)
              .from('businesses')
              .update({ onboarding_step: 3 })
              .eq('id', businessId)
@@ -133,7 +134,7 @@ export default function StaffManagementPage() {
 
   const toggleStatus = async (id: string, current: boolean) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("staff_members")
         .update({ is_active: !current })
         .eq("id", id);
@@ -148,14 +149,10 @@ export default function StaffManagementPage() {
   const regenerateCode = async (id: string, name: string) => {
     if (!confirm(`Regenerate access code for ${name}? The old code will stop working.`)) return;
     try {
-      const { data: newCode, error: genErr } = await supabase.rpc("generate_staff_access_code");
+      const { data: newCode, error: genErr } = await (supabase as any).rpc("regenerate_staff_access_code", {
+        p_staff_id: id
+      });
       if (genErr) throw genErr;
-
-      const { error: upErr } = await supabase
-        .from("staff_members")
-        .update({ access_code: newCode })
-        .eq("id", id);
-      if (upErr) throw upErr;
 
       setShowCodeModal({ name, code: newCode });
       fetchInitialData();
@@ -167,7 +164,7 @@ export default function StaffManagementPage() {
 
   const changeDepartment = async (staffId: string, deptId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("staff_members")
         .update({ department_id: deptId })
         .eq("id", staffId);
@@ -288,7 +285,7 @@ export default function StaffManagementPage() {
                     </td>
                     <td className="px-6 py-5">
                       <button 
-                        onClick={() => toggleStatus(s.id, s.is_active)}
+                        onClick={() => toggleStatus(s.id, !!s.is_active)}
                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all ${
                           s.is_active ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"
                         }`}

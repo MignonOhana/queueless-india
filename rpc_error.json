@@ -1,0 +1,6 @@
+{
+  "code": "23502",
+  "details": "Failing row contains (null, aiims-delhi, Test Dept 1775854782680, Test description, 🏢, t, 10, 09:00-17:00, 500, 0, 2026-04-10 20:59:43.266862+00, 2026-04-10 20:59:43.266862+00, 15, 9:00 AM - 5:00 PM, null, 0).",
+  "hint": null,
+  "message": "null value in column \"id\" of relation \"departments\" violates not-null constraint"
+}

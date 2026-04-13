@@ -337,9 +337,9 @@ function MobileFallback() {
 
 // ─── FLOATING STAT BADGES ────────────────────────────────────────────────────
 const STATS = [
-  { label: "2,400+", sub: "businesses", delay: 0.8, x: "-5%", y: "30%" },
-  { label: "18 min", sub: "avg wait saved", delay: 1.0, x: "73%", y: "22%" },
-  { label: "50+ Cities", sub: "Mumbai · Delhi · Bangalore", delay: 1.2, x: "5%", y: "72%" },
+  { label: "2,400+", sub: "businesses", delay: 0.8, x: "2%", y: "30%" },
+  { label: "18 min", sub: "avg wait saved", delay: 1.0, x: "75%", y: "20%" },
+  { label: "50+ Cities", sub: "Mumbai · Delhi · Bangalore", delay: 1.2, x: "5%", y: "85%" },
 ];
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────────────────────

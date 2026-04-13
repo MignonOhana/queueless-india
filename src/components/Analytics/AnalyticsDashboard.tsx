@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import { format, subDays } from 'date-fns';
 import { createClient } from '@/lib/supabase/client';
-import { Database } from '@/types/database.types';
+import { Database } from '@/types/database';
 import { FEATURES } from '@/lib/features';
 import GlassCard from '@/components/ui/GlassCard';
 import { jsPDF } from 'jspdf';
@@ -63,7 +63,11 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
       try {
         // 1. Check Subscription Gate (bypassed during testing phase)
         if (!FEATURES.IS_TESTING_PHASE) {
-          const { data: biz } = await supabase.from('businesses').select('plan').eq('id', businessId).single();
+          const { data: biz, error: bErr } = await ((supabase as any)
+        .from('businesses')
+        .select('plan')
+        .eq('id', businessId)
+        .single() as any);
           if (biz?.plan === 'free') {
             setIsLocked(true);
             setIsLoading(false);
@@ -73,7 +77,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
 
         // 1b. Fetch real metrics from daily_stats (last 7 days)
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        const { data: statsRows } = await supabase
+        const { data: statsRows } = await (supabase as any)
           .from('daily_stats')
           .select('*')
           .eq('business_id', businessId)
@@ -100,7 +104,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
 
         // 2. Fetch Hourly Data
         const today = new Date().toISOString().split('T')[0];
-        const { data: hourly } = await supabase.rpc('get_hourly_distribution', { 
+        const { data: hourly } = await (supabase as any).rpc('get_hourly_distribution', { 
           p_org_id: businessId, 
           p_date: today 
         });
@@ -108,7 +112,7 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
         if (hourly) {
           const formattedHourly = Array.from({ length: 15 }, (_, i) => {
              const h = i + 6;
-             const found = hourly?.find((d) => d.hour_val === h);
+             const found = (hourly as any[]).find((d) => d.hour_val === h);
              return {
                hour: `${h}:00`,
                count: found ? found.token_count : 0,
@@ -118,23 +122,9 @@ export default function AnalyticsDashboard({ businessId }: { businessId: string 
           setHourlyData(formattedHourly);
         }
 
-        try {
-          const { data: trend } = await supabase.rpc('get_wait_time_trend', {
-            p_org_id: businessId,
-            p_days: 7
-          });
-          if (trend && Array.isArray(trend)) {
-             setDailyStats(trend.map((d) => ({
-               day: format(new Date(d.date_val), 'EEE'),
-               wait: d.avg_wait
-             })));
-          }
-        } catch (e) {
-          console.warn("Wait time trend RPC not found, using daily stats instead");
-        }
-
+        // 3. AI Insights via Edge Function (optional, using fallback if fails)
         // 4. AI Insights via Edge Function
-        const { data: aiResponse } = await supabase.functions.invoke('predict-queue', {
+        const { data: aiResponse } = await (supabase as any).functions.invoke('predict-queue', {
           body: { orgId: businessId, stats: { currentlyWaiting: 5, totalToday: 47 } }
         });
 

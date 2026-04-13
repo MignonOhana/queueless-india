@@ -67,22 +67,20 @@ export default function LoginPage() {
     try {
       const role = (intendedRole || localStorage.getItem("ql_intended_role") || "customer") as "customer" | "business_owner";
       
-      // 1. Fetch profile
-      const { data: profile } = await (supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle() as any);
-
-      // 2. Update role if needed
-      if (!profile || profile.role !== role) {
-        await (supabase.from('user_profiles').upsert({ 
-          id: user.id, 
-          role, 
+      // 1. Sync profile via secure API
+      const syncRes = await fetch('/api/auth/sync-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
           email: user.email,
-          updated_at: new Date().toISOString() 
-        } as any, { onConflict: 'id' }) as any);
-      }
+          role: role,
+          fullName: user.user_metadata?.full_name || ''
+        })
+      });
+
+      const { profile } = await syncRes.json();
+
       
       // Sync localStorage for legacy hooks
       localStorage.setItem("ql_user_role", role);
