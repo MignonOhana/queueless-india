@@ -8,7 +8,6 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  // Default to /home (safe for customers), never /dashboard
   const next = requestUrl.searchParams.get("next") ?? "/home";
   const role = requestUrl.searchParams.get("role") || "customer";
 
@@ -32,34 +31,39 @@ export async function GET(request: NextRequest) {
         },
       },
     );
+
     const { data: { session } } = await supabase.auth.exchangeCodeForSession(code);
 
     if (session?.user) {
       const adminSupabase = createServiceRoleClient();
 
       // Check if profile already exists (returning user)
-      const { data: existingProfile } = await adminSupabase
+      // Use `as any` to bypass strict Supabase generated type inference
+      const { data: existingProfile } = await (adminSupabase
         .from("user_profiles")
         .select("id, role, profile_completed")
         .eq("id", session.user.id)
-        .maybeSingle() as { data: { id: string; role: string; profile_completed: boolean } | null; error: unknown };
+        .maybeSingle() as any) as {
+          data: { id: string; role: string; profile_completed: boolean } | null;
+        };
 
       const isNewUser = !existingProfile;
 
-      // Upsert the profile — preserve existing role for returning users
-      await adminSupabase
+      // Upsert profile — preserve existing role for returning users
+      await (adminSupabase as any)
         .from("user_profiles")
-        .upsert({
-          id: session.user.id,
-          // Use existing role for returning users, new role for new users
-          role: existingProfile?.role ?? role,
-          email: session.user.email,
-          // Carry over Google name for new users
-          ...(isNewUser && session.user.user_metadata?.full_name
-            ? { full_name: session.user.user_metadata.full_name }
-            : {}),
-          updated_at: new Date().toISOString(),
-        } as any, { onConflict: 'id' });
+        .upsert(
+          {
+            id: session.user.id,
+            role: existingProfile ? existingProfile.role : role,
+            email: session.user.email,
+            ...(isNewUser && session.user.user_metadata?.full_name
+              ? { full_name: session.user.user_metadata.full_name }
+              : {}),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "id" }
+        );
 
       // New customers → onboarding; new business owners → dashboard
       if (isNewUser) {
@@ -67,10 +71,9 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(new URL(destination, requestUrl.origin));
       }
 
-      // Returning users: use the next param but validate role
-      const effectiveRole = existingProfile?.role ?? role;
+      // Returning users — route by their stored role
+      const effectiveRole = existingProfile ? existingProfile.role : role;
       const safeNext = effectiveRole === "business_owner" ? "/dashboard" : "/home";
-      // Only honour the `next` param if it's safe for their role
       const finalNext = next === "/home" || next === "/customer/dashboard" ? next : safeNext;
       return NextResponse.redirect(new URL(finalNext, requestUrl.origin));
     }
