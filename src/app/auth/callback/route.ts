@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         .from("user_profiles")
         .select("id, role, profile_completed")
         .eq("id", session.user.id)
-        .maybeSingle();
+        .maybeSingle() as { data: { id: string; role: string; profile_completed: boolean } | null; error: unknown };
 
       const isNewUser = !existingProfile;
 
