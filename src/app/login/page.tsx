@@ -61,7 +61,7 @@ export default function LoginPage() {
     setStep("auth");
   };
 
-  const handleAuthSuccess = async (user: any) => {
+  const handleAuthSuccess = async (user: import("@supabase/supabase-js").User) => {
     setShowOTP(false);
     setIsVerifying(true);
     try {

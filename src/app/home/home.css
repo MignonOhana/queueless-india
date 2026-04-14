@@ -1,0 +1,7 @@
+.progress-bar-fill {
+  width: var(--progress-width, 0%);
+}
+
+.occupancy-bar-fill {
+  width: var(--occupancy-width, 0%);
+}

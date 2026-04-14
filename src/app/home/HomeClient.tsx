@@ -11,6 +11,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { CURRENT_LOCATION, Business } from "@/lib/mockHomeData";
 import { createClient } from "@/lib/supabase/client";
+import DynamicProgressBar from "@/components/ui/DynamicProgressBar";
 
 const supabase = createClient();
 import { useAuth } from "@/context/AuthContext";
@@ -91,8 +92,9 @@ function HCard({ biz, queueStates }: { biz: Business; queueStates: Record<string
         </div>
         {/* Mini capacity bar */}
         <div className="mt-1.5 w-full h-1 bg-white/10 rounded-full overflow-hidden">
-          <div
-            style={{ '--progress-width': `${Math.min(100, ((queueStates[biz.id] || 0) / (biz.max_capacity || 50)) * 100)}%` } as React.CSSProperties}
+          <DynamicProgressBar 
+            progress={((queueStates[biz.id] || 0) / (biz.max_capacity || 50)) * 100}
+            variableName="--progress-width"
             className={`h-full rounded-full transition-all w-[var(--progress-width)] ${
               (queueStates[biz.id] || 0) < 10 ? "bg-emerald-500" :
               (queueStates[biz.id] || 0) < 25 ? "bg-amber-500" : "bg-rose-500"
@@ -174,8 +176,9 @@ function VCard({ biz, queueStates }: { biz: Business; queueStates: Record<string
             <span>{biz.queueLength} waiting</span>
           </div>
           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-            <div
-              style={{ '--occupancy-width': `${Math.min(100, occupancy * 100)}%` } as React.CSSProperties}
+            <DynamicProgressBar 
+              progress={occupancy * 100}
+              variableName="--occupancy-width"
               className={`h-full rounded-full transition-all w-[var(--occupancy-width)] ${
                 occupancy < 0.4 ? "bg-emerald-500" : occupancy < 0.7 ? "bg-amber-500" : "bg-rose-500"
               }`}
@@ -212,20 +215,27 @@ function SectionHeader({ title, href }: { title: string; href?: string }) {
   );
 }
 
+interface PulseItem {
+  type: 'LIVE' | 'ALERT' | 'FALLBACK';
+  name: string;
+  label: string;
+  org_id?: string;
+}
+
 // ─── Main component ────────────────────────────────────────────────────────
 export default function HomeClient({ initialBusinesses = [] }: { initialBusinesses?: Business[] }) {
   const router = useRouter();
   const { user, userRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [activeTokenMap, setActiveTokenMap] = useState<any>(null);
+  const [activeTokenMap, setActiveTokenMap] = useState<{ orgId: string; tokenId: string } | null>(null);
   const [liveBusinesses, setLiveBusinesses] = useState<Business[]>(initialBusinesses);
   const [trendingBusinesses, setTrendingBusinesses] = useState<Business[]>(initialBusinesses.slice(0, 6));
   const [userLoc, setUserLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [locationName, setLocationName] = useState("Detecting...");
   const [isLocating, setIsLocating] = useState(true);
   const [queueStates, setQueueStates] = useState<Record<string, number>>({});
-  const [pulseItems, setPulseItems] = useState<any[]>([]);
+  const [pulseItems, setPulseItems] = useState<PulseItem[]>([]);
   const [dataLoaded, setDataLoaded] = useState(initialBusinesses.length > 0);
   const [showMap, setShowMap] = useState(false);
 
@@ -253,14 +263,14 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
       const qMap: Record<string, number> = {};
       const qLenMap: Record<string, number> = {};
       const qCapMap: Record<string, number> = {};
-      (queueData || []).forEach((q: any) => {
+      (queueData || []).forEach((q: { org_id: string; last_issued_number: number; total_waiting: number; max_capacity: number }) => {
         qMap[q.org_id] = q.last_issued_number;
         qLenMap[q.org_id] = q.total_waiting;
         qCapMap[q.org_id] = q.max_capacity;
       });
       setQueueStates(qMap);
 
-      const mapped: Business[] = data.map((b: any) => ({
+      const mapped: Business[] = (data as any[]).map((b) => ({
         id: b.id, name: b.name, category: b.category, address: b.location,
         distance: userLat && userLng ? haversineDistance(userLat, userLng, Number(b.latitude), Number(b.longitude)) : 0,
         waitTime: b.serviceMins || 15,
@@ -282,14 +292,14 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
     const fetchPulse = async () => {
       try {
         const { data } = await supabase.rpc('get_live_pulse_data');
-        if (data && !Array.isArray(data)) {
-          const s = data as any;
+        const s = data as { active_queues?: number; tokens_today?: number; busiest_business?: string } | null;
+        if (s) {
           setPulseItems([
             { type: 'LIVE', name: 'Network Status', label: `${s.active_queues || 0} active queues across India` },
             { type: 'ALERT', name: 'Tokens Today', label: `${s.tokens_today || 0} customers saved time today` },
-            ...(s.busiest_business ? [{ type: 'FALLBACK', name: 'High Demand', label: `${s.busiest_business} is busy now` }] : [])
+            ...(s.busiest_business ? [{ type: 'FALLBACK', name: 'High Demand', label: `${s.busiest_business} is busy now` } as PulseItem] : [])
           ]);
-        } else if (Array.isArray(data)) setPulseItems(data);
+        } else if (Array.isArray(data)) setPulseItems(data as PulseItem[]);
       } catch { /* silent */ }
     };
 
@@ -320,8 +330,16 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
     // ── Realtime ───────────────────────────────────────────────────────
     const tokenSub = supabase.channel('public:tokens')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tokens' }, async (payload) => {
-        const { data: biz } = await (supabase.from('businesses').select('name, category').eq('id', payload.new.orgId).single() as any);
-        if (biz) setPulseItems(prev => [{ type: 'LIVE', org_id: payload.new.orgId, name: biz.name, label: 'Someone just joined the queue' }, ...prev.slice(0, 7)]);
+        const { data: biz } = await supabase.from('businesses').select('name, category').eq('id', (payload.new as { orgId: string }).orgId).maybeSingle();
+        const b = biz as { name: string; category: string } | null;
+        if (b) {
+          setPulseItems(prev => [{ 
+            type: 'LIVE', 
+            org_id: (payload.new as { orgId: string }).orgId, 
+            name: b.name, 
+            label: 'Someone just joined the queue' 
+          }, ...prev.slice(0, 7)]);
+        }
       }).subscribe();
 
     return () => { supabase.removeChannel(tokenSub); };
@@ -428,7 +446,7 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Active Token</p>
-                  <p className="text-white font-bold text-sm">You're in a queue!</p>
+                  <p className="text-white font-bold text-sm">You&apos;re in a queue!</p>
                 </div>
               </div>
               <button

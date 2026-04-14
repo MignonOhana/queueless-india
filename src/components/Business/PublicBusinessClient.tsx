@@ -82,14 +82,15 @@ export default function PublicBusinessClient({ business, departments, initialWai
   // Fetch Live Serving Token
   useEffect(() => {
     const fetchServing = async () => {
-      const { data } = await (supabase.from("tokens") as any)
+      const { data } = await (supabase.from("tokens"))
         .select("tokenNumber")
         .eq("orgId", business.id)
         .eq("status", "SERVING")
         .order("createdAt", { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) setLiveServingToken(data.tokenNumber);
+      const t = data as { tokenNumber: string } | null;
+      if (t) setLiveServingToken(t.tokenNumber);
     };
     fetchServing();
     
@@ -111,7 +112,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
       }, async () => {
         // Refetch total waiting on any change
         const { count } = await (supabase
-          .from('tokens') as any)
+          .from('tokens'))
           .select('*', { count: 'exact', head: true })
           .eq('orgId', business.id)
           .eq('status', 'WAITING')
@@ -186,7 +187,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
 
     setIsJoining(true);
     try {
-      const counterPrefix = (selectedDept as any)?.prefix || (business as any).services?.[0]?.prefix || "Q";
+      const counterPrefix = selectedDept?.prefix || departments?.[0]?.prefix || "Q";
       const userId = asGuest ? null : user?.id;
       const customerPhone = asGuest ? "+91" + digits : user?.phone || "+91" + digits;
 
@@ -268,7 +269,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
         mode: asGuest ? 'guest' : 'account'
       });
       toast.success("Joined successfully!");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Join Error:", e);
       toast.error("Failed to join queue. Our servers are busy.");
     } finally {
@@ -435,11 +436,11 @@ export default function PublicBusinessClient({ business, departments, initialWai
                                  <p className="font-black text-white text-lg tracking-tight">{dept.name}</p>
                                  <div className="flex items-center gap-3 mt-1">
                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                                       <Users size={12} /> {(dept as any).waiting_count || 0} waiting
+                                       <Users size={12} /> {(dept as { waiting_count?: number }).waiting_count || 0} waiting
                                     </span>
                                     <div className="w-1 h-1 rounded-full bg-zinc-800" />
                                     <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary">
-                                       <Clock size={12} /> ~{((dept as any).waiting_count || 0) * (business.serviceMins || 5)}m
+                                       <Clock size={12} /> ~{((dept as { waiting_count?: number }).waiting_count || 0) * (business.serviceMins || 5)}m
                                     </span>
                                  </div>
                               </div>
@@ -652,7 +653,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                                  amount={business.settings?.fastPassPrice || 49}
                                  tokenData={{
                                     orgId: business.id,
-                                    counterPrefix: (selectedDept as any)?.prefix || (business as any)?.services?.[0]?.prefix || "Q",
+                                    counterPrefix: selectedDept?.prefix || departments?.[0]?.prefix || "Q",
                                     customerName: user?.user_metadata?.full_name || "User",
                                     customerPhone: user?.phone,
                                     departmentId: selectedDept?.id
@@ -680,9 +681,10 @@ export default function PublicBusinessClient({ business, departments, initialWai
           {/* HOURS SECTION */}
           <div className="mt-6">
              <button 
+                type="button"
                 onClick={() => setShowHours(!showHours)}
                 className="w-full flex items-center justify-between p-6 bg-surface border border-border rounded-brand text-sm text-zinc-300 font-bold"
-                aria-expanded={showHours ? "true" : "false"}
+                {...({ "aria-expanded": showHours ? "true" : "false" })}
                 title={showHours ? "Hide Operating Hours" : "Show Operating Hours"}
              >
                 <div className="flex items-center gap-3">
@@ -825,7 +827,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                   <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mb-6 mx-auto">
                      <AlertCircle size={32} />
                   </div>
-                  <h3 className="text-2xl font-black text-white text-center mb-2">You're bit far!</h3>
+                  <h3 className="text-2xl font-black text-white text-center mb-2">You&apos;re bit far!</h3>
                   <p className="text-zinc-500 text-center text-sm mb-8">
                      You are <span className="text-white font-bold">{distance.toFixed(1)}km</span> away. We recommend joining only if you can reach within the wait time.
                   </p>
