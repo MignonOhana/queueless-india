@@ -115,8 +115,8 @@ export default function MobileNav() {
         </nav>
 
         <div className="p-6 border-t border-zinc-900 space-y-4">
-          {/* Role Switcher for Business Owners */}
-          {userRole === "business_owner" && (
+          {/* Role Switcher - ONLY for verified business owners or staff */}
+          {(userRole === "business_owner" || userRole === "staff") && (
             <button 
               onClick={handleRoleSwitch}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all group"

@@ -92,11 +92,11 @@ function HCard({ biz, queueStates }: { biz: Business; queueStates: Record<string
         {/* Mini capacity bar */}
         <div className="mt-1.5 w-full h-1 bg-white/10 rounded-full overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${
+            style={{ '--progress-width': `${Math.min(100, ((queueStates[biz.id] || 0) / (biz.max_capacity || 50)) * 100)}%` } as React.CSSProperties}
+            className={`h-full rounded-full transition-all w-[var(--progress-width)] ${
               (queueStates[biz.id] || 0) < 10 ? "bg-emerald-500" :
               (queueStates[biz.id] || 0) < 25 ? "bg-amber-500" : "bg-rose-500"
             }`}
-            style={{ width: `${Math.min(100, ((queueStates[biz.id] || 0) / (biz.max_capacity || 50)) * 100)}%` }}
           />
         </div>
       </div>
@@ -175,17 +175,20 @@ function VCard({ biz, queueStates }: { biz: Business; queueStates: Record<string
           </div>
           <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${
+              style={{ '--occupancy-width': `${Math.min(100, occupancy * 100)}%` } as React.CSSProperties}
+              className={`h-full rounded-full transition-all w-[var(--occupancy-width)] ${
                 occupancy < 0.4 ? "bg-emerald-500" : occupancy < 0.7 ? "bg-amber-500" : "bg-rose-500"
               }`}
-              style={{ width: `${Math.min(100, occupancy * 100)}%` }}
             />
           </div>
         </div>
 
         {/* CTA */}
         <button
-          onClick={(e) => { e.stopPropagation(); }}
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            router.push(`/b/${biz.id}?intent=join`);
+          }}
           className="w-full bg-[#00F5A0] text-black font-black text-xs py-2.5 rounded-xl uppercase tracking-widest active:scale-95 transition-transform"
         >
           Join Queue →
@@ -549,12 +552,11 @@ export default function HomeClient({ initialBusinesses = [] }: { initialBusiness
 
             {/* Map teaser */}
             <section
-              className="relative rounded-2xl overflow-hidden border border-white/8 cursor-pointer"
-              style={{ height: 160 }}
+              className="relative rounded-2xl overflow-hidden border border-white/8 cursor-pointer h-[160px]"
               onClick={() => setShowMap(v => !v)}
             >
               {showMap ? (
-                <div style={{ height: 160 }}>
+                <div className="h-[160px]">
                   <LeafletMiniMap
                     center={userLoc ? [userLoc.lat, userLoc.lng] : CURRENT_LOCATION.coordinates}
                     markers={liveBusinesses.slice(0, 10).map(b => ({ id: b.id, name: b.name, position: b.coordinates, waitTime: b.waitTime }))}

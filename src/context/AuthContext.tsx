@@ -12,6 +12,7 @@ const supabase = createClient();
 interface AuthContextType {
   user: User | null;
   userRole: Role | null;
+  profile: Profile | null;
   loading: boolean;
   isAuthenticated: boolean;
   signOut: () => Promise<void>;
@@ -20,6 +21,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   userRole: null,
+  profile: null,
   loading: true,
   isAuthenticated: false,
   signOut: async () => {},
@@ -30,6 +32,7 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<Role | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,20 +56,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    // Listen for auth changes (login, logout, token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
         
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
+        setProfile(profile);
           
-        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "customer";
-        setUserRole(finalRole);
+        const rawRole = (profile?.role || session.user.user_metadata?.role || "customer").toLowerCase();
+        const finalRole = rawRole === "business_owner" || rawRole === "staff" ? rawRole : "customer";
+        
+        setUserRole(finalRole as Role);
         localStorage.setItem("ql_user_role", finalRole);
       } else {
         setUser(null);
         setUserRole(null);
+        setProfile(null);
         localStorage.removeItem("ql_user_role");
       }
       setLoading(false);
@@ -87,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       user,
       userRole,
+      profile,
       loading,
       isAuthenticated: !!user,
       signOut,

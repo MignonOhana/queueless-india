@@ -60,7 +60,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/b/") || 
     pathname.startsWith("/api/") ||
     pathname.startsWith("/track/") ||
-    pathname.startsWith("/customer/queue/");
+    pathname.startsWith("/customer/queue/") ||
+    pathname.startsWith("/customer/dashboard") ||
+    pathname.startsWith("/customer/scanner");
 
   const isBypass = request.cookies.get("queueless_dev_bypass")?.value === "true";
 

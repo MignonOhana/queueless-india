@@ -148,25 +148,49 @@ export default function LoginPage() {
                 <p className="text-slate-400 font-bold text-lg">Select your path to continue</p>
               </div>
 
-              {/* Customer Card */}
-              <motion.button
-                whileHover={{ scale: 1.02, y: -5 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handleRoleSelect("customer")}
-                className="bg-surface/80 bg-opacity-95 border-2 border-border p-10 rounded-[3rem] text-left group hover:border-emerald-500/50 transition-all duration-300 shadow-2xl relative overflow-hidden h-full min-h-[220px]"
-              >
-                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                  <span className="text-9xl">🧑</span>
-                </div>
-                <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
-                   <Users size={32} />
-                </div>
-                <h3 className="text-3xl font-black text-white mb-3 italic">Customer</h3>
-                <p className="text-slate-400 text-sm leading-relaxed font-medium">Join queues from your phone, track tokens live, and save hours of waiting time.</p>
-                <div className="mt-10 flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
-                  Join a Queue <ArrowRight size={14} />
-                </div>
-              </motion.button>
+              <div className="flex flex-col gap-4">
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -5 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    handleRoleSelect("customer");
+                    setIsRegister(false);
+                  }}
+                  className="bg-surface/80 bg-opacity-95 border-2 border-border p-10 rounded-[3rem] text-left group hover:border-emerald-500/50 transition-all duration-300 shadow-2xl relative overflow-hidden flex-1 min-h-[220px]"
+                >
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <span className="text-9xl">🧑</span>
+                  </div>
+                  <div className="w-16 h-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 border border-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform">
+                     <Users size={32} />
+                  </div>
+                  <h3 className="text-3xl font-black text-white mb-3 italic">Customer Login</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed font-medium">Already have an account? Sign in to track your tokens and history.</p>
+                  <div className="mt-10 flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-opacity">
+                    Sign In <ArrowRight size={14} />
+                  </div>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    handleRoleSelect("customer");
+                    setIsRegister(true);
+                  }}
+                  className="bg-emerald-500/10 border-2 border-emerald-500/20 p-6 rounded-[2rem] text-left group hover:bg-emerald-500/20 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-white font-black text-lg">New User? Register for Free</h4>
+                      <p className="text-emerald-500/60 text-xs font-bold mt-1">Join the digital queue movement today</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-emerald-500 text-black flex items-center justify-center">
+                      <ArrowRight size={18} strokeWidth={3} />
+                    </div>
+                  </div>
+                </motion.button>
+              </div>
 
               {/* Business Card */}
               <motion.button

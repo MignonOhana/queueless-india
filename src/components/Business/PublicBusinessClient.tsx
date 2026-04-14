@@ -495,7 +495,7 @@ export default function PublicBusinessClient({ business, departments, initialWai
                        </div>
 
                        <button 
-                         onClick={() => router.push(`/track/${joinedToken.tokenId}`)}
+                         onClick={() => router.push(`/customer/queue/${business.id}/${joinedToken.tokenId}`)}
                          className="w-full py-4 rounded-2xl bg-white text-black font-black uppercase tracking-widest text-xs hover:brightness-110 active:scale-95 transition-all shadow-xl"
                        >
                           Track Progress <ArrowRight size={16} className="inline ml-1" />

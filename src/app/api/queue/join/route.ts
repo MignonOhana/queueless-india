@@ -67,9 +67,13 @@ export async function POST(req: NextRequest) {
     }
 
     const { data: queueData, error: queueErr } = await queueQuery.single<QueueSelect>();
-
+    
     if (queueErr || !queueData) {
-      return NextResponse.json({ error: "No active queue found for this selection" }, { status: 404 });
+      console.error(`[API: Join] No active queue found for business ${orgId}. Error:`, queueErr);
+      return NextResponse.json({ 
+        error: "This business hasn't started its queue yet today. Please ask the staff to activate the queue.",
+        code: "QUEUE_NOT_ACTIVE"
+      }, { status: 404 });
     }
 
     const adminSupabase = createServiceRoleClient();
