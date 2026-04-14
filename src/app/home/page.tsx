@@ -3,7 +3,6 @@ import HomeClient from "./HomeClient";
 import { Business } from "@/lib/mockHomeData";
 
 export const revalidate = 300; // ISR: rebuild at most every 5 minutes
-export const dynamic = 'force-static'; // serve from CDN cache
 
 const CATEGORY_ICONS: Record<string, string> = {
   "Hospital": "🏥",
