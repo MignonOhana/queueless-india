@@ -55,8 +55,8 @@ export default function CustomerDashboard() {
         .order('createdAt', { ascending: false })
         .limit(10);
         
-      active = (act as any) || [];
-      history = (hist as any) || [];
+      active = (act as unknown as Token[]) || [];
+      history = (hist as unknown as Token[]) || [];
     } else {
       const guestSessions = getAllGuestSessions();
       const tokenIds = guestSessions.map(s => s.activeTokenId).filter(Boolean) as string[];
@@ -75,8 +75,8 @@ export default function CustomerDashboard() {
           .in('status', ['SERVED', 'CANCELLED'])
           .order('createdAt', { ascending: false });
 
-        active = (act as any) || [];
-        history = (hist as any) || [];
+        active = (act as unknown as Token[]) || [];
+        history = (hist as unknown as Token[]) || [];
       }
     }
 
@@ -91,7 +91,7 @@ export default function CustomerDashboard() {
     // Initial fetch
     fetchData();
 
-    let channel: any;
+    let channel: ReturnType<typeof supabase.channel>;
 
     if (user) {
       channel = supabase
@@ -101,7 +101,7 @@ export default function CustomerDashboard() {
           schema: 'public',
           table: 'tokens',
           filter: `userId=eq.${user.id}`
-        }, (payload: any) => {
+        }, (payload: { new: unknown }) => {
           const updatedToken = payload.new as Token;
           setActiveTokens(prev => prev.map(t => t.id === updatedToken.id ? { ...t, ...updatedToken } : t));
           // If status moved to SERVED or CANCELLED, refetch to update sections
@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
             schema: 'public',
             table: 'tokens',
             // No in filter support in realtime yet, using generic and then javascript filter
-          }, (payload: any) => {
+          }, (payload: { new: unknown }) => {
             const updatedToken = payload.new as Token;
             if (tokenIds.includes(updatedToken.id)) {
               setActiveTokens(prev => prev.map(t => t.id === updatedToken.id ? { ...t, ...updatedToken } : t));
