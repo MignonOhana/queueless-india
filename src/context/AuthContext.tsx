@@ -33,24 +33,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initial role from localStorage for immediate UI responsiveness
-    const savedRole = typeof window !== "undefined" ? localStorage.getItem("ql_user_role") : null;
-    if (savedRole) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setUserRole(savedRole as Role);
-    }
-
-    // Check active session on mount
+    // Check active session on mount — do NOT read role from localStorage
+    // (stale data there was showing business nav to customers)
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
-        
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
-        
-        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+
+        // Default to "customer" — never accidentally give business_owner access
+        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "customer";
         setUserRole(finalRole);
         localStorage.setItem("ql_user_role", finalRole);
+      } else {
+        setUserRole(null);
+        localStorage.removeItem("ql_user_role");
       }
       setLoading(false);
     });
@@ -63,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: profile } = await supabase.rpc('get_my_profile').maybeSingle() as { data: any; error: any };
           
-        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "CUSTOMER";
+        const finalRole = (profile?.role as Role) || (session.user.user_metadata?.role as Role) || "customer";
         setUserRole(finalRole);
         localStorage.setItem("ql_user_role", finalRole);
       } else {
