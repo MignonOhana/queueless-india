@@ -52,38 +52,52 @@ export function EmailOTPModal({ onSuccess, onClose, defaultEmail = '', defaultNa
 
     setLoading(true)
     setError('')
-    
+
     try {
-
-
-      const options: { 
-        shouldCreateUser: boolean; 
-        data: { full_name: string }; 
+      const options: {
+        shouldCreateUser: boolean;
+        data: { full_name: string };
       } = {
         shouldCreateUser: true,
         data: { full_name: defaultName || '' },
       };
 
+      // Race against a 10-second timeout so the button can never hang forever
+      const timeoutPromise = new Promise<{ error: Error }>((_resolve, reject) =>
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      );
 
+      let otpError: unknown = null;
+      try {
+        const result = await Promise.race([
+          supabase.auth.signInWithOtp({ email, options }),
+          timeoutPromise,
+        ]) as { error: unknown };
+        otpError = result?.error ?? null;
+      } catch (raceErr) {
+        // timeout fired — treat as soft failure; we'll still show OTP step
+        console.warn("OTP send timed out or failed:", raceErr);
+        otpError = raceErr;
+      }
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options
-      })
-      
-      if (error) {
-        console.error("Supabase OTP Error:", error);
-        setError(error.message)
+      if (otpError) {
+        const msg = otpError instanceof Error ? otpError.message : String(otpError);
+        console.error("Supabase OTP Error:", msg);
+        // Still advance to OTP step — Supabase may have sent the email even if
+        // the response was slow. User can check inbox/spam and enter the code.
+        setStep('otp');
+        setCountdown(60);
+        setError('Email may be delayed — check your spam folder too.');
       } else {
-        setStep('otp')
-        setCountdown(60)
-        toast.success("OTP sent to your email!");
+        setStep('otp');
+        setCountdown(60);
+        toast.success('OTP sent! Check your email inbox.');
       }
     } catch (err: unknown) {
       console.error("OTP send catch block:", err);
-      setError(err instanceof Error ? err.message : 'Failed to send OTP')
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
